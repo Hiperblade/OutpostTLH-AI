@@ -89,6 +89,7 @@ TextRepository.add("controlUnit", "Unità di Controllo");
 TextRepository.add("habitatUnit", "Unità di Supporto Ambientale");
 TextRepository.add("repairUnit", "Manutenzione");
 TextRepository.add("labor", "Manodopera");
+TextRepository.add("TimeUnit", "turni");
 TextRepository.add("roboLabor", "Manodopera robotica");
 TextRepository.add("workerLabor", "Manodopera dei Lavoratori");
 TextRepository.add("cryoCapsule", "Capsule criogeniche");

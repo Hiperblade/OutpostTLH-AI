@@ -23,6 +23,7 @@ import { Typology, TerrainLayer, PipeType, RobotTypes } from "../script/Enums.js
 import { Turn, OutcomePhase, GameOutcome, RobotWearPhase } from "../script/Turn.js";
 import { Revival } from "../script/Revival.js";
 import { createWorkers } from "../script/Generations.js";
+import { RecipeLib } from "../script/RecipeLib.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
 import { Site, createGame, MAP_SIZE } from "../script/GameSetup.js";
@@ -177,7 +178,9 @@ function checks()
 	// fase di preparazione: kit con capsule, centro di ricerca automatico senza personale, laboratorio fermo
 	let game = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	let gs = game.getState();
-	gs.configureMaterial("cryoCapsule", "genericStorage");
+	// magazzini condivisi come in una partita vera (GameSetup.createGame)
+	["mediKit", "goods", "toxicWaste", "fusionWaste", "cryoCapsule"].forEach(m => gs.configureMaterial(m, "genericStorage"));
+	["dozer", "digger", "miner", "roboWorker", "MicrowaveSatellite"].forEach(m => gs.configureMaterial(m, "roboticStorage"));
 	gs.addKnowledge({ technology: ["LandingModule"] });
 	game.addBuilding("LandingModule", { x: 10, y: 10 });
 	for(let t = 0; t < 4; t++) Turn.advance(game);
@@ -198,6 +201,15 @@ function checks()
 	let awake = () => gs.getPopulation().registry.reduce((n, g) => n + g.getPopulation(), 0);
 	expect("risveglio: 5 coloni svegli, 15 capsule", [awake(), gs.getStored("cryoCapsule"), gs.getPendingRevival()], [5, 15, 0]);
 	expect("manodopera separata", [gs.getStored("roboLabor") >= 0, gs.getStored("workerLabor") > 0], [true, true]);
+
+	// i robot prodotti vengono consegnati: il modulo cargo dà posto al kit e ai primi robot
+	game.addBuilding("IndustrialFactory", { x: 8, y: 11 }, true);
+	game.addBuilding("MicrowavePlant", { x: 11, y: 8 }, true);
+	gs.createMaterials({ metalOre: 20 });
+	gs.getProductionQueue().push(RecipeLib.create("Robo-Dozer"));
+	let dozers = gs.getStored("dozer");
+	for(let t = 0; t < 3; t++) Turn.advance(game);
+	expect("robot prodotto consegnato", [gs.getStored("dozer"), gs.getProductionQueue().length], [dozers + 1, 0]);
 
 	// usura dei robot (vita ridotta per il test)
 	let life = RobotWearPhase.ROBOT_LIFE;

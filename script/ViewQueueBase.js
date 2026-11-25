@@ -302,6 +302,16 @@ function BaseQueueData(colonyState, queue, available)
 			let cost;
 			let time;
 			let remainTime;
+			// disponibilità in un turno: la manodopera è quella di robot e Lavoratori, gli altri materiali scorta più produzione
+			let _availablePerTurn = function(resource)
+			{
+				if(resource == "labor")
+				{
+					return colonyState.getStored("roboLabor") + colonyState.getStored("workerLabor");
+				}
+				return colonyState.getStored(resource) + colonyState.getProduced(resource);
+			};
+
 			if(item.getBase != undefined)
 			{
 				time = item.getTime();
@@ -334,7 +344,7 @@ function BaseQueueData(colonyState, queue, available)
 				if(cost.hasOwnProperty(resource))
 				{
 					text += '<tr><td>' + TextRepository.get(resource) + '</td><td class="tableDataRight">' + cost[resource] + '</td>';
-					if(cost[resource] > colonyState.getProduced(resource))
+					if(cost[resource] > _availablePerTurn(resource))
 					{
 						text += '<td class="colorError">' + TextRepository.get("unavailable") + '</td>';
 					}
