@@ -5,6 +5,32 @@ import { BuildingGraph } from "./PipeNetwork.js";
 
 /** popolazione: consumi di sussistenza, istruzione, nascite, morti e stato della popolazione */
 let PopulationPhase = {
+	/** abitabilità del turno, per il report: supporto vitale, alloggi e cibo rispetto ai coloni */
+	project: function(ctx)
+	{
+		let state = ctx.state;
+		let people = state.getPopulation().registry.reduce(function(n, generation) { return n + generation.getPopulation(); }, 0);
+		let colonists = people + state.getPendingRevival();
+		let elements = 0;
+		ctx.networks.forEach(function(graph)
+		{
+			if(BuildingGraph.hasHeadquarter(graph))
+			{
+				elements += BuildingGraph.countPipes(graph);
+			}
+		});
+		state.setHabitability({
+			people: people,
+			pendingRevival: state.getPendingRevival(),
+			capsules: state.getStored("cryoCapsule"),
+			revivalCapacity: Math.max(0, state.getRemainder("cryoRevival")),
+			habitat: { available: Math.max(0, state.getRemainder("habitatUnit")), needed: elements },
+			housing: { available: Math.max(0, state.getRemainder("residentialUnit")), needed: colonists },
+			food: { available: Math.max(0, state.getRemainder("foodUnit")), needed: colonists }
+		});
+	},
+
+
 	RETIREE_DEATH_RATE: 0.05,
 	MEDICAL_DEATH_REDUCTION: 0.5,
 	GOODS_PER_PEOPLE: 10,

@@ -44,6 +44,11 @@ import { RecipeLib } from "./RecipeLib.js";
 		// i materiali sono gestiti dal Material ledger
 		let ledger = new MaterialLedger();
 
+		/** perché un edificio non funziona in questo turno: { reason: "inactive" | "stalled" | "disconnected", missing: [...] } */
+		let buildingIssues = new Map();
+		/** abitabilità del turno: per supporto vitale, alloggi e cibo { available, needed } */
+		let habitability = null;
+
 		let _resetAll = function()
 		{
 			ledger.resetTurn();
@@ -52,6 +57,8 @@ import { RecipeLib } from "./RecipeLib.js";
 			state.destroyedList = [];
 			state.activeList = {};
 			state.inactiveList = {};
+			buildingIssues = new Map();
+			habitability = null;
 		};
 
 		let _addToBuildList = function(building)
@@ -352,6 +359,12 @@ import { RecipeLib } from "./RecipeLib.js";
 		this.getActiveList = function() { return state.activeList; };
 		this.addToInactiveList = _addToInactiveList;
 		this.getInactiveList = function() { return state.inactiveList; };
+		// il primo motivo registrato vince: un edificio scollegato è anzitutto scollegato
+		this.setBuildingIssue = function(building, issue) { if(!buildingIssues.has(building)) { buildingIssues.set(building, issue); } };
+		this.getBuildingIssue = function(building) { return buildingIssues.get(building) || null; };
+		this.getBuildingIssues = function() { return Array.from(buildingIssues.entries()).map(function(e) { return { building: e[0], issue: e[1] }; }); };
+		this.setHabitability = function(value) { habitability = value; };
+		this.getHabitability = function() { return habitability; };
 
 
 		this.isCompletedKnowledge = _isCompletedKnowledge;

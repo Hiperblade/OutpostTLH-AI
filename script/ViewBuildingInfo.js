@@ -1,18 +1,20 @@
 "use strict";
 
+import { describeBuildingIssue } from "./BuildingIssueText.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
 import { TextRepository } from "./TextRepository.js";
 
 let BuildingInfoView;
 
-function InitializeBuildingInfoView(onChangePosition, onClearCurrentItem)
+/** @param {function(Building)} getIssue motivo per cui un edificio non funziona (o null) */
+function InitializeBuildingInfoView(onChangePosition, onClearCurrentItem, getIssue)
 {
-	BuildingInfoView = new BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem);
+	BuildingInfoView = new BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue);
 	return BuildingInfoView;
 }
 
-function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem)
+function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue)
 {
 	let currentItem;
 
@@ -24,6 +26,8 @@ function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem)
 	let _refresh = function()
 	{
 		let buildingInfoImage = $("#buildingInfoImage");
+		let issue = (currentItem != null && currentItem.getPosition && getIssue) ? getIssue(currentItem) : null;
+		$("#buildingInfoDataStatus").text(describeBuildingIssue(issue)).toggle(issue != null);
 		if(currentItem == null)
 		{
 			$("#buildingInfoDataTitle").html("");

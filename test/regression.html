@@ -45,7 +45,7 @@ function snapshot(map)
 		.map(s => [s.getBuildingType(), s.getLayer(), s.getPosition().x, s.getPosition().y, s.getProgressState(), s.getIntegrity(), s.getFrozen()].join(","))
 		.sort();
 	let materials = {};
-	st.getMaterials().forEach(m => { materials[m] = [st.getStored(m), st.getCapacity(m)]; });
+	st.getMaterials().slice().sort().forEach(m => { materials[m] = [st.getStored(m), st.getCapacity(m)]; });
 	let graphs = map.getGraph().map(g => BuildingGraph.countAll(g) + (BuildingGraph.hasHeadquarter(g) ? "H" : "o")).sort();
 	let pop = st.getPopulation();
 	let population = { people: pop.registry.reduce((n, g) => n + g.getPopulation(), 0), subsistence: pop.subsistence, wellness: pop.wellness, happiness: pop.happiness };
@@ -187,7 +187,7 @@ function checks()
 	game.addBuilding("HotLab", { x: 10, y: 8 }, true);
 	game.addBuilding("Pipe_d_surface", { x: 9, y: 12 }, true);
 	Turn.project(game);
-	expect("risveglio senza centro criogenico attivo", Revival.check(game).reason, "noCryoCenter");
+	expect("risveglio senza centro criogenico", [Revival.check(game).reason, Revival.check(game).detail.status], ["noCryoCenter", "missing"]);
 	game.addBuilding("CryoCenter", { x: 9, y: 13 }, true);
 	game.addBuilding("Residential", { x: 10, y: 12 }, true);
 	for(let t = 0; t < 4; t++) Turn.advance(game);
@@ -270,6 +270,38 @@ function checks()
 	lost.getStructure().filter(el => el.getType() == "building" && el.isHeadquarter()).forEach(el => el.destroy());
 	Turn.advance(lost);
 	expect("sconfitta senza headquarter", lost.getState().getOutcome(), GameOutcome.Defeat);
+
+	// spiegazione del rifiuto: alloggi fermi per mancanza di habitat residenziale, centro criogenico senza energia
+	let housing = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let hs = housing.getState();
+	hs.configureMaterial("cryoCapsule", "genericStorage");
+	hs.addKnowledge({ technology: ["LandingModule"] });
+	housing.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(housing);
+	housing.addBuilding("Pipe_d_surface", { x: 9, y: 12 }, true);
+	for(let py = 13; py <= 17; py++) housing.addPipe(PipeType.NorthEastSouthWest, TerrainLayer.Underground, { x: 9, y: py }, true);
+	[[10, 13], [10, 15], [10, 17], [8, 13], [8, 15], [8, 17]].forEach(p => housing.addBuilding("Residential", { x: p[0], y: p[1] }, true));
+	housing.addBuilding("CryoCenter", { x: 8, y: 14 }, true);
+	for(let t = 0; t < 4; t++) Turn.advance(housing);
+	let refused = Revival.check(housing);
+	let residential = housing.findBuilding({ x: 10, y: 13 }, TerrainLayer.Underground);
+	expect("indicatore: struttura residenziale ferma", hs.getBuildingIssue(residential), { reason: "inactive", missing: ["habitatResidentialUnit"], noSpace: false });
+	expect("abitabilità nel report", [hs.getHabitability().capsules, hs.getHabitability().housing], [20, { available: 0, needed: 0 }]);
+	expect("alloggi fermi: manca habitat residenziale", [refused.reason, refused.detail.building, refused.detail.status, refused.detail.missing], ["notEnoughHousing", "Residential", "inactive", ["habitatResidentialUnit"]]);
+	housing.addBuilding("EnvironmentalControl", { x: 8, y: 10 }, true);
+	Turn.advance(housing);
+	refused = Revival.check(housing);
+	expect("centro criogenico senza energia", [refused.reason, refused.detail.status, refused.detail.missing], ["noCryoCenter", "inactive", ["power"]]);
+
+	// le parti di una struttura composita non consumano manodopera: costruisce l'edificio principale
+	let parts = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	parts.getState().addKnowledge({ technology: ["LandingModule"] });
+	parts.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(parts);
+	parts.addBuilding("Park", { x: 12, y: 13 });
+	Turn.project(parts);
+	let parkIssues = parts.getState().getBuildingIssues().filter(e => e.building.getBuildingType().indexOf("Park") == 0);
+	expect("parco scollegato segnalato una volta sola", parkIssues.map(e => e.building.getBuildingType() + ":" + e.issue.reason), ["Park:disconnected"]);
 
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });

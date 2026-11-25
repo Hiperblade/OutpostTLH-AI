@@ -2,6 +2,7 @@
 
 import { RobotTypes, StructureTypes } from "./Enums.js";
 import { GenerationState } from "./Generations.js";
+import { BuildingGraph } from "./PipeNetwork.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { RecipeLib } from "./RecipeLib.js";
 import { MaintenancePhase } from "./TurnMaintenance.js";
@@ -156,6 +157,19 @@ let _withLabor = function(state, cost)
 let _canPay = function(state, cost) { return state.haveMaterials(_withLabor(state, cost)); };
 let _pay = function(state, cost) { state.delMaterials(_withLabor(state, cost)); };
 
+/** materiali di un costo che non bastano in questo momento ("labor" = manodopera di robot e Lavoratori) */
+let _missing = function(state, cost)
+{
+	return Object.keys(cost).filter(function(name)
+	{
+		if(name == "labor")
+		{
+			return state.getRemainder("roboLabor") + state.getRemainder("workerLabor") < cost.labor;
+		}
+		return state.getRemainder(name) < cost[name];
+	});
+};
+
 /** consumi di un edificio attivo, compreso il personale */
 let _runningCost = function(prototype)
 {
@@ -198,6 +212,7 @@ let BuildingProductionPhase = {
 		let state = ctx.state;
 		ctx.networks.forEach(function(graph)
 		{
+			let connected = BuildingGraph.hasHeadquarter(graph);
 			PrototypeLib.getPriorityList().forEach(function(buildingType)
 			{
 				if(graph[buildingType] == undefined)
@@ -207,6 +222,10 @@ let BuildingProductionPhase = {
 				let prototype = PrototypeLib.get(buildingType);
 				graph[buildingType].forEach(function(building)
 				{
+					if(!connected && !building.isDestroyed() && !building.getFrozen())
+					{
+						state.setBuildingIssue(building, { reason: "disconnected", missing: [] });
+					}
 					if(building.isOperative())
 					{
 						// senza materiali, energia o personale l'edificio resta inattivo
@@ -224,9 +243,11 @@ let BuildingProductionPhase = {
 						{
 							// edificio inattivo
 							state.addToInactiveList(building);
+							state.setBuildingIssue(building, { reason: "inactive", missing: _missing(state, running), noSpace: !state.haveSpace(prototype.getProductionWaste()) });
 						}
 					}
-					else if(building.underConstruction())
+					// le parti delle strutture composite sono costruite dall'edificio principale
+					else if(building.underConstruction() && !building.getFrozen())
 					{
 						// senza materiali o manodopera il cantiere resta fermo questo turno
 						let cost = _constructionCost(prototype);
@@ -234,6 +255,10 @@ let BuildingProductionPhase = {
 						{
 							_pay(state, cost);
 							state.addToBuildList(building);
+						}
+						else
+						{
+							state.setBuildingIssue(building, { reason: "stalled", missing: _missing(state, cost) });
 						}
 					}
 					else if(building.getIntegrity() == 0)

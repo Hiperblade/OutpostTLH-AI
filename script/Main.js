@@ -189,7 +189,7 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 		mapView = new MapView(terrainMap, miniMapCanvas, site.getBackground(), areaSize, _onChangePosition);
 		selectorView = new BuildingSelectorView(selectorCanvas, canvasSize.x, state, _onSelected);
 
-		buildingInfo = InitializeBuildingInfoView(_onChangePosition, _onClearCurrentItem);
+		buildingInfo = InitializeBuildingInfoView(_onChangePosition, _onClearCurrentItem, function(building) { return state.getBuildingIssue(building); });
 		queueView = InitializeQueueView("queueDiv", canvasSize);
 
 		// pulsanti spostamento
@@ -461,7 +461,23 @@ Log.dialog(_placementMessage(result));
 	let _wakeUp = function()
 	{
 		let result = Revival.request(terrainMap, 5);
-Log.dialog(TextRepository.get(result.ok ? "RevivalScheduled" : "Revival_" + result.reason));
+Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(result));
+	};
+
+	/** motivo del rifiuto, con l'edificio responsabile e cosa gli manca */
+	let _revivalMessage = function(result)
+	{
+		let text = TextRepository.get("Revival_" + result.reason);
+		let detail = result.detail;
+		if(detail)
+		{
+			text += " " + TextRepository.get("Revival_status_" + detail.status).replace("%s", TextRepository.get(detail.building));
+			if(detail.missing.length > 0)
+			{
+				text += " " + TextRepository.get("Revival_lacks").replace("%s", detail.missing.map(function(name) { return TextRepository.get(name); }).join(", "));
+			}
+		}
+		return text;
 	};
 
 	let _doNext = function()

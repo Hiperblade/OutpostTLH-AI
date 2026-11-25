@@ -1,5 +1,6 @@
 "use strict";
 
+import { describeBuildingIssue } from "./BuildingIssueText.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { inherits } from "./SystemLib.js";
@@ -363,51 +364,44 @@ function ReportMaintenance(colonyState, image)
 
 function ReportHumans(colonyState, image)
 {
+	let _percent = function(value) { return Math.round((value || 0) * 100) + "%"; };
+	let _row = function(label, value, error) { return '<tr><td class="tableMainColumn">' + label + '</td><td class="tableDataColumn"></td><td class="tableDataColumn"></td><td class="tableDataRight' + (error ? ' colorError' : '') + '">' + value + '</td></tr>'; };
+	let _ratio = function(label, entry) { return _row(label, entry.available + "/" + entry.needed, entry.available < entry.needed); };
+	let _separator = '<tr><td colspan="4" class="tableSeparator"></td></tr>';
+
 	this.getItemInfo = function()
 	{
-		let text = "";
-		text += '<table>';
-		text += '<tr><td class="tableMainColumn">' + TextRepository.get("subsistence") + '</td><td class="tableDataColumn"></td><td class="tableDataColumn"></td><td class="tableDataRight">' + colonyState.getPopulation().subsistence + '</td></tr>';
-		text += '<tr><td>' + TextRepository.get("wellness") + '</td><td></td><td></td><td class="tableDataRight">' + colonyState.getPopulation().wellness + '</td></tr>';
-		text += '<tr><td>' + TextRepository.get("happiness") + '</td><td></td><td></td><td class="tableDataRight">' + colonyState.getPopulation().happiness + '</td></tr>';
-
-		text += '<tr><td>' + TextRepository.get("Population") + ':</td></tr>';
+		let population = colonyState.getPopulation();
+		let text = '<table>';
+		text += _row(TextRepository.get("subsistence"), _percent(population.subsistence), population.subsistence < 1);
+		text += _row(TextRepository.get("wellness"), _percent(population.wellness), population.wellness < 1);
+		text += _row(TextRepository.get("happiness"), _percent(population.happiness), false);
+		text += _separator;
 
 		let date = colonyState.getDate();
-		let generations = colonyState.getPopulation().registry;
-		for(let i  = 0; i < generations.length; i++)
+		let people = 0;
+		population.registry.forEach(function(generation)
 		{
-			text += '<tr><td>' + TextRepository.get(generations[i].getState(date)) + '</td><td></td><td></td><td class="tableDataRight">' + generations[i].getPopulation() + '</td></tr>';
-		}
+			people += generation.getPopulation();
+			text += _row(TextRepository.get(generation.getState(date)), generation.getPopulation(), false);
+		});
+		text += _row(TextRepository.get("AwakeColonists"), people, false);
 
-		text += '<tr><td colspan="4" class="tableSeparator"></td></tr>';
-
-		let surplus = 0;
-
-		text += '<tr><td>' + TextRepository.get("Surplus") + '</td><td></td><td></td>';
-		if(surplus < 0)
+		let habitability = colonyState.getHabitability();
+		if(habitability != null)
 		{
-			text += '<td class="tableDataRight colorError">' + surplus + '</td>';
+			text += _row(TextRepository.get("cryoCapsule"), habitability.capsules, false);
+			if(habitability.pendingRevival > 0)
+			{
+				text += _row(TextRepository.get("PendingRevival"), habitability.pendingRevival, false);
+			}
+			text += _separator;
+			text += '<tr><td colspan="4">' + TextRepository.get("Habitability") + '</td></tr>';
+			text += _ratio(TextRepository.get("habitatUnit"), habitability.habitat);
+			text += _ratio(TextRepository.get("residentialUnit"), habitability.housing);
+			text += _ratio(TextRepository.get("foodUnit"), habitability.food);
+			text += _row(TextRepository.get("cryoRevival"), habitability.revivalCapacity, habitability.capsules > 0 && habitability.revivalCapacity == 0);
 		}
-		else
-		{
-			text += '<td class="tableDataRight">' + surplus + '</td>';	// total
-		}
-		text += '</tr>';
-
-		text += '<tr><td>' + TextRepository.get("Stored") + '</td><td></td><td></td>';
-		let capacity = 0;//colonyState.getCapacity(metaMaterial);
-		let stored = 0;//(colonyState.getStored(metaMaterial) || colonyState.getFullCapacity(metaMaterial));
-		if(stored >= capacity)
-		{
-			text += '<td class="tableDataRight colorError">' + stored + '/' + capacity + '</td>';
-		}
-		else
-		{
-			text += '<td class="tableDataRight">' + stored + '/' + capacity + '</td>';
-		}
-		text += '</tr>';
-
 		text += '</table>';
 		return text;
 	};
@@ -416,11 +410,46 @@ function ReportHumans(colonyState, image)
 	this.getImageId = function(){ return image || "Humans"; }
 }
 
+/** edifici che non funzionano in questo turno, raggruppati per tipo e motivo */
+function ReportStoppedBuildings(colonyState, image)
+{
+	this.getItemInfo = function()
+	{
+		let groups = {};
+		colonyState.getBuildingIssues().forEach(function(entry)
+		{
+			let key = entry.building.getBuildingType() + "|" + describeBuildingIssue(entry.issue);
+			if(groups[key] === undefined)
+			{
+				groups[key] = { type: entry.building.getBuildingType(), text: describeBuildingIssue(entry.issue), count: 0 };
+			}
+			groups[key].count++;
+		});
+		let list = Object.keys(groups).map(function(key) { return groups[key]; });
+		if(list.length == 0)
+		{
+			return '<p>' + TextRepository.get("NoStoppedBuildings") + '</p>';
+		}
+		let text = '<table>';
+		list.forEach(function(group)
+		{
+			text += '<tr><td class="tableMainColumn">' + TextRepository.get(group.type) + '</td><td class="tableDataRight">' + group.count + '</td></tr>';
+			text += '<tr><td colspan="2" class="tableIndentation colorError">' + group.text + '</td></tr>';
+		});
+		text += '</table>';
+		return text;
+	};
+
+	this.getName = function(){ return "StoppedBuildings"; };
+	this.getImageId = function(){ return image || "Pipes"; }
+}
+
 function ReportQueueData(colonyState)
 {
 	let queue = [];
 	let available = [];
 
+	queue.push(new ReportStoppedBuildings(colonyState, "Pipes"));
 	queue.push(new ReportMaintenance(colonyState, "Pipes"));
 	queue.push(new ReportProductionMaterial(colonyState, "power", "Power" ));
 	queue.push(new ReportHumans(colonyState, "Humans"));
@@ -459,4 +488,4 @@ function ReportQueueData(colonyState)
 }
 inherits(ReportQueueData, QueueData);
 
-export { ReportProductionMaterial, ReportMetaMaterial, ReportMaintenance, ReportHumans, ReportQueueData };
+export { ReportProductionMaterial, ReportMetaMaterial, ReportMaintenance, ReportHumans, ReportStoppedBuildings, ReportQueueData };

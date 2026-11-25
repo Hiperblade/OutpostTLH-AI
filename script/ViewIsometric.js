@@ -173,10 +173,36 @@ function IsometricView(map, canvasId, viewSize, viewTileDimension)
 					(lastStructure.getPosition().y != structurePosition.y))
 				{
 					_drawImage(ctx, _toRelativePosition(structurePosition), ImagesLib.getImage(structure[i].getImageId()));
+					_drawIssue(ctx, _toRelativePosition(structurePosition), map.getState().getBuildingIssue(structure[i]));
 					lastStructure = structure[i];
 				}
 			}
 		}
+	};
+
+	/** segnale sopra un edificio che non funziona: rosso se fermo o scollegato, giallo se il cantiere è fermo */
+	let _drawIssue = function(ctx, point, issue)
+	{
+		if(issue == null)
+		{
+			return;
+		}
+		let p = _toScreenPosition(point);
+		let x = p.x + 80, y = p.y - 72;
+		ctx.beginPath();
+		ctx.arc(x, y, 8, 0, Math.PI * 2);
+		ctx.fillStyle = (issue.reason == "stalled") ? "rgb(220,170,40)" : "rgb(210,60,50)";
+		ctx.fill();
+		ctx.lineWidth = 1.5;
+		ctx.strokeStyle = "rgb(20,20,20)";
+		ctx.stroke();
+		ctx.fillStyle = "rgb(255,255,255)";
+		ctx.font = "bold 12px sans-serif";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText("!", x, y + 1);
+		ctx.textAlign = "start";
+		ctx.textBaseline = "alphabetic";
 	};
 
 	let _drawImage = function(ctx, point, image)
