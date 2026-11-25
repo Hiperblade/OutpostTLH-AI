@@ -144,3 +144,5 @@ function Recipe(baseRecipe)
 
 // singleton
 let RecipeLib = new RecipeLibConstructor();
+
+export { RecipeType, RecipeLibConstructor, BaseRecipe, Recipe, RecipeLib };

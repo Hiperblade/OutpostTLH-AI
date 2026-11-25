@@ -1,14 +1,14 @@
 "use strict";
 
-// calcolo popolazione (nascite, morti e stato)
-function PopulationEngine()
-{
-	let _simulation = function(colonyState, graphs)
-	{
-	};
+import { Generation, GenerationState } from "./Generations.js";
+import { BuildingGraph } from "./PipeNetwork.js";
 
-	let _computation = function(colonyState, graphs, map)
+/** popolazione: consumi di sussistenza, istruzione, nascite, morti e stato della popolazione */
+let PopulationPhase = {
+	apply: function(ctx)
 	{
+		let colonyState = ctx.state;
+		let graphs = ctx.networks;
 		let date = colonyState.getDate();
 
 		// totale popolazione
@@ -67,7 +67,7 @@ function PopulationEngine()
 
 			// alloggi (sovraffollamento)
 			let residentialUnit = colonyState.getRemainder("residentialUnit");
-			colonyState.delMaterials( { foodUnit: Math.min(residentialUnit, people) } );
+			colonyState.delMaterials( { residentialUnit: Math.min(residentialUnit, people) } );
 			overcrowding = 1 - (residentialUnit / people);
 			if(overcrowding < 0)
 			{
@@ -222,12 +222,7 @@ function PopulationEngine()
 		population.subsistence = subsistence;
 		population.wellness = wellness;
 		population.happiness = happiness;
-	};
+	}
+};
 
-	//-----------------------------------------
-
-	this.simulation = _simulation;
-	this.computation = _computation;
-
-	//-----------------------------------------
-}
+export { PopulationPhase };

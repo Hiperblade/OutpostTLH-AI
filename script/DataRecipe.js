@@ -1,5 +1,7 @@
 "use strict";
 
+import { RecipeLib, RecipeType } from "./RecipeLib.js";
+
 //-----
 
 RecipeLib.add(RecipeType.Production, "Robo-Worker", { discovery: ["Robotics"] }, 1, { productionUnit: 3, productionStandardStructure: 1, metalOre: 2 }, { roboWorker: 1 });

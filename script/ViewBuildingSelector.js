@@ -1,5 +1,9 @@
 "use strict";
 
+import { TerrainLayer } from "./Enums.js";
+import { ImagesLib } from "./ImagesLib.js";
+import { PrototypeLib } from "./PrototypeLib.js";
+
 function BuildingSelectorView(canvasId, width, colonyState, onSelected)
 {
 	let canvasView = document.getElementById(canvasId);
@@ -240,3 +244,5 @@ function BuildingSelectorView(canvasId, width, colonyState, onSelected)
 
 	//-----------------------------------------
 }
+
+export { BuildingSelectorView };

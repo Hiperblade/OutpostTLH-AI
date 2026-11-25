@@ -45,3 +45,5 @@ function TextRepositoryConstructor()
 
 // singleton
 let TextRepository = new TextRepositoryConstructor();
+
+export { TextRepositoryConstructor, TextRepository };

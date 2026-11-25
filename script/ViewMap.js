@@ -1,5 +1,8 @@
 "use strict";
 
+import { StructureTypes } from "./Enums.js";
+import { ImagesLib } from "./ImagesLib.js";
+
 function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 {
 	let canvasMap = document.getElementById(canvasId);
@@ -135,3 +138,5 @@ function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 
 	//-----------------------------------------
 }
+
+export { MapView };

@@ -1,5 +1,9 @@
 "use strict";
 
+import { ImagesLib } from "./ImagesLib.js";
+import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
+import { TextRepository } from "./TextRepository.js";
+
 let BuildingInfoView;
 
 function InitializeBuildingInfoView(onChangePosition, onClearCurrentItem)
@@ -120,3 +124,5 @@ function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem)
 
 	//-----------------------------------------
 }
+
+export { BuildingInfoView, InitializeBuildingInfoView, BuildingInfoViewConstructor };

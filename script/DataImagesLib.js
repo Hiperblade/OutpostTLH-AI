@@ -1,3 +1,5 @@
+"use strict";
+
 let imagesList =[];
 imagesList.push({ id: "baseTile", fileName: "interface/baseTile.gif" });
 imagesList.push({ id: "button_back", fileName: "interface/button_back.gif" });
@@ -286,3 +288,5 @@ imagesList.push({ id: "HumanScience", fileName: "illustrations/HumanScience.png"
 imagesList.push({ id: "Psicology", fileName: "illustrations/Psicology.png" });
 imagesList.push({ id: "Sociology", fileName: "illustrations/Sociology.png" });
 imagesList.push({ id: "SocialControl", fileName: "illustrations/SocialControl.png" });
+
+export { imagesList };

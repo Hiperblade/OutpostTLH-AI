@@ -1,5 +1,7 @@
 "use strict";
 
+import { Log } from "./SystemLib.js";
+
 function ImagesLibConstructor()
 {
 	let images = [];
@@ -117,3 +119,5 @@ function ImagesLibConstructor()
 
 // singleton
 let ImagesLib = new ImagesLibConstructor();
+
+export { ImagesLibConstructor, ImagesLib };

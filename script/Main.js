@@ -1,5 +1,19 @@
 "use strict";
 
+import { PipeType, RobotTypes, TerrainLayer } from "./Enums.js";
+import { Placement, PlacementReason } from "./Placement.js";
+import { Log } from "./SystemLib.js";
+import { TerrainMap } from "./TerrainMap.js";
+import { TextRepository } from "./TextRepository.js";
+import { Turn } from "./Turn.js";
+import { InitializeBuildingInfoView } from "./ViewBuildingInfo.js";
+import { BuildingSelectorView } from "./ViewBuildingSelector.js";
+import { IsometricView } from "./ViewIsometric.js";
+import { MapView } from "./ViewMap.js";
+import { InitializeQueueView, ProductionQueueData, ResearchQueueData } from "./ViewQueueBase.js";
+import { HelpQueueData } from "./ViewQueueHelp.js";
+import { ReportQueueData } from "./ViewQueueReport.js";
+
 let Main;
 
 function InitializeMainSystem(mapCanvas, miniMapCanvas, selectorCanvas, siteType)
@@ -192,189 +206,54 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 
 		view.setGridCallback(function(point)
 			{
-				let target = _findBuilding(point);
+				if(currentTile != null)
+				{
+					let result = Placement.place(terrainMap, currentTile, point);
+					if(result.ok)
+					{
+						_setCurrentTile(null);
+					}
+					else if(!Placement.isSilent(result))
+					{
+Log.dialog(_placementMessage(result));
+					}
+					_redraw();
+					return;
+				}
+
 				if(!terrainMap.isVisible(point))
 				{
 					return;
 				}
 
-				let resource;
-				if(currentTile != null)
+				// nessuno strumento selezionato: informazioni sull'elemento cliccato
+				let target = _findBuilding(point);
+				if(target != null)
 				{
-					if(currentTile.isRobot)
+					buildingInfo.show(target);
+
+					if(target.isPipe() && !target.underConstruction() && !target.isDestroyed())
 					{
-						if(currentTile.robotType == RobotTypes.Dozer)
+						if(target.haveUp())
 						{
-							if(terrainMap.getRobot(point) == null)
-							{
-								if(target != null)
-								{
-									if(state.useRoboDozer())
-									{
-										//distruggi l'edificio
-										if(!target.isDestroyed())
-										{
-											let eventDestroy = PrototypeLib.get(target.getBuildingType()).eventDestroy;
-											if(eventDestroy != undefined)
-											{
-												eventDestroy(target, terrainMap);
-											}
-										}
-										terrainMap.delBuilding(point);
-
-										terrainMap.addRoboDozer(point);
-										_setCurrentTile(null);
-									}
-									else
-									{
-Log.dialog("Non \u00E8 disponibile nessuna " + TextRepository.get(RobotTypes.Dozer) + "!");
-									}
-								}
-								else if(terrainMap.isRazable(point))
-								{
-									if(state.useRoboDozer())
-									{
-										terrainMap.addRoboDozer(point);
-										_setCurrentTile(null);
-									}
-									else
-									{
-Log.dialog("Non \u00E8 disponibile nessuna " + TextRepository.get(RobotTypes.Dozer) + "!");
-									}
-								}
-							}
+							_goUp();
 						}
-						else if(currentTile.robotType == RobotTypes.Digger)
+						else if(target.haveDown())
 						{
-							if(target == null)
-							{
-								if(terrainMap.getRobot(point) == null)
-								{
-									if(terrainMap.isDiggable(point))
-									{
-										if(state.useRoboDigger())
-										{
-											terrainMap.addRoboDigger(point);
-											_setCurrentTile(null);
-										}
-										else
-										{
-Log.dialog("Non \u00E8 disponibile nessuna " + TextRepository.get(RobotTypes.Digger) + "!");
-										}
-									}
-								}
-							}
-						}
-						else if(currentTile.robotType == RobotTypes.Miner)
-						{
-							resource = terrainMap.findResource(point);
-							if(resource != null)
-							{
-								let material = resource.getResourceType();
-								let theory = "Extraction_" + material;
-								let mineType = "Mine" + material;
-
-								if(state.checkKnowledge({theory: [theory]})) // controlo se hai la tecnologia richiesta
-								{
-									if(!terrainMap.isRazable(point))
-									{
-										terrainMap.addBuilding(mineType, point);
-										_setCurrentTile(null);
-									}
-									else
-									{
-Log.dialog("Il terreno non \u00E8 spianato!");
-									}
-								}
-								else
-								{
-Log.dialog("Non hai la tecnologia per estrarre questa risorsa!");
-								}
-							}
-						}
-
-						_redraw();
-					}
-					else
-					{
-						if(target == null)
-						{
-							if(!terrainMap.isRazable(point))
-							{
-								resource = terrainMap.findResource(point);
-								let p = PrototypeLib.get(currentTile.buildingType);
-								if(p.getRequiredResource() == undefined && resource == null)
-								{
-									if(_addBuilding(currentTile.buildingType, point))
-									{
-										_setCurrentTile(null);
-									}
-								}
-								else
-								{
-									if(resource != null)
-									{
-										if(p.getRequiredResource() == null)
-										{
-Log.dialog("Questo edificio non richiede la presenza di risorse!");
-										}
-										else if(resource.getResourceType() == p.getRequiredResource())
-										{
-											if(_addBuilding(currentTile.buildingType, point))
-											{
-												_setCurrentTile(null);
-											}
-										}
-										else
-										{
-Log.dialog("Questo edificio richiede la presenza della risorsa " + p.getRequiredResource() + "!");
-										}
-									}
-									else
-									{
-Log.dialog("Questo edificio richiede la presenza della risorsa " + p.getRequiredResource() + "!");
-									}
-								}
-							}
-							else if(currentTile.buildingType == "LandingModule")
-							{
-								if(_addBuilding(currentTile.buildingType, point))
-								{
-									_setCurrentTile(null);
-								}
-							}
+							_goDown();
 						}
 					}
 				}
 				else
 				{
-					if(target != null)
+					let resource = terrainMap.findResource(point);
+					if(resource != null)
 					{
-						buildingInfo.show(target);
-
-						if(target.isPipe() && !target.underConstruction() && !target.isDestroyed())
-						{
-							if(target.haveUp())
-							{
-								_goUp();
-							}
-							else if(target.haveDown())
-							{
-								_goDown();
-							}
-						}
+						buildingInfo.show(resource);
 					}
 					else
 					{
-						resource = terrainMap.findResource(point);
-						if(resource != null)
-						{
-							buildingInfo.show(resource);
-						}
-						else
-						{
-							buildingInfo.hide();
-						}
+						buildingInfo.hide();
 					}
 				}
 			});
@@ -383,15 +262,28 @@ Log.dialog("Questo edificio richiede la presenza della risorsa " + p.getRequired
 			{
 			});
 
-		terrainMap.simulation();		
+		Turn.project(terrainMap);
 		_setAbsolutePosition({x: 0, y: 0});
 		_setLayer(TerrainLayer.Surface);
 	};
 
-	let _addBuilding = function(buildingType, point)
+	let _placementMessage = function(result)
 	{
-		let newBuilding = terrainMap.addBuilding(buildingType, point);
-		return (newBuilding != null);
+		switch(result.reason)
+		{
+			case PlacementReason.NoDozer:
+			case PlacementReason.NoDigger:
+				return "Non \u00E8 disponibile nessuna " + TextRepository.get(result.data.robotType) + "!";
+			case PlacementReason.NoExtractionTechnology:
+				return "Non hai la tecnologia per estrarre questa risorsa!";
+			case PlacementReason.NotRazed:
+				return "Il terreno non \u00E8 spianato!";
+			case PlacementReason.NoResourceRequired:
+				return "Questo edificio non richiede la presenza di risorse!";
+			case PlacementReason.RequiresResource:
+				return "Questo edificio richiede la presenza della risorsa " + result.data.resource + "!";
+		}
+		return result.reason;
 	};
 
 	let _createCurrentTilePipe = function(pipeType, layer)
@@ -555,8 +447,11 @@ Log.dialog("Questo edificio richiede la presenza della risorsa " + p.getRequired
 
 	let _doNext = function()
 	{
-		terrainMap.computation();
-		terrainMap.simulation();
+		let report = Turn.advance(terrainMap);
+		report.events.forEach(function(event)
+		{
+Log.dialog(event.type + ": " + event.name);
+		});
 		_redraw();
 		buildingInfo.refresh();
 	};
@@ -691,3 +586,5 @@ function Site(typology, imageName)
 
 	//-----------------------------------------
 }
+
+export { Main, InitializeMainSystem, MainCommand, MainSystemConstructor, Site };

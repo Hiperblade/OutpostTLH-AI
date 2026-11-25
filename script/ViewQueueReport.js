@@ -1,5 +1,11 @@
 "use strict";
 
+import { ImagesLib } from "./ImagesLib.js";
+import { PrototypeLib } from "./PrototypeLib.js";
+import { inherits } from "./SystemLib.js";
+import { TextRepository } from "./TextRepository.js";
+import { QueueData } from "./ViewQueueBase.js";
+
 function ReportProductionMaterial(colonyState, material, image)
 {
 	let productionBuildingList = [];
@@ -451,4 +457,6 @@ function ReportQueueData(colonyState)
 	this.getQueueTitle = function() { return "ReportBase"; };
 	this.getAvailableTitle = function() { return "ReportEvents"; };
 }
-ReportQueueData.inherits(QueueData);
+inherits(ReportQueueData, QueueData);
+
+export { ReportProductionMaterial, ReportMetaMaterial, ReportMaintenance, ReportHumans, ReportQueueData };

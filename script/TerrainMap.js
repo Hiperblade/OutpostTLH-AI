@@ -1,38 +1,14 @@
 "use strict";
 
-let Typology = {
-	Vulcanic: "vulcanic",
-	Asteroid: "asteroid",
-	Ice: "ice",
-	Desert: "desert",
-	Jungle: "jungle",
-	Rock: "rock",
-	Stone: "stone"
-};
-
-let TerrainLayer = {
-	Surface: "surface",
-	Underground: "underground",
-	Deep: "deep"
-};
-
-let Morphology = {
-	Razed: "razed",
-	Clear: "clear",
-	Rough: "rough",
-	Impervious: "impervious",
-	Inaccessible: "inaccessible",
-	Undiscovery: "undiscovered"
-};
-
-let StructureTypes = {
-	Resource: "resource",
-	Building: "building",
-	Robot: "robot"
-};
+import { ColonyState } from "./ColonyState.js";
+import { Morphology, PipePorts, RobotTypes, StructureTypes, TerrainLayer } from "./Enums.js";
+import { PipeNetwork } from "./PipeNetwork.js";
+import { PrototypeLib } from "./PrototypeLib.js";
+import { inherits } from "./SystemLib.js";
 
 function TerrainMap(terrainTypology, size)
 {
+	let self = this;
 	let typology = terrainTypology;
 	let layer = TerrainLayer.Surface;
 	let surface = [];
@@ -134,23 +110,66 @@ function TerrainMap(terrainTypology, size)
 		}
 	};
 
+	let _isInside = function(point)
+	{
+		return (point.x >= 0) && (point.y >= 0) && (point.x < size.x) && (point.y < size.y);
+	};
+
+	let _partPosition = function(position, part)
+	{
+		return { x: position.x + (part.dx || 0), y: position.y + (part.dy || 0) };
+	};
+
+	/** verifica pura: l'edificio può essere posizionato qui (cella libera, area delle parti libera, vincoli del prototipo) */
+	let _canPlaceBuilding = function(buildingType, position)
+	{
+		let prototype = PrototypeLib.get(buildingType);
+		if(prototype == undefined || !_isInside(position) || _findBuilding(position, prototype.getTerrainLayer()) != null)
+		{
+			return false;
+		}
+		let partsFree = prototype.getParts().every(function(part)
+		{
+			let partLayer = PrototypeLib.get(part.type).getTerrainLayer();
+			let partPosition = _partPosition(position, part);
+			return _isInside(partPosition) &&
+				(_findBuilding(partPosition, partLayer) == null) &&
+				(_findResource(partPosition, partLayer) == null);
+		});
+		return partsFree && (prototype.canPlace == undefined || prototype.canPlace(position, self));
+	};
+
+	let _addStructure = function(item)
+	{
+		_addObject(structure, item);
+		let position = item.getPosition();
+		_getLayer(item.getLayer())[position.x][position.y] = 0;
+	};
+
+	/** posiziona un edificio con le sue eventuali parti; restituisce null se non è possibile */
 	let _addBuilding = function(buildingType, position, alreadyBuilt)
 	{
-		let placed = true;
-		let newBuilding = PrototypeLib.createBuilding(buildingType, position, alreadyBuilt);
-		let eventBeginBuilding = PrototypeLib.get(buildingType).eventBeginBuilding;
-		if(eventBeginBuilding != undefined)
+		if(!_canPlaceBuilding(buildingType, position))
 		{
-			placed = eventBeginBuilding(newBuilding, this);
+			return null;
 		}
 
-		if(placed)
+		let prototype = PrototypeLib.get(buildingType);
+		let newBuilding = PrototypeLib.createBuilding(buildingType, position, alreadyBuilt);
+		prototype.getParts().forEach(function(part)
 		{
-			_addObject(structure, newBuilding);
-			_getLayer(newBuilding.getLayer())[position.x][position.y] = 0;
-			return newBuilding;
+			let item = PrototypeLib.createBuilding(part.type, _partPosition(position, part), alreadyBuilt);
+			item.setFrozen(true);
+			item.setMainBuilding(newBuilding);
+			newBuilding.addPart(item);
+			_addStructure(item);
+		});
+		if(prototype.onPlaced != undefined)
+		{
+			prototype.onPlaced(newBuilding, self);
 		}
-		return null;
+		_addStructure(newBuilding);
+		return newBuilding;
 	};
 
 	let _addPipe = function(pipeType, layer, position, alreadyBuilt)
@@ -434,353 +453,43 @@ function TerrainMap(terrainTypology, size)
 		return null;
 	};
 
-	let _addToGraph = function(list, el)
-	{
-		list.push(el);
-
-		if((el.isPipe()) && (el.haveUp() || el.haveDown()))
-		{
-			if(list.elevators == undefined)
-			{
-				list.elevators = [];
-			}
-			list.elevators.push(el);
-		}
-	};
-
+	/** reti di edifici collegati (vedi PipeNetwork) */
 	let _getGraph = function()
 	{
-		let data = {};
-		data[TerrainLayer.Surface] = [];
-		data[TerrainLayer.Underground] = [];
-		data[TerrainLayer.Deep] = [];
-		for (let elIndex = 0; elIndex < structure.length; elIndex++)
-		{
-			let el = structure[elIndex];
-			if((el.getType() == StructureTypes.Building) && (el.isPipe()))
-			{
-				data[el.getLayer()].push(el);
-			}
-		}
-
-		let upper = _getGraphInternal(_getGraphLayer(data[TerrainLayer.Underground]), _getGraphLayer(data[TerrainLayer.Deep]));    	
-		let graphList = _getGraphInternal(_getGraphLayer(data[TerrainLayer.Surface]), upper);
-
-		let tmpRet = _getGraphBoundBildings(graphList, structure);
-
-		// conversione da array a object
-		let ret = [];
-		for (let i = 0; i < tmpRet.length; i++)
-		{
-			let retItem = new BuildingGraph();
-			for (let ii = 0; ii < tmpRet[i].length; ii++)
-			{
-				let buildingType = tmpRet[i][ii].getBuildingType();
-				if(retItem[buildingType] == null)
-				{
-					retItem[buildingType] = [];
-				}
-				retItem[buildingType].push(tmpRet[i][ii]);
-			}
-			ret.push(retItem);
-		}
-		return ret;
+		return PipeNetwork.networksOf(structure);
 	};
 
-	let _getGraphBoundBildings = function (graphList, structure)
+	/** un edificio è stato distrutto: con lui tutta la sua struttura composita, poi gli effetti del prototipo */
+	let _onBuildingDestroyed = function(building)
 	{
-		let ret = [];
-		let orphans = [];
-		let added;
-		let i, ii;
-		for(i = 0; i < graphList.length; i++)
-		{
-			added = false;
-			for(ii = 0; ii < graphList[i].length; ii++)
-			{
-				if(graphList[i][ii].isHeadquarter)
-				{
-					ret.push(graphList[i]);
-					added = true;
-					break;
-				}
-			}
-			if(added == false)
-			{
-				orphans.push(graphList[i]);
-			}
-		}
-		let orphan = null;
-		if(orphans.length > 0)
-		{
-			orphan = orphans[0];
-			for(i = 1; i < orphans.length; i++)
-			{
-				for(ii = 0; ii < orphans[i].length; ii++)
-				{
-					orphan.push(orphans[i][ii]);
-				}
-			}
-		}
-		else
-		{
-			orphan = [];
-		}
+		let main = building.getMainBuilding();
+		main.destroy();
+		main.getParts().forEach(function(part) { part.destroy(); });
 
-		// assegno gli edifici ai grafi
-		for (let elIndex = 0; elIndex < structure.length; elIndex++)
+		let prototype = PrototypeLib.get(building.getBuildingType());
+		if(prototype.onDestroyed != undefined)
 		{
-			let el = structure[elIndex];
-			if((el.getType() == StructureTypes.Building) && (!el.isPipe()))
-			{
-				for(i = 0; i < ret.length; i++)
-				{
-					if(_getGraphIsBound(ret[i], el.getPosition(), el.getLayer()))
-					{
-						ret[i].push(el);
-						el = null;
-						break;
-					}
-				}
-				if(el != null)
-				{
-					orphan.push(el);
-				}
-			}
+			prototype.onDestroyed(building, self);
 		}
-		if(orphan.length > 0)
-		{
-			ret.push(orphan);
-		}
-		return ret;
 	};
 
-	// restituisce true se il grafo permette il collegamento verso le coordinate point
-	let _getGraphIsBound = function(graph, point, layer)
+	/** un cantiere è stato completato: si completano le parti (scoprendo i dintorni di quelle su altri layer), poi gli effetti del prototipo */
+	let _onBuildingCompleted = function(building)
 	{
-		for(let i = 0; i < graph.length; i++)
+		building.getParts().forEach(function(part)
 		{
-			if(!graph[i].isPipe())
+			part.setBuilded();
+			if(part.getLayer() != building.getLayer())
 			{
-				// nei grafi sono presenti i tubi poi in fondo gli edifici
-				break;
+				_discoveryNearTiles(part.getPosition(), part.getLayer());
 			}
-			else
-			{
-				if(graph[i].getLayer() == layer)
-				{
-					let pos = graph[i].getPosition();
-					if(pos.x == point.x)
-					{
-						if(((pos.y == point.y -1) && (graph[i].haveEast())) ||
-							((pos.y == point.y +1) && (graph[i].haveWest())))
-						{
-							return true;
-						}
-					}
-					else if (pos.y == point.y)
-					{
-						if(((pos.x == point.x -1) && (graph[i].haveSouth())) ||
-							((pos.x == point.x +1) && (graph[i].haveNorth())))
-						{
-							return true;
-						}
-					}
-				}
-			}
-		}
-		return false;
-	};
+		});
 
-	let _getGraphInternal = function(upper, lower)
-	{
-		for(let i = 0; i < lower.length; i++)
+		let prototype = PrototypeLib.get(building.getBuildingType());
+		if(prototype.onCompleted != undefined)
 		{
-			let rootGraph = null;
-			if(lower[i].elevators != undefined)
-			{
-				for(let ii = 0; ii < lower[i].elevators.length; ii++)
-				{
-					let elevator = lower[i].elevators[ii];
-					if(elevator.haveUp() && !elevator.isDestroyed())
-					{
-						let iii;
-						let upperGraph = _getGraphFind(upper, elevator.getPosition());
-						if(rootGraph != null)
-						{
-							if(rootGraph != upperGraph)
-							{
-								// merge nodi di upperGraph
-								for(iii = 0; iii < upperGraph.length; iii++)
-								{
-									_addToGraph(rootGraph, upperGraph[iii]);
-								}
-								upper.splice(upper.indexOf(upperGraph), 1); // remove
-							}
-						}
-						else
-						{
-							rootGraph = upperGraph;
-							// merge nodi di lower
-							for(iii = 0; iii < lower[i].length; iii++)
-							{
-								rootGraph.push(lower[i][iii]);
-							}
-						}
-					}
-				}
-			}
-			else
-			{
-				upper.push(lower[i]);
-			}
+			prototype.onCompleted(building, self);
 		}
-		return upper;
-	};
-
-	let _getGraphFind = function(upper, position)
-	{
-		for(let i = 0; i < upper.length; i++)
-		{
-			if(upper[i].elevators != undefined)
-			{
-				for(let ii = 0; ii < upper[i].elevators.length; ii++)
-				{
-					let elevator = upper[i].elevators[ii];
-					if(elevator.haveDown())
-					{
-						if((elevator.getPosition().x == position.x) &&
-							(elevator.getPosition().y == position.y))
-						{
-							return upper[i];
-						}
-					}
-				}
-			}
-		}
-		return null;
-	};
-
-	let _getGraphLayer = function(pipes)
-	{
-		let a = null;
-		let ay = -1;
-
-		let b = [];
-		let b1 = [];
-
-		// lista di grafi
-		let ret = [];
-
-		let d = null;
-		let e = [];
-		let e1 = [];
-
-		let x = 0;
-		let l = null;
-
-		let elementPosition;
-		for (let elementIndex = 0; elementIndex < pipes.length; elementIndex++)
-		{
-			let element = pipes[elementIndex];
-
-			elementPosition = element.getPosition();
-			if (x > elementPosition.x)
-			{
-				a = null;
-				ay = -1;
-				d = null;
-				if (x == elementPosition.x + 1)
-				{
-					b = b1;
-					e = e1;
-				}
-				else
-				{
-					b = [];
-					e = [];
-				}
-				b1 = [];
-				e1 = [];
-			}
-			x = elementPosition.x;
-
-			// Gestione tubi
-			l = null;
-			if (element.haveWest() && a != null && ay == elementPosition.y - 1)
-			{
-				l = a;
-			}
-			if (element.haveNorth() && b[elementPosition.y] != null)
-			{
-				if ((l != null) && (b[elementPosition.y] != a))
-				{
-					let tmp = b[elementPosition.y];
-					let i;
-					for(i = 0; i < a.length; i++)
-					{
-						_addToGraph(tmp, a[i]);
-					}
-					ret.splice(ret.indexOf(a), 1); // remove
-					for(i = 0; i < b1.length; i++)
-					{
-						if(b1[i] == a)
-						{
-							b1[i] = tmp;
-						}
-					}
-				}
-				l = b[elementPosition.y];
-			}
-			else if(l == null)
-			{
-				l = [];
-				ret.push(l);
-			}
-			_addToGraph(l, element);
-
-			a = null;
-			ay = -1;
-			if (element.haveEast())
-			{
-				a = l;
-				ay = elementPosition.y;
-			}
-			if (element.haveSouth())
-			{
-				b1[elementPosition.y] = l;
-			}
-
-			if (element.haveWest() && d != null && d.getPosition().y == elementPosition.y - 1)
-			{
-				_addToGraph(l, d);
-				e1[d.getPosition().y] = null;
-			}
-			d = null;
-			if (element.haveNorth() && e[elementPosition.y] != null)
-			{
-				_addToGraph(l, e[elementPosition.y]);
-			}
-			e[elementPosition.y] = null;
-		}
-		return ret;
-	};
-
-	let _computation = function()
-	{
-		let en = new Engine();
-		let tmp = _getGraph();
-		en.computation(state, tmp, this);
-		state.setDate(state.getDate() + 1);
-
-		_simulation();
-	};
-
-	let _simulation = function()
-	{
-		let en = new Engine();
-		let tmp = _getGraph();
-		en.simulation(state, tmp);
 	};
 
 	//-----------------------------------------
@@ -794,6 +503,7 @@ function TerrainMap(terrainTypology, size)
 	this.getTerrainImageId = _getTerrainImageId;
 	this.addResource = _addResource;
 	this.addBuilding = _addBuilding;
+	this.canPlaceBuilding = _canPlaceBuilding;
 	this.delBuilding = _delBuilding;
 	this.addPipe = _addPipe;
 	this.isVisible = _isVisible;
@@ -812,8 +522,8 @@ function TerrainMap(terrainTypology, size)
 	this.addRoboDigger = _addRoboDigger;
 	this.getRobot = _getRobot;
 
-	this.computation = _computation;
-	this.simulation = _simulation;
+	this.onBuildingDestroyed = _onBuildingDestroyed;
+	this.onBuildingCompleted = _onBuildingCompleted;
 
 	//-----------------------------------------
 	_initialize();
@@ -947,42 +657,41 @@ function Building(buildingType, terrainLayer, position, buildingTime, builder)
 	this.isOperative = _isOperative;
 	this.getImageId = _getImageId;
 
-	this.isPipe = function() { return false; };
 	this.getType = function() { return StructureTypes.Building; };
+
+	// collegamenti come un tubo (vedi BasePrototype.ports)
+	let ports = null;
+	this.setPorts = function(value) { ports = value; return this; };
+	this.isPipe = function() { return ports !== null; };
+	this.haveNorth = function() { return ports !== null && ports.indexOf("n") >= 0; };
+	this.haveSouth = function() { return ports !== null && ports.indexOf("s") >= 0; };
+	this.haveEast  = function() { return ports !== null && ports.indexOf("e") >= 0; };
+	this.haveWest  = function() { return ports !== null && ports.indexOf("w") >= 0; };
+	this.haveUp    = function() { return ports !== null && ports.indexOf("u") >= 0; };
+	this.haveDown  = function() { return ports !== null && ports.indexOf("d") >= 0; };
+
+	let headquarter = false;
+	this.setHeadquarter = function() { headquarter = true; return this; };
+	this.isHeadquarter = function() { return headquarter; };
+
+	// strutture composite: la parte rimanda all'edificio principale, il principale elenca le parti
+	let mainBuilding = null;
+	let parts = [];
+	this.setMainBuilding = function(main) { mainBuilding = main; return this; };
+	this.getMainBuilding = function() { return mainBuilding || this; };
+	this.addPart = function(part) { parts.push(part); };
+	this.getParts = function() { return parts; };
 
 	//-----------------------------------------
 }
-
-let PipeType = {
-	NorthEastSouthWest: "nesw",
-	NorthSouth: "ns",
-	EastWest: "ew",
-	Up: "u",
-	Down: "d"
-};
 
 function Pipe(pipeType, layer, position, buildingTime)
 {
 	Building.call(this, "Pipe_" + pipeType + "_" + layer, layer, position, buildingTime);
 
-	//let pipeType = pipeType;
-
-	this.isPipe = function() { return true; };
-
-	this.haveNorth = function() { return (pipeType != PipeType.EastWest); };
-	this.haveSouth = function() { return (pipeType != PipeType.EastWest); };
-	this.haveEast  = function() { return (pipeType != PipeType.NorthSouth); };
-	this.haveWest  = function() { return (pipeType != PipeType.NorthSouth); };
-	this.haveUp    = function() { return (pipeType == PipeType.Up); };
-	this.haveDown  = function() { return (pipeType == PipeType.Down); };
+	this.setPorts(PipePorts[pipeType]);
 }
-Pipe.inherits(Building);
-
-let RobotTypes = {
-	Dozer: "RoboDozer",
-	Digger: "RoboDigger",
-	Miner: "RoboMiner"
-};
+inherits(Pipe, Building);
 
 function Resource(resourceType, layer, color, position)
 {
@@ -994,7 +703,7 @@ function Resource(resourceType, layer, color, position)
 
 	this.getColor = function() {return color; };
 }
-Resource.inherits(Building);
+inherits(Resource, Building);
 
 function Robot(robotType, layer, position)
 {
@@ -1006,60 +715,6 @@ function Robot(robotType, layer, position)
 
 	this.getImageId = function() { return this.getBuildingType().toString(); };
 }
-Robot.inherits(Building);
+inherits(Robot, Building);
 
-function BuildingGraph()
-{
-	/** @param {BuildingGraph} graph */
-	BuildingGraph.countAll = function(graph)
-	{
-		let ret = 0;
-		for(let buildingType in graph)
-		{
-			if(graph.hasOwnProperty(buildingType))
-			{
-				ret += graph[buildingType].length;
-			}
-		}
-		return ret;
-	};
-
-	/** @param {BuildingGraph} graph */
-	BuildingGraph.countPipes = function(graph)
-	{
-		let ret = 0;
-		for(let buildingType in graph)
-		{
-			if(graph.hasOwnProperty(buildingType))
-			{
-				if(graph[buildingType][0].isPipe())
-				{
-					ret += graph[buildingType].length;
-				}
-			}
-		}
-		return ret;
-	};
-
-	/** @param {BuildingGraph} graph */
-	BuildingGraph.getHeadquarter = function(graph)
-	{
-		for(let buildingType in graph)
-		{
-			if(graph.hasOwnProperty(buildingType))
-			{
-				if(graph[buildingType][0].isHeadquarter)
-				{
-					return graph[buildingType][0];
-				}
-			}
-		}
-		return null;
-	};
-
-	/** @param {BuildingGraph} graph */
-	BuildingGraph.hasHeadquarter = function(graph)
-	{
-		return (BuildingGraph.getHeadquarter(graph) != null);
-	};
-}
+export { TerrainMap, Building, Pipe, Resource, Robot };

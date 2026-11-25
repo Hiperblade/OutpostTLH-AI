@@ -1,5 +1,11 @@
 "use strict";
 
+import { ImagesLib } from "./ImagesLib.js";
+import { PrototypeLib } from "./PrototypeLib.js";
+import { GetImageSize, inherits } from "./SystemLib.js";
+import { TextRepository } from "./TextRepository.js";
+import { QueueData } from "./ViewQueueBase.js";
+
 function HelpTutorial()
 {
 	let _getText = function()
@@ -184,4 +190,6 @@ function HelpQueueData(colonyState)
 	this.getQueueTitle = function() { return "HelpBase"; };
 	this.getAvailableTitle = function() { return "Buildings"; };
 }
-HelpQueueData.inherits(QueueData);
+inherits(HelpQueueData, QueueData);
+
+export { HelpTutorial, HelpTutorialBuilding, HelpQueueData };

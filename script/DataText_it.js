@@ -1,5 +1,8 @@
 "use strict";
 
+import { TerrainLayer } from "./Enums.js";
+import { TextRepository } from "./TextRepository.js";
+
 // --- Base
 TextRepository.add(TerrainLayer.Surface, "Superfice");
 TextRepository.add(TerrainLayer.Underground, "Sottosuolo");

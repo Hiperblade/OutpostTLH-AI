@@ -204,3 +204,5 @@ function GenerationalLot(date)
 
 	//-----------------------------------------
 }
+
+export { GenerationState, GenerationConst, Generation, GenerationalLot };

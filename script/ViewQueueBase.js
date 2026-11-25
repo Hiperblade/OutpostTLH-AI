@@ -1,5 +1,10 @@
 "use strict";
 
+import { ImagesLib } from "./ImagesLib.js";
+import { RecipeLib } from "./RecipeLib.js";
+import { inherits } from "./SystemLib.js";
+import { TextRepository } from "./TextRepository.js";
+
 let Queue;
 
 function InitializeQueueView(divId, size)
@@ -33,6 +38,10 @@ function QueueViewConstructor(divId, size)
 
 	let _initialize = function()
 	{
+		// click sugli elementi della coda (il pulsante "aggiungi" è dentro l'elemento: prima aggiunge, poi seleziona)
+		divViewBase.on("click", ".queueItemButton", function() { _addItem($(this).attr("data-add")); });
+		divViewBase.on("click", ".queueItem", function() { _setCurrent($(this).attr("data-current")); });
+
 		// Slider queue
 		let scrollPane = $('#' + divId);
 		let scrollContent = $('#' + divId + "_content");
@@ -230,7 +239,7 @@ function QueueViewConstructor(divId, size)
 			currentId = item.getName();
 		}
 
-		let tmp = '<div class="queueItem" onclick="Queue.setCurrent(\'' + currentId + '\');">';
+		let tmp = '<div class="queueItem" data-current="' + currentId + '">';
 		let imageId = item.getName();
 		if(item.getImageId != undefined)
 		{
@@ -239,7 +248,7 @@ function QueueViewConstructor(divId, size)
 		tmp += '<img class="queueItemImage" src="' + ImagesLib.getFileName(imageId) + '">';
 		if(canAppends)
 		{
-			tmp += '<div class="queueItemButton" onclick="Queue.addItem(\'' + item.getName() + '\');"></div>';
+			tmp += '<div class="queueItemButton" data-add="' + item.getName() + '"></div>';
 		}
 		tmp += '<div class="queueItemText"><div class="queueItemTitle">' + TextRepository.get(item.getName()) + '</div>';
 		if(haveBar)
@@ -342,7 +351,7 @@ function BaseQueueData(colonyState, queue, available)
 
 	this.haveBar = function() { return true; };
 }
-BaseQueueData.inherits(QueueData);
+inherits(BaseQueueData, QueueData);
 
 function ResearchQueueData(colonyState)
 {
@@ -382,7 +391,7 @@ function ResearchQueueData(colonyState)
 	this.getTitle = function() { return "ResearchTitle"; };
 	this.getQueueTitle = function() { return "Researching"; };
 }
-ResearchQueueData.inherits(BaseQueueData);
+inherits(ResearchQueueData, BaseQueueData);
 
 function ProductionQueueData(colonyState)
 {
@@ -399,4 +408,6 @@ function ProductionQueueData(colonyState)
 	this.getTitle = function() { return "ProductionTitle"; };
 	this.appends = _appends;
 }
-ProductionQueueData.inherits(BaseQueueData);
+inherits(ProductionQueueData, BaseQueueData);
+
+export { Queue, InitializeQueueView, QueueViewConstructor, QueueData, BaseQueueData, ResearchQueueData, ProductionQueueData };

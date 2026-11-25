@@ -1,11 +1,11 @@
 "use strict";
 
-Function.prototype.inherits = function(superclass)
+/** ereditarietà tra costruttori: child.prototype deriva da superclass.prototype */
+function inherits(child, superclass)
 {
-	let temp = function() { };
-	temp.prototype = superclass.prototype;
-	this.prototype = new temp();
-};
+	child.prototype = Object.create(superclass.prototype);
+	child.prototype.constructor = child;
+}
 
 /**
  * @param {number} w
@@ -111,3 +111,5 @@ function CanvasGrid(ctx, position, fontSize, columnsList)
 
 	//-----------------------------------------
 }
+
+export { inherits, ImageSize, GetImageSize, LogConstructor, Log, Colors, CanvasGrid };

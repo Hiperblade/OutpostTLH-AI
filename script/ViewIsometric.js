@@ -1,5 +1,8 @@
 "use strict";
 
+import { ImagesLib } from "./ImagesLib.js";
+import { TextRepository } from "./TextRepository.js";
+
 function IsometricView(map, canvasId, viewSize, viewTileDimension)
 {
 	let yTopOffset = viewTileDimension.y * 2;
@@ -492,3 +495,5 @@ function IsometricView(map, canvasId, viewSize, viewTileDimension)
 	//-----------------------------------------
 	_initialize();
 }
+
+export { IsometricView };

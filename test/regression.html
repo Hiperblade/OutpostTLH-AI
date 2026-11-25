@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>OutpostTLH - regression</title>
+<style>body{font-family:monospace;background:#111;color:#ddd} .ok{color:#7c7} .ko{color:#e77}</style>
+</head>
+<body>
+<h3>Regression scenario</h3>
+<p>Esegue uno scenario deterministico (Math.random con seed) sul dominio, senza UI.
+Il primo run salva la baseline in localStorage; i run successivi confrontano.
+<a href="?reset=1">reset baseline</a></p>
+<pre id="out">running...</pre>
+<script>
+// random deterministico
+(function(){ let a = 12345; Math.random = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
+window.alert = function(m){ (window.__alerts = window.__alerts || []).push(m); };
+
+</script>
+<script type="module">
+import { TerrainMap } from "../script/TerrainMap.js";
+import { Typology, TerrainLayer, PipeType, RobotTypes } from "../script/Enums.js";
+import { Turn } from "../script/Turn.js";
+import { BuildingGraph } from "../script/PipeNetwork.js";
+import { Placement } from "../script/Placement.js";
+import "../script/DataPrototype.js";
+import "../script/DataRecipe.js";
+import "../script/DataText_it.js";
+
+function advance(map)
+{
+	return Turn.advance(map);
+}
+
+function snapshot(map)
+{
+	let st = map.getState();
+	let structures = map.getStructure()
+		.filter(s => s.getType() != "resource")
+		.map(s => [s.getBuildingType(), s.getLayer(), s.getPosition().x, s.getPosition().y, s.getProgressState(), s.getIntegrity(), s.getFrozen()].join(","))
+		.sort();
+	let materials = {};
+	st.getMaterials().forEach(m => { materials[m] = [st.getStored(m), st.getCapacity(m)]; });
+	let graphs = map.getGraph().map(g => BuildingGraph.countAll(g) + (BuildingGraph.hasHeadquarter(g) ? "H" : "o")).sort();
+	return { date: st.getDate(), structures, materials, graphs, technology: st.getTechnology().slice().sort() };
+}
+
+function scenario()
+{
+	let log = [];
+	let map = new TerrainMap(Typology.Vulcanic, { x: 40, y: 40 });
+	let st = map.getState();
+	["mediKit","goods","toxicWaste","fusionWaste"].forEach(m => st.configureMaterial(m, "genericStorage"));
+	["dozer","digger","miner","worker","MicrowaveSatellite"].forEach(m => st.configureMaterial(m, "roboticStorage"));
+	["radioactiveBar","radioactiveWaste"].forEach(m => st.configureMaterial(m, "radioactiveStorage"));
+	st.addKnowledge({ technology: ["LandingModule"], discovery: ["Robotics"], theory: ["Find_Metal"] });
+
+	map.addResource("Metal", { x: 8, y: 12 });
+	map.addResource("Mineral", { x: 12, y: 20 });
+
+	map.addBuilding("LandingModule", { x: 10, y: 10 });
+	Turn.project(map);
+	for(let t = 0; t < 6; t++) advance(map);
+	log.push(snapshot(map));
+
+	// rete principale
+	[[9,12],[9,13],[9,14],[9,16],[9,17]].forEach(p => map.addBuilding("Pipe_nesw_surface", { x: p[0], y: p[1] }));
+	map.addBuilding("Pipe_d_surface", { x: 9, y: 15 });
+	map.addBuilding("Agridome", { x: 10, y: 13 });
+	map.addBuilding("MicrowavePlant", { x: 8, y: 13 });
+	map.addBuilding("MineMetal", { x: 8, y: 12 });
+	map.addBuilding("Tokamak", { x: 10, y: 14 });
+	map.addBuilding("Park", { x: 10, y: 17 });
+	map.addBuilding("SpacePort", { x: 12, y: 18 });
+	map.addBuilding("Pipe_nesw_underground", { x: 9, y: 16 });
+	map.addBuilding("Residential", { x: 10, y: 16 });
+	map.addBuilding("MineMineral", { x: 12, y: 20 });
+	// seconda rete con headquarter e rete orfana
+	map.addBuilding("CommandCenter", { x: 30, y: 31 });
+	map.addBuilding("Pipe_ew_surface", { x: 30, y: 30 });
+	map.addBuilding("Agridome", { x: 31, y: 30 });
+	map.addBuilding("Pipe_nesw_surface", { x: 20, y: 30 });
+	map.addBuilding("Pipe_ns_surface", { x: 21, y: 30 });
+	map.addBuilding("Agridome", { x: 25, y: 25 });
+	// edifici al bordo (devono essere rifiutati senza eccezioni)
+	log.push({ edgeLanding: map.addBuilding("LandingModule", { x: 39, y: 20 }) === null, edgePark: map.addBuilding("Park", { x: 39, y: 5 }) === null });
+
+	for(let t = 0; t < 30; t++)
+	{
+		advance(map);
+		if(t % 10 == 9) log.push(snapshot(map));
+	}
+	return log;
+}
+
+// verifiche esplicite su Placement, strutture composite e reti
+function checks()
+{
+	let failures = [];
+	let expect = function(name, actual, expected)
+	{
+		if(JSON.stringify(actual) !== JSON.stringify(expected))
+		{
+			failures.push(name + ": atteso " + JSON.stringify(expected) + ", ottenuto " + JSON.stringify(actual));
+		}
+	};
+	let reason = function(r) { return r.ok ? "ok" : r.reason; };
+	let raze = function(map, p, layer) { while(map.isRazable(p, layer)) map.raze(p, layer); };
+
+	let map = new TerrainMap(Typology.Vulcanic, { x: 40, y: 40 });
+	let st = map.getState();
+	st.addKnowledge({ technology: ["LandingModule"] });
+	map.addResource("Metal", { x: 20, y: 20 });
+
+	// edifici
+	expect("agridome su terreno non spianato", reason(Placement.check(map, { buildingType: "Agridome" }, { x: 5, y: 30 })), "notApplicable");
+	raze(map, { x: 20, y: 20 });
+	expect("agridome su risorsa", reason(Placement.check(map, { buildingType: "Agridome" }, { x: 20, y: 20 })), "noResourceRequired");
+	raze(map, { x: 5, y: 30 });
+	expect("miniera senza risorsa", reason(Placement.check(map, { buildingType: "MineMetal" }, { x: 5, y: 30 })), "requiresResource");
+	expect("landing su terreno grezzo", reason(Placement.place(map, { buildingType: "LandingModule" }, { x: 10, y: 10 })), "ok");
+	expect("cella occupata", reason(Placement.check(map, { buildingType: "Agridome" }, { x: 10, y: 10 })), "occupied");
+	expect("landing al bordo", map.canPlaceBuilding("LandingModule", { x: 39, y: 20 }), false);
+	expect("park al bordo", map.canPlaceBuilding("Park", { x: 39, y: 5 }), false);
+
+	// robot
+	expect("dozer non disponibile", reason(Placement.check(map, { isRobot: true, robotType: RobotTypes.Dozer }, { x: 6, y: 30 })), "noDozer");
+	expect("miner senza tecnologia", reason(Placement.check(map, { isRobot: true, robotType: RobotTypes.Miner }, { x: 20, y: 20 })), "noExtractionTechnology");
+	st.addKnowledge({ theory: ["Extraction_Metal"] });
+	expect("miner", reason(Placement.place(map, { isRobot: true, robotType: RobotTypes.Miner }, { x: 20, y: 20 })), "ok");
+	let mine = map.findBuilding({ x: 20, y: 20 });
+	expect("miniera con pozzo", [mine.getBuildingType(), mine.getParts().map(p => p.getBuildingType() + "@" + p.getLayer())], ["MineMetal", ["Mine@underground"]]);
+	expect("pozzo rimanda alla miniera", map.findBuilding({ x: 20, y: 20 }, TerrainLayer.Underground).getMainBuilding() === mine, true);
+
+	// tokamak bloccato da un edificio sotterraneo
+	raze(map, { x: 25, y: 25 });
+	map.addBuilding("Residential", { x: 25, y: 25 });
+	expect("tokamak bloccato", reason(Placement.check(map, { buildingType: "Tokamak" }, { x: 25, y: 25 })), "blocked");
+
+	// distruzione a cascata: demolire una parte del parco distrugge tutto il parco
+	let park = map.addBuilding("Park", { x: 30, y: 30 });
+	map.onBuildingDestroyed(map.findBuilding({ x: 31, y: 29 }, TerrainLayer.Deep));
+	expect("parco distrutto", [park.isDestroyed()].concat(park.getParts().map(p => p.isDestroyed())), [true, true, true, true]);
+
+	// completamento: le parti su altri layer vengono completate
+	let tokamak = map.addBuilding("Tokamak", { x: 15, y: 25 });
+	map.onBuildingCompleted(tokamak);
+	expect("reattore completato", tokamak.getParts()[0].underConstruction(), false);
+
+	// reti: due tubi a U collegati in un solo grafo con l'headquarter
+	let net = new TerrainMap(Typology.Vulcanic, { x: 20, y: 20 });
+	net.addBuilding("CommandCenter", { x: 5, y: 5 }, true);
+	[[6,5],[7,5],[7,6],[7,7],[6,7],[5,7]].forEach(p => net.addPipe(PipeType.NorthEastSouthWest, TerrainLayer.Surface, { x: p[0], y: p[1] }, true));
+	net.addBuilding("Agridome", { x: 4, y: 7 }, true);
+	net.addPipe(PipeType.NorthEastSouthWest, TerrainLayer.Surface, { x: 15, y: 15 }, true);
+	expect("reti", net.getGraph().map(g => BuildingGraph.countAll(g) + (BuildingGraph.hasHeadquarter(g) ? "H" : "o")), ["8H", "1o"]);
+
+	return failures;
+}
+
+(function()
+{
+	let out = document.getElementById("out");
+	let result;
+	try { result = JSON.stringify(scenario(), null, 1); }
+	catch(e) { result = null; out.innerHTML = '<span class="ko">EXCEPTION ' + e.stack + '</span>'; window.__result = { error: String(e.stack) }; }
+
+	// le verifiche girano dopo lo scenario, per non alterare la sequenza casuale
+	let failures;
+	try { failures = checks(); } catch(e) { failures = ["EXCEPTION " + e.stack]; }
+	document.body.insertAdjacentHTML("beforeend", "<h3>Verifiche</h3><pre>" +
+		(failures.length ? '<span class="ko">' + failures.join("\n") + "</span>" : '<span class="ok">tutte superate</span>') + "</pre>");
+	window.__checks = failures;
+	if(result === null) return;
+
+	if(location.search.indexOf("reset=1") >= 0) localStorage.removeItem("outpost-baseline");
+	let base = localStorage.getItem("outpost-baseline");
+	if(base == null)
+	{
+		localStorage.setItem("outpost-baseline", result);
+		out.innerHTML = '<span class="ok">baseline salvata</span>\n' + result;
+		window.__result = { baseline: true };
+		return;
+	}
+	let a = base.split("\n"), b = result.split("\n");
+	let diffs = [];
+	for(let i = 0; i < Math.max(a.length, b.length); i++) if(a[i] !== b[i]) diffs.push(i + ": " + a[i] + "  =>  " + b[i]);
+	out.innerHTML = (diffs.length ? '<span class="ko">' + diffs.length + ' righe diverse</span>\n' + diffs.join("\n") : '<span class="ok">identico alla baseline</span>') + "\n\n" + result;
+	window.__result = { diffs: diffs, alerts: window.__alerts || [] };
+})();
+</script>
+</body>
+</html>
