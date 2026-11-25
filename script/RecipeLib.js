@@ -136,6 +136,8 @@ function Recipe(baseRecipe)
 	this.getBase = function(){ return baseRecipe; };
 	this.getTime = function() { return time; };
 	this.getRemainTime = function() { return (time - currentTime); };
+	this.getCurrentTime = function() { return currentTime; };
+	this.setCurrentTime = function(value) { currentTime = value; };
 
 	this.progress = _progress;
 

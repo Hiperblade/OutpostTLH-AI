@@ -33,7 +33,8 @@ function TurnConstructor()
 			ResearchPhase,
 			MaintenancePhase,
 			RobotPhase,
-			PopulationPhase
+			PopulationPhase,
+			OutcomePhase
 		];
 	};
 
@@ -55,12 +56,17 @@ function TurnConstructor()
 
 	let _report = function(ctx)
 	{
-		return { date: ctx.state.getDate(), events: ctx.events };
+		return { date: ctx.state.getDate(), events: ctx.events, outcome: ctx.state.getOutcome() };
 	};
 
-	/** @return {{date:number, events:Array<{type:string, name:string}>}} */
+	/** @return {{date:number, events:Array<{type:string, name:string}>, outcome:string|null}} */
 	let _advance = function(map)
 	{
+		if(map.getState().getOutcome() != null)
+		{
+			// partita conclusa: il tempo non avanza più
+			return _report(_project(map).ctx);
+		}
 		let turn = _project(map);
 		turn.phases.forEach(function(phase, i)
 		{
@@ -85,6 +91,11 @@ function TurnConstructor()
 	//-------------------------------------
 }
 
+let GameOutcome = {
+	Victory: "victory",
+	Defeat: "defeat"
+};
+
 let TurnEventType = {
 	NewCreation: "NEW_CREATION",
 	NewDiscovery: "NEW_DISCOVERY"
@@ -96,24 +107,53 @@ let Turn = new TurnConstructor();
 //-----------------------------------------------------------------------------
 // fasi
 
-/** manodopera umana e robotica */
+/**
+ * Manodopera del turno (materiale "labor"): 1 unità per Lavoratore, ridotta dalla felicità
+ * fino a un minimo di MIN_HAPPINESS_FACTOR, più 1 unità per RoboWorker. Non si accumula.
+ */
 let WorkforcePhase = {
+	MIN_HAPPINESS_FACTOR: 0.5,
+
 	project: function(ctx)
 	{
 		let state = ctx.state;
 		let date = state.getDate();
-		let humanWorkUnit = 0;
-		let generations = state.getPopulation().registry;
-		for(let i = 0; i < generations.length; i++)
+		let population = state.getPopulation();
+		let workers = 0;
+		population.registry.forEach(function(generation)
 		{
-			if(generations[i].getState(date) == GenerationState.Scientists)
+			if(generation.getState(date) == GenerationState.Scientists)
 			{
-				humanWorkUnit += generations[i].getPopulation();
+				workers += generation.getPopulation();
+			}
+		});
+		let factor = WorkforcePhase.MIN_HAPPINESS_FACTOR + (1 - WorkforcePhase.MIN_HAPPINESS_FACTOR) * population.happiness;
+		state.setMaterials({ labor: Math.floor(workers * factor) + state.getStored("roboWorker") });
+	}
+};
+
+/** smaltimento: elimina fino alla quantità indicata di ogni scarto disponibile */
+let _dispose = function(state, disposal)
+{
+	for(let name in disposal)
+	{
+		if(disposal.hasOwnProperty(name))
+		{
+			let amount = Math.min(disposal[name], state.getRemainder(name));
+			if(amount > 0)
+			{
+				state.delMaterials({ [name]: amount });
 			}
 		}
-		state.setMaterials({ humanWorkUnit: humanWorkUnit });
-		state.setMaterials({ roboticsWorkUnit: state.getStored("roboticsWorker") });
 	}
+};
+
+/** costo di un turno di cantiere: costo di costruzione più 1 unità di manodopera */
+let _constructionCost = function(prototype)
+{
+	let cost = Object.assign({}, prototype.getBuildingCost());
+	cost.labor = (cost.labor || 0) + 1;
+	return cost;
 };
 
 /** produzione e consumi degli edifici, in ordine di priorità; costi dei cantieri */
@@ -140,6 +180,7 @@ let BuildingProductionPhase = {
 							state.addMaterials(prototype.getProduction());
 							state.addMaterials(prototype.getProductionWaste());
 							state.addCapacity(prototype.getCapacity());
+							_dispose(state, prototype.getDisposal());
 							state.addToActiveList(building);
 						}
 						else
@@ -150,9 +191,11 @@ let BuildingProductionPhase = {
 					}
 					else if(building.underConstruction())
 					{
-						if(state.haveMaterials(prototype.getBuildingCost()))
+						// senza materiali o manodopera il cantiere resta fermo questo turno
+						let cost = _constructionCost(prototype);
+						if(state.haveMaterials(cost))
 						{
-							state.delMaterials(prototype.getBuildingCost());
+							state.delMaterials(cost);
 							state.addToBuildList(building);
 						}
 					}
@@ -289,4 +332,57 @@ let RobotPhase = {
 	}
 };
 
-export { TurnConstructor, TurnEventType, Turn, WorkforcePhase, BuildingProductionPhase, ProductionQueuePhase, ResearchPhase, RobotPhase };
+
+
+/**
+ * Esito della partita.
+ * Vittoria: almeno VICTORY_POPULATION coloni in piena sussistenza per VICTORY_TURNS turni consecutivi.
+ * Sconfitta: dopo l'arrivo dei coloni, tutti morti e nessuna Nursery attiva; oppure, dopo l'atterraggio,
+ * nessun Headquarter rimasto in piedi.
+ */
+let OutcomePhase = {
+	VICTORY_POPULATION: 200,
+	VICTORY_TURNS: 20,
+
+	apply: function(ctx)
+	{
+		let state = ctx.state;
+		let population = state.getPopulation();
+		let people = population.registry.reduce(function(n, generation) { return n + generation.getPopulation(); }, 0);
+		if(people > 0)
+		{
+			state.setColonistsArrived();
+		}
+
+		// vittoria
+		if(people >= OutcomePhase.VICTORY_POPULATION && population.subsistence == 1)
+		{
+			state.setVictoryStreak(state.getVictoryStreak() + 1);
+		}
+		else
+		{
+			state.setVictoryStreak(0);
+		}
+		if(state.getVictoryStreak() >= OutcomePhase.VICTORY_TURNS)
+		{
+			state.setOutcome(GameOutcome.Victory);
+			return;
+		}
+
+		// sconfitta
+		let headquarters = ctx.map.getStructure().filter(function(el)
+		{
+			return el.getType() == StructureTypes.Building && el.isHeadquarter();
+		});
+		let landed = headquarters.length > 0 || state.haveColonistsArrived();
+		let headquarterStanding = headquarters.some(function(el) { return !el.isDestroyed(); });
+		let nurseryActive = (state.getActiveList()["Nursery"] || []).length > 0;
+		if((landed && !headquarterStanding) ||
+			(state.haveColonistsArrived() && people == 0 && !nurseryActive))
+		{
+			state.setOutcome(GameOutcome.Defeat);
+		}
+	}
+};
+
+export { GameOutcome, OutcomePhase, TurnConstructor, TurnEventType, Turn, WorkforcePhase, BuildingProductionPhase, ProductionQueuePhase, ResearchPhase, RobotPhase };

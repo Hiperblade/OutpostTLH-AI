@@ -4,16 +4,17 @@ import { RecipeLib, RecipeType } from "./RecipeLib.js";
 
 //-----
 
-RecipeLib.add(RecipeType.Production, "Robo-Worker", { discovery: ["Robotics"] }, 1, { productionUnit: 3, productionStandardStructure: 1, metalOre: 2 }, { roboWorker: 1 });
-RecipeLib.add(RecipeType.Production, "Robo-Dozer",  { discovery: ["Robotics"] }, 2, { productionUnit: 2, productionStandardStructure: 1, metalOre: 4 }, { dozer: 1, fusionWaste: 2, toxicWaste: 1 });
-RecipeLib.add(RecipeType.Production, "Robo-Digger", { discovery: ["Robotics"] }, 3, { productionUnit: 2, productionStandardStructure: 1, metalOre: 4 }, { digger: 1, fusionWaste: 3, toxicWaste: 1 });
+RecipeLib.add(RecipeType.Production, "Robo-Worker", { discovery: ["Robotics"] }, 1, { labor: 1, productionUnit: 3, productionStandardStructure: 1, metalOre: 2 }, { roboWorker: 1 });
+RecipeLib.add(RecipeType.Production, "Robo-Dozer",  { discovery: ["Robotics"] }, 2, { labor: 1, productionUnit: 2, productionStandardStructure: 1, metalOre: 4 }, { dozer: 1, fusionWaste: 2, toxicWaste: 1 });
+RecipeLib.add(RecipeType.Production, "Robo-Miner",  { discovery: ["Robotics"] }, 3, { labor: 1, productionUnit: 3, productionStandardStructure: 1, metalOre: 6 }, { miner: 1, fusionWaste: 3, toxicWaste: 1 });
+RecipeLib.add(RecipeType.Production, "Robo-Digger", { discovery: ["Robotics"] }, 3, { labor: 1, productionUnit: 2, productionStandardStructure: 1, metalOre: 4 }, { digger: 1, fusionWaste: 3, toxicWaste: 1 });
 
-RecipeLib.add(RecipeType.Production, "MicrowaveSatellite",  { }, 3, { productionUnit: 3, productionStandardStructure: 1 }, { MicrowaveSatellite: 1 });
+RecipeLib.add(RecipeType.Production, "MicrowaveSatellite",  { }, 3, { labor: 1, productionUnit: 3, productionStandardStructure: 1 }, { MicrowaveSatellite: 1 });
 
-RecipeLib.add(RecipeType.Production, "RadioactiveBar", { technology: ["Tokamak"] }, 1, { productionUnit: 3, productionStandardStructure: 1, radioactiveOre: 2 }, { radioactiveBar: 10, radioactiveWaste: 3 });
+RecipeLib.add(RecipeType.Production, "RadioactiveBar", { technology: ["Tokamak"] }, 1, { labor: 1, productionUnit: 3, productionChemicalStructure: 1, radioactiveOre: 2 }, { radioactiveBar: 10, radioactiveWaste: 3 });
 
-RecipeLib.add(RecipeType.Production, "Goods",   { technology: ["GoodsIndustry"] }, 1, { goodsUnit: 10, productionStandardStructure: 1 },                   { goods: 10,  fusionWaste: 3 });
-RecipeLib.add(RecipeType.Production, "MediKit", { technology: ["PharmaceuticalIndustry"] }, 1, { pharmaceuticalUnit: 15, productionStandardStructure: 1 }, { mediKit: 10, toxicWaste: 3 });
+RecipeLib.add(RecipeType.Production, "Goods",   { technology: ["GoodsFactory"] }, 1, { labor: 1, goodsUnit: 10, productionStandardStructure: 1 },                   { goods: 10,  fusionWaste: 3 });
+RecipeLib.add(RecipeType.Production, "MediKit", { technology: ["PharmaceuticalIndustry"] }, 1, { labor: 1, pharmaceuticalUnit: 15, productionChemicalStructure: 1 }, { mediKit: 10, toxicWaste: 3 });
 
 //-----
 
@@ -27,10 +28,10 @@ RecipeLib.add(RecipeType.Research, "AdvancedMetallurgy",	{ theory: ["Extraction_
 RecipeLib.add(RecipeType.Research, "NuclearChemistry",		{ discovery: ["Resource_Radioactive"], theory: ["Chemistry"] },	3, { researchUnit: 5,  researchStructureUnderground: 1 },	{ theory: ["Extraction_Radioactive"] });
 
 RecipeLib.add(RecipeType.Research, "Physics",				{ },										5, { researchUnit: 15, researchStructureSurface: 1 },		{ theory: ["Physics"] });
-RecipeLib.add(RecipeType.Research, "QuantumPhysics",		{ theory: ["Physics", "AdvancedMetallurgy", "Chemistry", "AI"] },	25, { researchUnit: 50, researchStructureSurface: 2, researchStructureUnderground: 2, researchStructureDeep: 2 },	{ technology: ["EnvironmentalControlAdv", "SpacePort"] });
+RecipeLib.add(RecipeType.Research, "QuantumPhysics",		{ theory: ["Physics", "AdvancedMetallurgy", "Chemistry", "AI"] },	25, { researchUnit: 50, researchStructureSurface: 2, researchStructureUnderground: 2, researchStructureDeep: 2, researchStructureSurfaceAdv: 1, researchStructureUndergroundAdv: 1, researchStructureDeepAdv: 1 },	{ technology: ["EnvironmentalControlAdv", "SpacePort"] });
 
 RecipeLib.add(RecipeType.Research, "NuclearPhysics",		{ theory: ["Extraction_Radioactive"] },		5, { researchUnit: 10, researchStructureDeep: 1 },			{ technology: ["Tokamak"] });
-RecipeLib.add(RecipeType.Research, "ParticlePhysics",		{ technology: ["Tokamak"] },				5, { researchUnit: 10, researchStructureDeep: 2 },			{ technology: ["TokamakAdv"] });
+RecipeLib.add(RecipeType.Research, "ParticlePhysics",		{ technology: ["Tokamak"] },				5, { researchUnit: 10, researchStructureDeep: 2, researchStructureDeepAdv: 1 },			{ technology: ["TokamakAdv"] });
 
 RecipeLib.add(RecipeType.Research, "Hydroponics",			{ technology: ["Agridome"] },				3, { researchUnit: 5, researchStructureSurface: 1 },		{ technology: ["AgridomeAdv"] });
 RecipeLib.add(RecipeType.Research, "Aquaponics",			{ technology: ["AgridomeAdv"] },			4, { researchUnit: 5, researchStructureSurface: 1 },		{ technology: ["AgridomeIntensive"] });

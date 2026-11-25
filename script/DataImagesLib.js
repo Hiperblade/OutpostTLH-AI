@@ -251,6 +251,8 @@ imagesList.push({ id: "UnivesityAdv", fileName: "buildings/UnivesityAdv.gif" });
 imagesList.push({ id: "VerticalFarm", fileName: "buildings/VerticalFarm.gif" });
 imagesList.push({ id: "VerticalFarmAdv", fileName: "buildings/VerticalFarmAdv.gif" });
 imagesList.push({ id: "Warehouse", fileName: "buildings/Warehouse.gif" });
+// segnaposto finché non c'è un'immagine dedicata
+imagesList.push({ id: "WasteTreatment", fileName: "buildings/Warehouse.gif" });
 imagesList.push({ id: "AdvancedMedicine", fileName: "illustrations/AdvancedMedicine.png" });
 imagesList.push({ id: "Aquaponics", fileName: "illustrations/Aquaponics.png" });
 imagesList.push({ id: "controlUnit", fileName: "illustrations/controlUnit.png" });
@@ -274,6 +276,7 @@ imagesList.push({ id: "PipesWaste", fileName: "illustrations/PipesWaste.png" });
 imagesList.push({ id: "Power", fileName: "illustrations/Power.png" });
 imagesList.push({ id: "RadioactiveBar", fileName: "illustrations/RadioactiveBar.BMP" });
 imagesList.push({ id: "Robo-Digger", fileName: "illustrations/Robo-Digger.png" });
+imagesList.push({ id: "Robo-Miner", fileName: "interface/RoboMiner.gif" });
 imagesList.push({ id: "Robo-Dozer", fileName: "illustrations/Robo-Dozer.png" });
 imagesList.push({ id: "Robo-Worker", fileName: "illustrations/Robo-Worker.png" });
 imagesList.push({ id: "Chemistry", fileName: "illustrations/Chemistry.png" });

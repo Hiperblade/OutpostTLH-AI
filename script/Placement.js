@@ -24,6 +24,7 @@ let PlacementReason = {
 	// da segnalare
 	NoDozer: "noDozer",
 	NoDigger: "noDigger",
+	NoMiner: "noMiner",
 	NoExtractionTechnology: "noExtractionTechnology",
 	NotRazed: "notRazed",
 	NoResourceRequired: "noResourceRequired",
@@ -112,11 +113,18 @@ function PlacementConstructor()
 		{
 			return _fail(PlacementReason.NotRazed);
 		}
+		if(map.getState().getRoboMinerAvailable() <= 0)
+		{
+			return _fail(PlacementReason.NoMiner, { robotType: RobotTypes.Miner });
+		}
 		return _ok(function()
 		{
-			// la miniera può essere rifiutata dalla mappa (spazio sotterraneo occupato):
-			// lo strumento viene comunque consumato
-			map.addBuilding("Mine" + material, point);
+			// il RoboMiner si consuma solo se la miniera viene posizionata
+			if(map.addBuilding("Mine" + material, point) == null)
+			{
+				return false;
+			}
+			map.getState().useRoboMiner();
 			return true;
 		});
 	};

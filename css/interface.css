@@ -473,3 +473,66 @@ body
 {
 	height: auto;
 }
+
+/* Creazione della partita */
+
+#creationScreen
+{
+	margin: 5px;
+	color: rgb(119,207,60);
+	font-family: sans-serif;
+}
+
+.creationPanel h2, .creationPanel h3
+{
+	font-weight: normal;
+	margin: 12px 0 6px 0;
+}
+
+.creationList
+{
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.creationItem
+{
+	border: 1px solid rgb(47,106,8);
+	padding: 4px;
+	cursor: pointer;
+	text-align: center;
+}
+
+.creationItem canvas
+{
+	display: block;
+	margin: 0 auto;
+}
+
+.creationItemSelected
+{
+	border-color: rgb(119,207,60);
+	background: rgb(20,45,4);
+}
+
+.creationItemSubtitle
+{
+	font-size: 80%;
+	color: rgb(47,106,8);
+}
+
+.creationButton
+{
+	display: inline-block;
+	margin: 12px 8px 0 0;
+	padding: 6px 16px;
+	border: 1px solid rgb(119,207,60);
+	cursor: pointer;
+}
+
+.creationButton.buttonDisable
+{
+	opacity: 0.4;
+	cursor: default;
+}

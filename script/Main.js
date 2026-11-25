@@ -2,10 +2,10 @@
 
 import { PipeType, RobotTypes, TerrainLayer } from "./Enums.js";
 import { Placement, PlacementReason } from "./Placement.js";
+import { SaveGame } from "./SaveGame.js";
 import { Log } from "./SystemLib.js";
-import { TerrainMap } from "./TerrainMap.js";
 import { TextRepository } from "./TextRepository.js";
-import { Turn } from "./Turn.js";
+import { GameOutcome, Turn } from "./Turn.js";
 import { InitializeBuildingInfoView } from "./ViewBuildingInfo.js";
 import { BuildingSelectorView } from "./ViewBuildingSelector.js";
 import { IsometricView } from "./ViewIsometric.js";
@@ -16,9 +16,13 @@ import { ReportQueueData } from "./ViewQueueReport.js";
 
 let Main;
 
-function InitializeMainSystem(mapCanvas, miniMapCanvas, selectorCanvas, siteType)
+/**
+ * @param {Site} siteType sito della partita
+ * @param {TerrainMap} map mappa della partita (nuova o salvata)
+ */
+function InitializeMainSystem(mapCanvas, miniMapCanvas, selectorCanvas, siteType, map)
 {
-	Main = new MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteType);
+	Main = new MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteType, map);
 	return Main;
 }
 
@@ -46,9 +50,8 @@ let MainCommand =
 	ClearSelection: "ClearSelection"
 };
 
-function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteType)
+function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteType, map)
 {
-	const MAP_SIZE = { x: 150, y: 300 };
 	const TILE_DIMENSION = { x: 106, y: 46 };
 
 	let site = siteType;
@@ -168,7 +171,7 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 			}
 		};
 
-		terrainMap = new TerrainMap(site.getTypology(), MAP_SIZE);
+		terrainMap = map;
 		state = terrainMap.getState();
 		view = new IsometricView (terrainMap, mapCanvas, areaSize, TILE_DIMENSION);
 		let canvasSize = view.getCanvasSize();
@@ -177,7 +180,7 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 		mainArea.css("width", canvasSize.x);
 		mainArea.css("height", canvasSize.y);
 
-		mapView = new MapView(terrainMap, miniMapCanvas, site.getImageName(), areaSize, _onChangePosition);
+		mapView = new MapView(terrainMap, miniMapCanvas, site.getBackground(), areaSize, _onChangePosition);
 		selectorView = new BuildingSelectorView(selectorCanvas, canvasSize.x, state, _onSelected);
 
 		buildingInfo = InitializeBuildingInfoView(_onChangePosition, _onClearCurrentItem);
@@ -273,6 +276,7 @@ Log.dialog(_placementMessage(result));
 		{
 			case PlacementReason.NoDozer:
 			case PlacementReason.NoDigger:
+			case PlacementReason.NoMiner:
 				return "Non \u00E8 disponibile nessuna " + TextRepository.get(result.data.robotType) + "!";
 			case PlacementReason.NoExtractionTechnology:
 				return "Non hai la tecnologia per estrarre questa risorsa!";
@@ -345,6 +349,8 @@ Log.dialog(_placementMessage(result));
 		{
 			_setAbilitationButton(MainCommand.Dozer, true);
 		}
+
+		_setAbilitationButton(MainCommand.Miner, state.getRoboMinerAvailable() > 0);
 
 		if((state.getRoboDiggerAvailable() <= 0) || (terrainMap.getLayer() == TerrainLayer.Surface))
 		{
@@ -447,11 +453,26 @@ Log.dialog(_placementMessage(result));
 
 	let _doNext = function()
 	{
+		if(state.getOutcome() != null)
+		{
+			return;
+		}
 		let report = Turn.advance(terrainMap);
 		report.events.forEach(function(event)
 		{
 Log.dialog(event.type + ": " + event.name);
 		});
+		if(report.outcome == null)
+		{
+			SaveGame.save(terrainMap, site);
+		}
+		else
+		{
+			// partita conclusa: alla prossima apertura se ne crea una nuova
+			SaveGame.clear();
+			_setAbilitationButton(MainCommand.DoNext, false);
+Log.dialog(TextRepository.get(report.outcome == GameOutcome.Victory ? "GameVictory" : "GameDefeat"));
+		}
 		_redraw();
 		buildingInfo.refresh();
 	};
@@ -577,14 +598,4 @@ Log.dialog(event.type + ": " + event.name);
 	//----------------------------------------- */
 }
 
-function Site(typology, imageName)
-{
-	//-----------------------------------------
-
-	this.getTypology = function() { return typology; };
-	this.getImageName = function() { return imageName; };
-
-	//-----------------------------------------
-}
-
-export { Main, InitializeMainSystem, MainCommand, MainSystemConstructor, Site };
+export { Main, InitializeMainSystem, MainCommand, MainSystemConstructor };

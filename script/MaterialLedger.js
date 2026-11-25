@@ -242,7 +242,30 @@ function MaterialLedger()
 	};
 
 	//-----------------------------------------
+	// salvataggio
 
+	let _toData = function()
+	{
+		let ret = { names: names.slice(), records: [], pools: [] };
+		records.forEach(function(rec, name) { ret.records.push([name, Object.assign({}, rec)]); });
+		pools.forEach(function(pool, name) { ret.pools.push([name, { capacity: pool.capacity, members: pool.members.slice() }]); });
+		return ret;
+	};
+
+	let _loadData = function(data)
+	{
+		records.clear();
+		pools.clear();
+		names.length = 0;
+		data.names.forEach(function(name) { names.push(name); });
+		data.records.forEach(function(entry) { records.set(entry[0], Object.assign({}, entry[1])); });
+		data.pools.forEach(function(entry) { pools.set(entry[0], { capacity: entry[1].capacity, members: entry[1].members.slice() }); });
+	};
+
+	//-----------------------------------------
+
+	this.toData = _toData;
+	this.loadData = _loadData;
 	this.joinPool = _joinPool;
 	this.isPooled = function(name) { let rec = _record(name); return rec !== undefined && rec.pool !== null; };
 	this.isPool = function(name) { return pools.has(name); };

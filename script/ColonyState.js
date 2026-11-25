@@ -1,6 +1,8 @@
 "use strict";
 
+import { generationFromData } from "./Generations.js";
 import { MaterialLedger } from "./MaterialLedger.js";
+import { RecipeLib } from "./RecipeLib.js";
 
  
 	function ColonyState()
@@ -20,8 +22,8 @@ import { MaterialLedger } from "./MaterialLedger.js";
 			};
 		state.population = {
 			registry: [],
-			subsistence: 0,
-			wellness: 0,
+			subsistence: 1,
+			wellness: 1,
 			happiness: 0
 			};
 		state.robotsAvailable = {
@@ -30,6 +32,10 @@ import { MaterialLedger } from "./MaterialLedger.js";
 			digger: 0
 			};
 		state.date = 0;
+		// esito della partita: null finché si gioca, poi GameOutcome.Victory o GameOutcome.Defeat
+		state.outcome = null;
+		state.victoryStreak = 0;
+		state.colonistsArrived = false;
 
 		// i materiali sono gestiti dal Material ledger
 		let ledger = new MaterialLedger();
@@ -184,6 +190,22 @@ import { MaterialLedger } from "./MaterialLedger.js";
 			return false;
 		};
 
+		let _getRoboMinerAvailable = function()
+		{
+			return ledger.getStored("miner");
+		};
+
+		/** il RoboMiner diventa la miniera: viene consumato */
+		let _useRoboMiner = function()
+		{
+			if(_getRoboMinerAvailable() > 0)
+			{
+				ledger.destroyStock({ miner: 1 });
+				return true;
+			}
+			return false;
+		};
+
 		let _setRobotsAvailable = function(data)
 		{
 			state.robotsAvailable.controllers = data.controllers;
@@ -192,9 +214,84 @@ import { MaterialLedger } from "./MaterialLedger.js";
 		};
 
 		//-----------------------------------------
+		// salvataggio (le liste del turno si ricalcolano con la proiezione)
+
+		let _queueToData = function(queue)
+		{
+			return queue.map(function(item) { return { name: item.getName(), currentTime: item.getCurrentTime() }; });
+		};
+
+		let _queueFromData = function(queue, data)
+		{
+			queue.length = 0;
+			data.forEach(function(entry)
+			{
+				let item = RecipeLib.create(entry.name);
+				item.setCurrentTime(entry.currentTime);
+				queue.push(item);
+			});
+		};
+
+		let _toData = function()
+		{
+			let knowledge = state.knowledge;
+			return {
+				date: state.date,
+				outcome: state.outcome,
+				victoryStreak: state.victoryStreak,
+				colonistsArrived: state.colonistsArrived,
+				robotsAvailable: Object.assign({}, state.robotsAvailable),
+				knowledge: {
+					discovery: knowledge.discovery.slice(),
+					theory: knowledge.theory.slice(),
+					technology: knowledge.technology.slice(),
+					completed: knowledge.completed.slice(),
+					researchQueue: _queueToData(knowledge.researchQueue),
+					productionQueue: _queueToData(knowledge.productionQueue)
+				},
+				population: {
+					registry: state.population.registry.map(function(generation) { return generation.toData(); }),
+					subsistence: state.population.subsistence,
+					wellness: state.population.wellness,
+					happiness: state.population.happiness
+				},
+				ledger: ledger.toData()
+			};
+		};
+
+		let _loadData = function(data)
+		{
+			state.date = data.date;
+			state.outcome = data.outcome;
+			state.victoryStreak = data.victoryStreak;
+			state.colonistsArrived = data.colonistsArrived;
+			state.robotsAvailable = Object.assign({}, data.robotsAvailable);
+			["discovery", "theory", "technology", "completed"].forEach(function(type)
+			{
+				state.knowledge[type] = data.knowledge[type].slice();
+			});
+			_queueFromData(state.knowledge.researchQueue, data.knowledge.researchQueue);
+			_queueFromData(state.knowledge.productionQueue, data.knowledge.productionQueue);
+			state.population.registry = data.population.registry.map(generationFromData);
+			state.population.subsistence = data.population.subsistence;
+			state.population.wellness = data.population.wellness;
+			state.population.happiness = data.population.happiness;
+			ledger.loadData(data.ledger);
+		};
+
+		this.toData = _toData;
+		this.loadData = _loadData;
+
+		//-----------------------------------------
 
 		this.getDate = function() { return state.date; };
 		this.setDate = function(date) { state.date = date; };
+		this.getOutcome = function() { return state.outcome; };
+		this.setOutcome = function(outcome) { state.outcome = outcome; };
+		this.getVictoryStreak = function() { return state.victoryStreak; };
+		this.setVictoryStreak = function(value) { state.victoryStreak = value; };
+		this.haveColonistsArrived = function() { return state.colonistsArrived; };
+		this.setColonistsArrived = function() { state.colonistsArrived = true; };
 
 		this.getLedger = function() { return ledger; };
 		this.getConsumed = ledger.getConsumed;
@@ -208,13 +305,14 @@ import { MaterialLedger } from "./MaterialLedger.js";
 		this.getDiscovery = function() { return state.knowledge.discovery; };
 		this.getResearchQueue = function() { return state.knowledge.researchQueue; };
 		this.getProductionQueue = function() { return state.knowledge.productionQueue; };
-		this.getRoboticsWorkforce = function() { return state.roboticsWorkforce; };
 		this.getPopulation = function() { return state.population; };
 
 		this.getRoboDozerAvailable = _getRoboDozerAvailable;
 		this.useRoboDozer = _useRoboDozer;
 		this.getRoboDiggerAvailable = _getRoboDiggerAvailable;
 		this.useRoboDigger = _useRoboDigger;
+		this.getRoboMinerAvailable = _getRoboMinerAvailable;
+		this.useRoboMiner = _useRoboMiner;
 		this.setRobotsAvailable = _setRobotsAvailable;
 
 		this.isMetaMaterial = ledger.isPooled;

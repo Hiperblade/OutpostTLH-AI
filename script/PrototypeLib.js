@@ -153,6 +153,7 @@ function PrototypeLibConstructor()
  * parameters:
  *   requiredResource   risorsa su cui va costruito
  *   consumption, production, productionWaste, capacity   materiali per turno
+ *   disposal           scarti eliminati a turno, fino a esaurimento (quando l'edificio è attivo)
  *   builder            immagine del cantiere
  *   imageId, areaType  immagine e area mostrate nelle schede
  *   ports              collegamenti come un tubo, es. "nesw" (n, e, s, w, u = su, d = giù)
@@ -172,6 +173,7 @@ function BasePrototype(buildingType, terrainLayer, buildingTime, buildingCost, p
 	let production = parameters.production || {};
 	let productionWaste = parameters.productionWaste || {};
 	let capacity = parameters.capacity || {};
+	let disposal = parameters.disposal || {};
 	let requiredResource = parameters.requiredResource;
 	let parts = parameters.parts || [];
 
@@ -195,6 +197,7 @@ function BasePrototype(buildingType, terrainLayer, buildingTime, buildingCost, p
 	this.getProduction = function() { return production; };
 	this.getProductionWaste = function() { return productionWaste; };
 	this.getCapacity = function() { return capacity; };
+	this.getDisposal = function() { return disposal; };
 	this.getRequiredResource = function() { return requiredResource; };
 	this.getBuildingImageId = function() { return parameters.imageId || buildingType; };
 	this.getAreaType = function() { return parameters.areaType || AreaTypes.One; };

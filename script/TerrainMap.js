@@ -6,7 +6,12 @@ import { PipeNetwork } from "./PipeNetwork.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { inherits } from "./SystemLib.js";
 
-function TerrainMap(terrainTypology, size)
+/**
+ * @param {string} terrainTypology tipo di pianeta
+ * @param {{x:number, y:number}} size
+ * @param {number[][]} [surfaceMorphology] morfologia iniziale della superficie (dal sito); altrimenti casuale
+ */
+function TerrainMap(terrainTypology, size, surfaceMorphology)
 {
 	let self = this;
 	let typology = terrainTypology;
@@ -27,7 +32,7 @@ function TerrainMap(terrainTypology, size)
 			deep[x] = [];
 			for(y = 0; y < size.y; y++)
 			{
-				surface[x][y] = _randomMorphology();
+				surface[x][y] = surfaceMorphology ? surfaceMorphology[x][y] : _randomMorphology();
 				underground[x][y] = 9;
 				deep[x][y] = 9;
 				//debug: underground[x][y] = _randomMorphology();
@@ -453,6 +458,76 @@ function TerrainMap(terrainTypology, size)
 		return null;
 	};
 
+	//-----------------------------------------
+	// salvataggio
+
+	let _structureToData = function(el)
+	{
+		let common = { layer: el.getLayer(), position: { x: el.getPosition().x, y: el.getPosition().y } };
+		switch(el.getType())
+		{
+			case StructureTypes.Resource:
+				return Object.assign(common, { kind: StructureTypes.Resource, resourceType: el.getResourceType() });
+			case StructureTypes.Robot:
+				return Object.assign(common, { kind: StructureTypes.Robot, robotType: el.getRobotType() });
+		}
+		let main = el.getMainBuilding();
+		return Object.assign(common, {
+			kind: StructureTypes.Building,
+			buildingType: el.getBuildingType(),
+			integrity: el.getIntegrity(),
+			progressState: el.getProgressState(),
+			frozen: el.getFrozen(),
+			main: (main === el) ? -1 : structure.indexOf(main)
+		});
+	};
+
+	let _structureFromData = function(data)
+	{
+		switch(data.kind)
+		{
+			case StructureTypes.Resource:
+				return PrototypeLib.createResource(data.resourceType, data.position);
+			case StructureTypes.Robot:
+				return new Robot(data.robotType, data.layer, data.position);
+		}
+		return PrototypeLib.createBuilding(data.buildingType, data.position).restoreState(data);
+	};
+
+	let _toData = function()
+	{
+		return {
+			typology: typology,
+			size: { x: size.x, y: size.y },
+			layer: layer,
+			surface: surface,
+			underground: underground,
+			deep: deep,
+			structure: structure.map(_structureToData),
+			state: state.toData()
+		};
+	};
+
+	let _loadData = function(data)
+	{
+		layer = data.layer;
+		surface = data.surface;
+		underground = data.underground;
+		deep = data.deep;
+		structure.length = 0;
+		data.structure.forEach(function(item) { structure.push(_structureFromData(item)); });
+		// collegamenti delle strutture composite
+		data.structure.forEach(function(item, i)
+		{
+			if(item.main >= 0)
+			{
+				structure[i].setMainBuilding(structure[item.main]);
+				structure[item.main].addPart(structure[i]);
+			}
+		});
+		state.loadData(data.state);
+	};
+
 	/** reti di edifici collegati (vedi PipeNetwork) */
 	let _getGraph = function()
 	{
@@ -499,6 +574,8 @@ function TerrainMap(terrainTypology, size)
 	this.setLayer = function(newLayer) { layer = newLayer; };
 	this.getStructure = function() { return structure; };
 	this.getState = function() { return state; };
+	this.toData = _toData;
+	this.loadData = _loadData;
 
 	this.getTerrainImageId = _getTerrainImageId;
 	this.addResource = _addResource;
@@ -643,6 +720,7 @@ function Building(buildingType, terrainLayer, position, buildingTime, builder)
 	this.getIntegrity = function() { return integrity; };
 	this.getProgressState = function() { return progressState; };
 	this.getFrozen = function() { return frozen; };
+	this.restoreState = function(data) { integrity = data.integrity; progressState = data.progressState; frozen = data.frozen; return this; };
 	this.setFrozen = function(value) { frozen = value; return this; };
 	//this.getOwner = function() { return owner; };
 
@@ -716,5 +794,13 @@ function Robot(robotType, layer, position)
 	this.getImageId = function() { return this.getBuildingType().toString(); };
 }
 inherits(Robot, Building);
+
+/** ricostruisce una mappa salvata */
+TerrainMap.fromData = function(data)
+{
+	let map = new TerrainMap(data.typology, data.size);
+	map.loadData(data);
+	return map;
+};
 
 export { TerrainMap, Building, Pipe, Resource, Robot };

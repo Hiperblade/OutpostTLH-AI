@@ -12,6 +12,7 @@ let MaintenancePhase = (function()
 	const REPAIR_AMOUNT = 20;	// integrità recuperata a turno senza incuria
 	const DAMAGE_VARIANCE = 6;
 	const DISCONNECTED_DAMAGE = 100;
+	const EMERGENCY_TEAM_REDUCTION = 0.25;	// riduzione dei danni da incuria per squadra di emergenza
 
 	let _damageFor = function(neglectPercentage)
 	{
@@ -41,7 +42,7 @@ let MaintenancePhase = (function()
 	};
 
 	return {
-		/** @return {number} percentuale di incuria */
+		/** @return {{neglect: number, emergencyTeams: number}} incuria in percentuale e squadre di emergenza impiegate */
 		project: function(ctx)
 		{
 			let state = ctx.state;
@@ -54,20 +55,27 @@ let MaintenancePhase = (function()
 				}
 			});
 
+			let emergencyTeams = state.getRemainder("emergencyTeamUnit");
+			if(emergencyTeams > 0)
+			{
+				state.delMaterials({ emergencyTeamUnit: emergencyTeams });
+			}
+
 			let costAmount = buildingAmount * REPAIR_COST;
 			if(state.haveMaterials({ repairUnit: costAmount }))
 			{
 				state.delMaterials({ repairUnit: costAmount });
-				return 0;
+				return { neglect: 0, emergencyTeams: emergencyTeams };
 			}
 			let available = state.getRemainder("repairUnit");
 			state.delMaterials({ repairUnit: available });
-			return ((costAmount - available) * 100) / costAmount;
+			return { neglect: ((costAmount - available) * 100) / costAmount, emergencyTeams: emergencyTeams };
 		},
 
-		apply: function(ctx, neglectPercentage)
+		apply: function(ctx, plan)
 		{
-			let damageAmount = _damageFor(neglectPercentage);
+			let reduction = Math.max(0, 1 - EMERGENCY_TEAM_REDUCTION * plan.emergencyTeams);
+			let damageAmount = Math.round(_damageFor(plan.neglect) * reduction);
 			let buildList = ctx.state.getBuildList();
 
 			ctx.networks.forEach(function(graph)

@@ -5,6 +5,9 @@ import { BuildingGraph } from "./PipeNetwork.js";
 
 /** popolazione: consumi di sussistenza, istruzione, nascite, morti e stato della popolazione */
 let PopulationPhase = {
+	GOODS_PER_PEOPLE: 10,
+	GOODS_HAPPINESS_BONUS: 0.25,
+
 	apply: function(ctx)
 	{
 		let colonyState = ctx.state;
@@ -197,6 +200,18 @@ let PopulationPhase = {
 		//	missingHighEducation // mancanza di alta formazione
 		//	sadness // tristezza
 		let happiness = 1 - Math.max(missingEducation, missingHighEducation, sadness);
+
+		// beni di consumo: 1 ogni GOODS_PER_PEOPLE coloni, alzano la felicità fino a GOODS_HAPPINESS_BONUS
+		if(people > 0)
+		{
+			let goodsNeeded = Math.ceil(people / PopulationPhase.GOODS_PER_PEOPLE);
+			let goodsUsed = Math.min(goodsNeeded, colonyState.getRemainder("goods"));
+			if(goodsUsed > 0)
+			{
+				colonyState.delMaterials({ goods: goodsUsed });
+			}
+			happiness = Math.min(1, happiness + PopulationPhase.GOODS_HAPPINESS_BONUS * goodsUsed / goodsNeeded);
+		}
 
 		let subsistenceAverage = (population.subsistence + subsistence) / 2;
 		let wellnessAverage = (population.wellness + wellness) / 2;

@@ -10,19 +10,25 @@ let GenerationState = {
 	};
 
 const GenerationConst = {
+	AGE_ADULTS: 25,		// età dei coloni che arrivano già Lavoratori
 	AGE_INFANTS: 6,
 	AGE_RETIREES: 80,
 	EDUCATIONAL_PRIMARY: 13,
 	EDUCATIONAL_SECONDARY: 5
 };
 
-function Generation(date, nurseryUnit)
+/**
+ * @param {number} date data di nascita
+ * @param {number} nurseryUnit numero di lotti (5 coloni ciascuno)
+ * @param {number} [educationLevel] istruzione già completata (coloni che arrivano adulti)
+ */
+function Generation(date, nurseryUnit, educationLevel)
 {
 	let birthDate = date;
 	let lots = [];
 	for(let i = 0; i < nurseryUnit; i++)
 	{
-		lots[i] = new GenerationalLot(birthDate);
+		lots[i] = new GenerationalLot(birthDate, educationLevel);
 	}
 
 	let _getPopulation = function()
@@ -120,6 +126,7 @@ function Generation(date, nurseryUnit)
 
 	this.getBirthDate = function() { return birthDate; };
 	this.getLots = function() { return lots; };
+	this.toData = function() { return { birthDate: birthDate, lots: lots.map(function(lot) { return lot.toData(); }) }; };
 
 	this.getPopulation = _getPopulation;
 	this.kill = _kill;
@@ -130,13 +137,13 @@ function Generation(date, nurseryUnit)
 	//-----------------------------------------
 }
 
-function GenerationalLot(date)
+function GenerationalLot(date, initialEducationLevel, initialDeadCount)
 {
 	const INITIAL_POPULATION = 5;
 
 	let birthDate = date;
-	let deadCount = 0;
-	let educationLevel = 0;
+	let deadCount = initialDeadCount || 0;
+	let educationLevel = initialEducationLevel || 0;
 
 	let _getPopulation = function()
 	{
@@ -196,6 +203,7 @@ function GenerationalLot(date)
 	//-----------------------------------------
 
 	this.getEducationLevel = function() { return educationLevel; };
+	this.toData = function() { return { educationLevel: educationLevel, deadCount: deadCount }; };
 
 	this.getPopulation = _getPopulation;
 	this.kill = _kill;
@@ -205,4 +213,22 @@ function GenerationalLot(date)
 	//-----------------------------------------
 }
 
-export { GenerationState, GenerationConst, Generation, GenerationalLot };
+/** una generazione di Lavoratori adulti e istruiti, nata AGE_ADULTS turni prima di date */
+function createWorkers(date, lots)
+{
+	return new Generation(date - GenerationConst.AGE_ADULTS, lots,
+		GenerationConst.EDUCATIONAL_PRIMARY + GenerationConst.EDUCATIONAL_SECONDARY);
+}
+
+/** ricostruisce una generazione salvata */
+function generationFromData(data)
+{
+	let generation = new Generation(data.birthDate, 0);
+	data.lots.forEach(function(lot)
+	{
+		generation.getLots().push(new GenerationalLot(data.birthDate, lot.educationLevel, lot.deadCount));
+	});
+	return generation;
+}
+
+export { createWorkers, generationFromData, GenerationState, GenerationConst, Generation, GenerationalLot };

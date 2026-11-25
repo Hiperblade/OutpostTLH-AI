@@ -1,8 +1,8 @@
 "use strict";
 
 import { StructureTypes } from "./Enums.js";
-import { ImagesLib } from "./ImagesLib.js";
 
+/** @param {CanvasImageSource} backgroundImage immagine del sito */
 function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 {
 	let canvasMap = document.getElementById(canvasId);
@@ -41,7 +41,7 @@ function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
 		ctx.beginPath();
-		ctx.drawImage(ImagesLib.getImage(backgroundImage), 0, 0);
+		ctx.drawImage(backgroundImage, 0, 0, ctx.canvas.width, ctx.canvas.height);
 		ctx.closePath();
 		ctx.fill();
 

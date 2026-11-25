@@ -20,9 +20,12 @@ window.alert = function(m){ (window.__alerts = window.__alerts || []).push(m); }
 <script type="module">
 import { TerrainMap } from "../script/TerrainMap.js";
 import { Typology, TerrainLayer, PipeType, RobotTypes } from "../script/Enums.js";
-import { Turn } from "../script/Turn.js";
+import { Turn, OutcomePhase, GameOutcome } from "../script/Turn.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
+import { Site, createGame, MAP_SIZE } from "../script/GameSetup.js";
+import { SiteTerrain } from "../script/SiteTerrain.js";
+import { PlanetTypes } from "../script/DataPlanets.js";
 import "../script/DataPrototype.js";
 import "../script/DataRecipe.js";
 import "../script/DataText_it.js";
@@ -42,7 +45,9 @@ function snapshot(map)
 	let materials = {};
 	st.getMaterials().forEach(m => { materials[m] = [st.getStored(m), st.getCapacity(m)]; });
 	let graphs = map.getGraph().map(g => BuildingGraph.countAll(g) + (BuildingGraph.hasHeadquarter(g) ? "H" : "o")).sort();
-	return { date: st.getDate(), structures, materials, graphs, technology: st.getTechnology().slice().sort() };
+	let pop = st.getPopulation();
+	let population = { people: pop.registry.reduce((n, g) => n + g.getPopulation(), 0), subsistence: pop.subsistence, wellness: pop.wellness, happiness: pop.happiness };
+	return { date: st.getDate(), structures, materials, graphs, population, technology: st.getTechnology().slice().sort() };
 }
 
 function scenario()
@@ -51,7 +56,7 @@ function scenario()
 	let map = new TerrainMap(Typology.Vulcanic, { x: 40, y: 40 });
 	let st = map.getState();
 	["mediKit","goods","toxicWaste","fusionWaste"].forEach(m => st.configureMaterial(m, "genericStorage"));
-	["dozer","digger","miner","worker","MicrowaveSatellite"].forEach(m => st.configureMaterial(m, "roboticStorage"));
+	["dozer","digger","miner","roboWorker","MicrowaveSatellite"].forEach(m => st.configureMaterial(m, "roboticStorage"));
 	["radioactiveBar","radioactiveWaste"].forEach(m => st.configureMaterial(m, "radioactiveStorage"));
 	st.addKnowledge({ technology: ["LandingModule"], discovery: ["Robotics"], theory: ["Find_Metal"] });
 
@@ -127,7 +132,10 @@ function checks()
 	expect("dozer non disponibile", reason(Placement.check(map, { isRobot: true, robotType: RobotTypes.Dozer }, { x: 6, y: 30 })), "noDozer");
 	expect("miner senza tecnologia", reason(Placement.check(map, { isRobot: true, robotType: RobotTypes.Miner }, { x: 20, y: 20 })), "noExtractionTechnology");
 	st.addKnowledge({ theory: ["Extraction_Metal"] });
+	expect("miner non disponibile", reason(Placement.check(map, { isRobot: true, robotType: RobotTypes.Miner }, { x: 20, y: 20 })), "noMiner");
+	st.createMaterials({ miner: 1 });
 	expect("miner", reason(Placement.place(map, { isRobot: true, robotType: RobotTypes.Miner }, { x: 20, y: 20 })), "ok");
+	expect("miner consumato", st.getRoboMinerAvailable(), 0);
 	let mine = map.findBuilding({ x: 20, y: 20 });
 	expect("miniera con pozzo", [mine.getBuildingType(), mine.getParts().map(p => p.getBuildingType() + "@" + p.getLayer())], ["MineMetal", ["Mine@underground"]]);
 	expect("pozzo rimanda alla miniera", map.findBuilding({ x: 20, y: 20 }, TerrainLayer.Underground).getMainBuilding() === mine, true);
@@ -154,6 +162,80 @@ function checks()
 	net.addBuilding("Agridome", { x: 4, y: 7 }, true);
 	net.addPipe(PipeType.NorthEastSouthWest, TerrainLayer.Surface, { x: 15, y: 15 }, true);
 	expect("reti", net.getGraph().map(g => BuildingGraph.countAll(g) + (BuildingGraph.hasHeadquarter(g) ? "H" : "o")), ["8H", "1o"]);
+
+	// smaltimento degli scarti
+	let plant = new TerrainMap(Typology.Vulcanic, { x: 20, y: 20 });
+	plant.addBuilding("CommandCenter", { x: 5, y: 5 }, true);
+	plant.addBuilding("MicrowavePlant", { x: 6, y: 5 }, true);
+	plant.addBuilding("WasteTreatment", { x: 4, y: 5 }, true);
+	plant.getState().createMaterials({ fusionWaste: 25, toxicWaste: 3 });
+	Turn.advance(plant);
+	expect("smaltimento", [plant.getState().getStored("fusionWaste"), plant.getState().getStored("toxicWaste")], [15, 0]);
+
+	// vittoria (soglie ridotte per il test) e sconfitta
+	let limits = [OutcomePhase.VICTORY_POPULATION, OutcomePhase.VICTORY_TURNS];
+	OutcomePhase.VICTORY_POPULATION = 20;
+	OutcomePhase.VICTORY_TURNS = 3;
+	let game = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	game.getState().addKnowledge({ technology: ["LandingModule"] });
+	game.addBuilding("LandingModule", { x: 10, y: 10 });
+	let turns = 0;
+	while(game.getState().getOutcome() == null && turns < 30) { Turn.advance(game); turns++; }
+	expect("vittoria", game.getState().getOutcome(), GameOutcome.Victory);
+	let dateAtEnd = game.getState().getDate();
+	Turn.advance(game);
+	expect("partita conclusa: il tempo non avanza", game.getState().getDate(), dateAtEnd);
+	[OutcomePhase.VICTORY_POPULATION, OutcomePhase.VICTORY_TURNS] = limits;
+
+	// salvataggio: andata e ritorno identici, anche dopo un turno
+	let copy = TerrainMap.fromData(JSON.parse(JSON.stringify(game.toData())));
+	expect("salvataggio: stato ricaricato", JSON.stringify(snapshot(copy)), JSON.stringify(snapshot(game)));
+	expect("salvataggio: coda e popolazione", JSON.stringify(copy.getState().toData()), JSON.stringify(game.getState().toData()));
+	let saved = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	saved.getState().addKnowledge({ technology: ["LandingModule"] });
+	saved.addBuilding("LandingModule", { x: 10, y: 10 });
+	saved.addBuilding("Park", { x: 20, y: 20 });
+	for(let t = 0; t < 5; t++) Turn.advance(saved);
+	let restored = TerrainMap.fromData(JSON.parse(JSON.stringify(saved.toData())));
+	expect("salvataggio: parti composite", restored.findBuilding({ x: 21, y: 19 }, TerrainLayer.Deep).getMainBuilding().getBuildingType(), "Park");
+	let rnd = Math.random;
+	Math.random = () => 0.5; Turn.advance(saved);
+	Math.random = () => 0.5; Turn.advance(restored);
+	Math.random = rnd;
+	expect("salvataggio: turno successivo identico", JSON.stringify(snapshot(restored)), JSON.stringify(snapshot(saved)));
+
+	// creazione della partita
+	let site = new Site("ceres", "2");
+	let created = createGame(site);
+	let morphology = site.getMorphology();
+	let names = { 1: "clear", 2: "rough", 4: "impervious", 8: "inaccessible" };
+	expect("sito: superficie dal terreno del sito", [5, 77, 140].every(x => [3, 150, 299].every(y =>
+		created.findResource({ x: x, y: y }) != null ||
+		created.getTerrainImageId(x, y) == "Terrain_asteroid_surface_" + names[morphology[x][y]])), true);
+	let counts = {}; morphology.forEach(row => row.forEach(v => { counts[v] = (counts[v] || 0) + 1; }));
+	expect("sito: quattro morfologie", Object.keys(counts).sort(), ["1", "2", "4", "8"]);
+	let deposits = created.getStructure().filter(el => el.getType() == "resource").length;
+	let expected = Object.values(PlanetTypes[site.getTypology()].resources).reduce((a, b) => a + b, 0);
+	expect("sito: giacimenti del tipo di pianeta", deposits <= expected && deposits > expected * 0.8, true);
+	expect("sito: sfondo 300x150", [site.getBackground().width, site.getBackground().height], [300, 150]);
+	expect("sito: salvataggio", Site.fromData(site.toData()).getName(), site.getName());
+	expect("sito: non più nel catalogo", Site.fromData({ planetId: "nessuno", siteId: "1" }), null);
+	let painted = document.createElement("canvas"); painted.width = 300; painted.height = 150;
+	let pctx = painted.getContext("2d");
+	pctx.fillStyle = "rgb(0,160,0)"; pctx.fillRect(0, 0, 150, 150);
+	pctx.fillStyle = "rgb(140,0,0)"; pctx.fillRect(150, 0, 150, 75);
+	pctx.fillStyle = "rgb(0,0,0)"; pctx.fillRect(150, 75, 150, 75);
+	let read = SiteTerrain.fromImage(painted, MAP_SIZE);
+	expect("mappa del terreno letta dall'immagine", [read[10][20], read[140][200], read[10][200]], [1, 4, 8]);
+
+	let lost = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	lost.getState().addKnowledge({ technology: ["LandingModule"] });
+	lost.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(lost);
+	expect("ancora in gioco", lost.getState().getOutcome(), null);
+	lost.getStructure().filter(el => el.getType() == "building" && el.isHeadquarter()).forEach(el => el.destroy());
+	Turn.advance(lost);
+	expect("sconfitta senza headquarter", lost.getState().getOutcome(), GameOutcome.Defeat);
 
 	return failures;
 }
