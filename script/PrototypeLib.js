@@ -153,6 +153,7 @@ function PrototypeLibConstructor()
  * parameters:
  *   requiredResource   risorsa su cui va costruito
  *   consumption, production, productionWaste, capacity   materiali per turno
+ *   staff              manodopera dei Lavoratori richiesta a ogni turno per funzionare (edificio con personale)
  *   disposal           scarti eliminati a turno, fino a esaurimento (quando l'edificio è attivo)
  *   builder            immagine del cantiere
  *   imageId, areaType  immagine e area mostrate nelle schede
@@ -198,6 +199,7 @@ function BasePrototype(buildingType, terrainLayer, buildingTime, buildingCost, p
 	this.getProductionWaste = function() { return productionWaste; };
 	this.getCapacity = function() { return capacity; };
 	this.getDisposal = function() { return disposal; };
+	this.getStaff = function() { return parameters.staff || 0; };
 	this.getRequiredResource = function() { return requiredResource; };
 	this.getBuildingImageId = function() { return parameters.imageId || buildingType; };
 	this.getAreaType = function() { return parameters.areaType || AreaTypes.One; };

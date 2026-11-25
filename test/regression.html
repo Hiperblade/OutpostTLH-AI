@@ -20,7 +20,9 @@ window.alert = function(m){ (window.__alerts = window.__alerts || []).push(m); }
 <script type="module">
 import { TerrainMap } from "../script/TerrainMap.js";
 import { Typology, TerrainLayer, PipeType, RobotTypes } from "../script/Enums.js";
-import { Turn, OutcomePhase, GameOutcome } from "../script/Turn.js";
+import { Turn, OutcomePhase, GameOutcome, RobotWearPhase } from "../script/Turn.js";
+import { Revival } from "../script/Revival.js";
+import { createWorkers } from "../script/Generations.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
 import { Site, createGame, MAP_SIZE } from "../script/GameSetup.js";
@@ -172,20 +174,52 @@ function checks()
 	Turn.advance(plant);
 	expect("smaltimento", [plant.getState().getStored("fusionWaste"), plant.getState().getStored("toxicWaste")], [15, 0]);
 
-	// vittoria (soglie ridotte per il test) e sconfitta
-	let limits = [OutcomePhase.VICTORY_POPULATION, OutcomePhase.VICTORY_TURNS];
-	OutcomePhase.VICTORY_POPULATION = 20;
-	OutcomePhase.VICTORY_TURNS = 3;
+	// fase di preparazione: kit con capsule, centro di ricerca automatico senza personale, laboratorio fermo
 	let game = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
-	game.getState().addKnowledge({ technology: ["LandingModule"] });
+	let gs = game.getState();
+	gs.configureMaterial("cryoCapsule", "genericStorage");
+	gs.addKnowledge({ technology: ["LandingModule"] });
 	game.addBuilding("LandingModule", { x: 10, y: 10 });
-	let turns = 0;
-	while(game.getState().getOutcome() == null && turns < 30) { Turn.advance(game); turns++; }
-	expect("vittoria", game.getState().getOutcome(), GameOutcome.Victory);
-	let dateAtEnd = game.getState().getDate();
+	for(let t = 0; t < 4; t++) Turn.advance(game);
+	expect("kit: capsule e nessun colono sveglio", [gs.getStored("cryoCapsule"), gs.getPopulation().registry.length], [20, 0]);
+	game.addBuilding("EnvironmentalControl", { x: 8, y: 10 }, true);
+	game.addBuilding("AutoLab", { x: 12, y: 9 }, true);
+	game.addBuilding("HotLab", { x: 10, y: 8 }, true);
+	game.addBuilding("Pipe_d_surface", { x: 9, y: 12 }, true);
+	Turn.project(game);
+	expect("risveglio senza centro criogenico attivo", Revival.check(game).reason, "noCryoCenter");
+	game.addBuilding("CryoCenter", { x: 9, y: 13 }, true);
+	game.addBuilding("Residential", { x: 10, y: 12 }, true);
+	for(let t = 0; t < 4; t++) Turn.advance(game);
+	let active = type => (gs.getActiveList()[type] || []).length;
+	expect("edifici automatici attivi, laboratorio senza personale fermo", [active("AutoLab"), active("CryoCenter"), active("HotLab")], [1, 1, 0]);
+	expect("risveglio prenotato", Revival.request(game).ok, true);
 	Turn.advance(game);
-	expect("partita conclusa: il tempo non avanza", game.getState().getDate(), dateAtEnd);
-	[OutcomePhase.VICTORY_POPULATION, OutcomePhase.VICTORY_TURNS] = limits;
+	let awake = () => gs.getPopulation().registry.reduce((n, g) => n + g.getPopulation(), 0);
+	expect("risveglio: 5 coloni svegli, 15 capsule", [awake(), gs.getStored("cryoCapsule"), gs.getPendingRevival()], [5, 15, 0]);
+	expect("manodopera separata", [gs.getStored("roboLabor") >= 0, gs.getStored("workerLabor") > 0], [true, true]);
+
+	// usura dei robot (vita ridotta per il test)
+	let life = RobotWearPhase.ROBOT_LIFE;
+	RobotWearPhase.ROBOT_LIFE = 1;
+	game.addBuilding("Pipe_nesw_surface", { x: 9, y: 14 });
+	let robots = gs.getStored("roboWorker");
+	Turn.advance(game);
+	RobotWearPhase.ROBOT_LIFE = life;
+	expect("usura: robot fuori uso", gs.getStored("roboWorker") < robots, true);
+
+	// vittoria (soglie ridotte per il test): coloni contenti per 3 turni
+	let limits = [OutcomePhase.VICTORY_POPULATION, OutcomePhase.VICTORY_TURNS, OutcomePhase.VICTORY_HAPPINESS];
+	OutcomePhase.VICTORY_POPULATION = 5;
+	OutcomePhase.VICTORY_TURNS = 3;
+	OutcomePhase.VICTORY_HAPPINESS = 0;
+	let turns = 0;
+	while(gs.getOutcome() == null && turns < 30) { Turn.advance(game); turns++; }
+	expect("vittoria", gs.getOutcome(), GameOutcome.Victory);
+	let dateAtEnd = gs.getDate();
+	Turn.advance(game);
+	expect("partita conclusa: il tempo non avanza", gs.getDate(), dateAtEnd);
+	[OutcomePhase.VICTORY_POPULATION, OutcomePhase.VICTORY_TURNS, OutcomePhase.VICTORY_HAPPINESS] = limits;
 
 	// salvataggio: andata e ritorno identici, anche dopo un turno
 	let copy = TerrainMap.fromData(JSON.parse(JSON.stringify(game.toData())));
@@ -236,6 +270,14 @@ function checks()
 	lost.getStructure().filter(el => el.getType() == "building" && el.isHeadquarter()).forEach(el => el.destroy());
 	Turn.advance(lost);
 	expect("sconfitta senza headquarter", lost.getState().getOutcome(), GameOutcome.Defeat);
+
+	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	idle.getState().addKnowledge({ technology: ["LandingModule"] });
+	idle.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(idle);
+	idle.getState().destroyMaterials({ roboWorker: 100 });
+	Turn.advance(idle);
+	expect("sconfitta senza manodopera", idle.getState().getOutcome(), GameOutcome.Defeat);
 
 	return failures;
 }

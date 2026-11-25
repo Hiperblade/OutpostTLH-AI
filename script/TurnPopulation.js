@@ -1,10 +1,12 @@
 "use strict";
 
-import { Generation, GenerationState } from "./Generations.js";
+import { Generation, GenerationState, createWorkers } from "./Generations.js";
 import { BuildingGraph } from "./PipeNetwork.js";
 
 /** popolazione: consumi di sussistenza, istruzione, nascite, morti e stato della popolazione */
 let PopulationPhase = {
+	RETIREE_DEATH_RATE: 0.05,
+	MEDICAL_DEATH_REDUCTION: 0.5,
 	GOODS_PER_PEOPLE: 10,
 	GOODS_HAPPINESS_BONUS: 0.25,
 
@@ -215,7 +217,8 @@ let PopulationPhase = {
 
 		let subsistenceAverage = (population.subsistence + subsistence) / 2;
 		let wellnessAverage = (population.wellness + wellness) / 2;
-		if(subsistenceAverage == 1 && wellnessAverage == 1)
+		// nascite: piena sussistenza e alloggi sufficienti (le cure mediche non servono per nascere)
+		if(subsistenceAverage == 1 && overcrowding == 0)
 		{
 			// nascite (se le condizioni sono favorevoli)
 			let nurseryUnit = colonyState.getRemainder("nurseryUnit");
@@ -234,10 +237,55 @@ let PopulationPhase = {
 			}
 		}
 
+		// mortalità naturale dei Pensionati, rallentata dalle cure mediche
+		let healthCover = 1 - missingHealthCover;
+		let deathRate = PopulationPhase.RETIREE_DEATH_RATE * (1 - PopulationPhase.MEDICAL_DEATH_REDUCTION * healthCover);
+		generations.forEach(function(generation)
+		{
+			if(generation.getState(date) == GenerationState.Retirees)
+			{
+				let expected = generation.getPopulation() * deathRate;
+				let deaths = Math.floor(expected) + ((Math.random() < expected - Math.floor(expected)) ? 1 : 0);
+				for(let d = 0; d < deaths; d++)
+				{
+					generation.kill();
+				}
+			}
+		});
+
 		population.subsistence = subsistence;
 		population.wellness = wellness;
 		population.happiness = happiness;
 	}
 };
 
-export { PopulationPhase };
+/**
+ * Risveglio delle capsule criogeniche richiesto dal giocatore (vedi Revival.js): a gruppi di
+ * REVIVAL_GROUP, nei limiti della capacità dei Centri Criogenici attivi in questo turno.
+ */
+let RevivalPhase = {
+	REVIVAL_GROUP: 5,
+
+	apply: function(ctx)
+	{
+		let state = ctx.state;
+		let pending = state.getPendingRevival();
+		if(pending <= 0)
+		{
+			return;
+		}
+		let n = Math.min(pending, state.getStored("cryoCapsule"), Math.max(0, state.getRemainder("cryoRevival")));
+		n -= n % RevivalPhase.REVIVAL_GROUP;
+		if(n <= 0)
+		{
+			return;
+		}
+		state.delMaterials({ cryoRevival: n });
+		state.destroyMaterials({ cryoCapsule: n });
+		state.getPopulation().registry.push(createWorkers(state.getDate(), n / RevivalPhase.REVIVAL_GROUP));
+		state.setPendingRevival(pending - n);
+		ctx.events.push({ type: "COLONISTS_REVIVED", count: n });
+	}
+};
+
+export { PopulationPhase, RevivalPhase };

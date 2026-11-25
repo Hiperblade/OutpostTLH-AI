@@ -35,7 +35,11 @@ import { RecipeLib } from "./RecipeLib.js";
 		// esito della partita: null finché si gioca, poi GameOutcome.Victory o GameOutcome.Defeat
 		state.outcome = null;
 		state.victoryStreak = 0;
-		state.colonistsArrived = false;
+		state.kitDelivered = false;
+		// capsule criogeniche di cui il giocatore ha chiesto il risveglio
+		state.pendingRevival = 0;
+		// usura accumulata per tipo di robot (turni di lavoro non coperti da manutenzione)
+		state.robotWear = { roboWorker: 0, dozer: 0, digger: 0 };
 
 		// i materiali sono gestiti dal Material ledger
 		let ledger = new MaterialLedger();
@@ -239,7 +243,9 @@ import { RecipeLib } from "./RecipeLib.js";
 				date: state.date,
 				outcome: state.outcome,
 				victoryStreak: state.victoryStreak,
-				colonistsArrived: state.colonistsArrived,
+				kitDelivered: state.kitDelivered,
+				pendingRevival: state.pendingRevival,
+				robotWear: Object.assign({}, state.robotWear),
 				robotsAvailable: Object.assign({}, state.robotsAvailable),
 				knowledge: {
 					discovery: knowledge.discovery.slice(),
@@ -264,7 +270,9 @@ import { RecipeLib } from "./RecipeLib.js";
 			state.date = data.date;
 			state.outcome = data.outcome;
 			state.victoryStreak = data.victoryStreak;
-			state.colonistsArrived = data.colonistsArrived;
+			state.kitDelivered = data.kitDelivered;
+			state.pendingRevival = data.pendingRevival || 0;
+			state.robotWear = Object.assign({ roboWorker: 0, dozer: 0, digger: 0 }, data.robotWear);
 			state.robotsAvailable = Object.assign({}, data.robotsAvailable);
 			["discovery", "theory", "technology", "completed"].forEach(function(type)
 			{
@@ -290,8 +298,11 @@ import { RecipeLib } from "./RecipeLib.js";
 		this.setOutcome = function(outcome) { state.outcome = outcome; };
 		this.getVictoryStreak = function() { return state.victoryStreak; };
 		this.setVictoryStreak = function(value) { state.victoryStreak = value; };
-		this.haveColonistsArrived = function() { return state.colonistsArrived; };
-		this.setColonistsArrived = function() { state.colonistsArrived = true; };
+		this.isKitDelivered = function() { return state.kitDelivered; };
+		this.setKitDelivered = function() { state.kitDelivered = true; };
+		this.getPendingRevival = function() { return state.pendingRevival; };
+		this.setPendingRevival = function(value) { state.pendingRevival = value; };
+		this.getRobotWear = function() { return state.robotWear; };
 
 		this.getLedger = function() { return ledger; };
 		this.getConsumed = ledger.getConsumed;

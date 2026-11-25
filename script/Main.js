@@ -2,6 +2,7 @@
 
 import { PipeType, RobotTypes, TerrainLayer } from "./Enums.js";
 import { Placement, PlacementReason } from "./Placement.js";
+import { Revival } from "./Revival.js";
 import { SaveGame } from "./SaveGame.js";
 import { Log } from "./SystemLib.js";
 import { TextRepository } from "./TextRepository.js";
@@ -47,6 +48,7 @@ let MainCommand =
 	ShowProduction: "ShowProduction",
 	ShowResearch: "ShowResearch",
 	DoNext: "DoNext",
+	WakeUp: "WakeUp",
 	ClearSelection: "ClearSelection"
 };
 
@@ -136,6 +138,10 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 					break;
 				case 76: // l
 					_executeCommand(MainCommand.ShowResearch);
+					break;
+
+				case 82: // r
+					_executeCommand(MainCommand.WakeUp);
 					break;
 
 				case 13: // enter
@@ -451,6 +457,13 @@ Log.dialog(_placementMessage(result));
 		}
 	};
 
+	/** prenota il risveglio di 5 capsule criogeniche (avviene a fine turno) */
+	let _wakeUp = function()
+	{
+		let result = Revival.request(terrainMap, 5);
+Log.dialog(TextRepository.get(result.ok ? "RevivalScheduled" : "Revival_" + result.reason));
+	};
+
 	let _doNext = function()
 	{
 		if(state.getOutcome() != null)
@@ -460,7 +473,7 @@ Log.dialog(_placementMessage(result));
 		let report = Turn.advance(terrainMap);
 		report.events.forEach(function(event)
 		{
-Log.dialog(event.type + ": " + event.name);
+Log.dialog(TextRepository.get("Event_" + event.type) + ": " + (event.count !== undefined ? event.count : TextRepository.get(event.name)));
 		});
 		if(report.outcome == null)
 		{
@@ -562,6 +575,10 @@ Log.dialog(TextRepository.get(report.outcome == GameOutcome.Victory ? "GameVicto
 
 			case MainCommand.DoNext:
 				_doNext();
+				break;
+
+			case MainCommand.WakeUp:
+				_wakeUp();
 				break;
 
 			case MainCommand.ClearSelection:

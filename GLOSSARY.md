@@ -1,6 +1,6 @@
 # OutpostTLH
 
-Gestionale a turni di una colonia spaziale: si sceglie un pianeta e un sito, si atterra, si costruisce su tre strati di terreno e si fa crescere la colonia fino alla fine della partita.
+Gestionale a turni di una colonia spaziale: si sceglie un pianeta e un sito, si atterra, i robot preparano il sito, si risvegliano i coloni, si fa crescere la colonia e si raggiungono gli obiettivi finali.
 
 ## Linguaggio
 
@@ -13,6 +13,16 @@ _Evitare_: demo, sandbox
 **Creazione della partita**:
 La procedura iniziale in cui il giocatore sceglie il tipo di pianeta e il sito di atterraggio.
 _Evitare_: setup, nuova mappa
+
+**Fase di preparazione**:
+La prima fase della partita (le fasi descrivono l'andamento del gioco, non sono stati distinti): senza coloni svegli, i robot esplorano, trovano le risorse e costruiscono ciò che serve ad accogliere i coloni.
+
+**Fase della colonia**:
+La seconda fase, dal risveglio dei coloni: si gestiscono coloni, produzione, cure mediche, istruzione e svago.
+
+**Fase degli obiettivi**:
+La terza fase, in cui la colonia lavora ai traguardi finali come lo spazioporto, la terraformazione e la vittoria.
+_Evitare_: endgame
 
 **Tipo di pianeta**:
 Una delle sette categorie di pianeta (vulcanico, asteroide, ghiacciato, desertico, giungla, roccioso, pietroso) che determina l'aspetto dei terreni e l'abbondanza di ciascuna risorsa.
@@ -30,18 +40,27 @@ Quanto è praticabile una casella: spianata, sgombra, accidentata, impervia, ina
 _Evitare_: detriti, difficoltà del terreno
 
 **Vittoria**:
-La colonia raggiunge una popolazione minima e la mantiene in piena sussistenza per un numero stabilito di turni consecutivi.
+La colonia mantiene una popolazione minima di coloni contenti per un numero stabilito di turni consecutivi.
 
 **Sconfitta**:
-Tutti i coloni sono morti senza possibilità di nuove nascite, oppure non resta in piedi nessun Headquarter.
+Non resta in piedi nessun Headquarter; oppure non resta manodopera e non c'è modo di riaverla (nessun RoboWorker, nessun Lavoratore, nessun risveglio possibile); oppure non ci sono più coloni, né nascite possibili, né capsule criogeniche.
 
 ### Coloni
 
 **Kit di atterraggio**:
-Ciò che la colonia riceve atterrando: i moduli di base, i robot di cantiere, i RoboWorker, una scorta di cibo e un piccolo supporto vitale.
+Ciò che la colonia riceve atterrando: i moduli di base, i robot di cantiere, i RoboWorker, una scorta di cibo e le capsule criogeniche.
 
-**Coloni iniziali**:
-Il primo gruppo di Lavoratori che arriva con il kit di atterraggio, quando il modulo cargo è completato.
+**Capsula criogenica**:
+Un colono adulto ibernato, arrivato con il kit di atterraggio; non consuma risorse e non lavora finché non viene risvegliato.
+_Evitare_: coloni iniziali, ibernato
+
+**Risveglio**:
+La trasformazione di capsule criogeniche in Lavoratori, a gruppi di 5, compiuta da un Centro Criogenico quando cibo, alloggi e habitat bastano per tutti.
+
+**Centro Criogenico**:
+Edificio sotterraneo automatico che risveglia i coloni dalle capsule criogeniche.
+_Evitare_: crio-centro, centro di risveglio
+_Evitare_: scongelamento
 
 **Generazione**:
 I coloni nati nello stesso turno, che attraversano insieme le fasi di vita.
@@ -54,15 +73,42 @@ _Evitare_: Infants, Students, Researchers, Scientists, Retirees; Scienziati, Ric
 Il grado di soddisfazione dei coloni (istruzione, svago, beni); quando è bassa i coloni forniscono meno manodopera.
 _Evitare_: happiness, morale
 
+**Coloni contenti**:
+I coloni vivi di ogni età, quando la colonia è in piena sussistenza e la felicità è alta; le capsule non risvegliate non contano.
+
+**Mortalità naturale**:
+La morte per vecchiaia dei Pensionati, rallentata dalle cure mediche.
+
 ### Lavoro
 
 **Manodopera**:
-Il lavoro disponibile in un turno, fornito dai Lavoratori e dai RoboWorker; è consumata dai cantieri e dalla coda di produzione e non si accumula tra un turno e l'altro.
+Il lavoro disponibile in un turno, fornito dai Lavoratori e dai RoboWorker; cantieri e produzione usano prima quella dei robot, gli edifici con personale solo quella dei Lavoratori. Non si accumula tra un turno e l'altro.
 _Evitare_: workforce, work unit, forza lavoro
 
 **RoboWorker**:
 Robot lavoratore che fornisce manodopera robotica e occupa spazio nel magazzino robotico.
 _Evitare_: roboticsWorker, worker, Robo-Worker
+
+**Deterioramento dei robot**:
+L'usura con cui i robot perdono efficienza e prima o poi vanno sostituiti; è una delle sfide della fase di preparazione.
+_Evitare_: degrado, rottura
+
+### Costruzione e ricerca
+
+**Edificio automatico**:
+Edificio che funziona con la sola energia, senza personale; è ciò che si costruisce nella fase di preparazione.
+
+**Edificio con personale**:
+Edificio che a ogni turno richiede manodopera dei Lavoratori per funzionare (laboratori, istruzione, cure mediche, svago, industrie specializzate).
+_Evitare_: edificio presidiato
+
+**Costo per turno di cantiere**:
+I materiali che un cantiere consuma a ogni turno di lavoro; se mancano, il cantiere resta fermo quel turno.
+_Evitare_: costo di costruzione (inteso come costo una tantum)
+
+**Centro di ricerca automatico**:
+Edificio di superficie che conduce senza coloni le ricerche necessarie a rendere la colonia abitabile.
+_Evitare_: laboratorio robotico
 
 ### Robot di cantiere
 

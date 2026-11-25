@@ -70,6 +70,12 @@ body
 	background: url("../images/interface/button_research.gif") no-repeat center;
 }
 
+.buttonWakeUp
+{
+	background: url("../images/buildings/CryoCenter.gif") no-repeat center;
+	background-size: 24px 24px;
+}
+
 .buttonTime
 {
 	background: url("../images/interface/button_time.gif") no-repeat center;

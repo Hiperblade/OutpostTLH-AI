@@ -21,9 +21,9 @@ RecipeLib.add(RecipeType.Production, "MediKit", { technology: ["PharmaceuticalIn
 RecipeLib.add(RecipeType.Research, "ElectrostaticEnergy",	{ discovery: ["ElectrostaticDischarge"] },	2, { researchElaborationUnit: 1 },							{ technology: ["ElectrostaticCoil"] });
 RecipeLib.add(RecipeType.Research, "GeothermalEnergy",		{ discovery: ["Resource_Fumarole"] },		2, { researchUnit: 10, researchStructureDeep: 1 },			{ technology: ["Geothermal"] });
 
-RecipeLib.add(RecipeType.Research, "Metallurgy",			{ discovery: ["Resource_Metal"] },			3, { researchUnit: 5,  researchStructureUnderground: 1 },	{ theory: ["Extraction_Metal"] });
-RecipeLib.add(RecipeType.Research, "Mineralogy",			{ discovery: ["Resource_Mineral"] },		3, { researchUnit: 5,  researchStructureUnderground: 1 },	{ theory: ["Extraction_Mineral"] });
-RecipeLib.add(RecipeType.Research, "Chemistry",				{ theory: ["Extraction_Metal", "Extraction_Mineral"] },	7, { researchUnit: 10,  researchStructureSurface: 2 },		{ theory: ["Chemistry"], technology: ["ChemicalFactory", "GoodsFactory"] });
+RecipeLib.add(RecipeType.Research, "Metallurgy",			{ discovery: ["Resource_Metal"] },			6, { researchUnit: 4, researchStructureAuto: 1 },	{ theory: ["Extraction_Metal"] });
+RecipeLib.add(RecipeType.Research, "Mineralogy",			{ discovery: ["Resource_Mineral"] },		6, { researchUnit: 4, researchStructureAuto: 1 },	{ theory: ["Extraction_Mineral"] });
+RecipeLib.add(RecipeType.Research, "Chemistry",				{ theory: ["Extraction_Metal", "Extraction_Mineral"] },	14, { researchUnit: 4, researchStructureAuto: 1 },		{ theory: ["Chemistry"], technology: ["ChemicalFactory", "GoodsFactory"] });
 RecipeLib.add(RecipeType.Research, "AdvancedMetallurgy",	{ theory: ["Extraction_Metal", "Extraction_Mineral"] },	5, { researchUnit: 5,  researchStructureUnderground: 1 },	{ theory: ["AdvancedMetallurgy"], technology: ["SmelterAdv", "RoboRemittanceAdv", "ResidentialAdv"] });
 RecipeLib.add(RecipeType.Research, "NuclearChemistry",		{ discovery: ["Resource_Radioactive"], theory: ["Chemistry"] },	3, { researchUnit: 5,  researchStructureUnderground: 1 },	{ theory: ["Extraction_Radioactive"] });
 
@@ -38,13 +38,13 @@ RecipeLib.add(RecipeType.Research, "Aquaponics",			{ technology: ["AgridomeAdv"]
 RecipeLib.add(RecipeType.Research, "Farming",				{ technology: ["AgridomeIntensive"] },		5, { researchUnit: 10, researchStructureUnderground: 1, researchStructureDeep: 2 },	{ technology: ["VerticalFarm"] });
 RecipeLib.add(RecipeType.Research, "VerticalFarming",		{ technology: ["VerticalFarm"] },			8, { researchUnit: 10, researchStructureUnderground: 2, researchStructureDeep: 2 },	{ technology: ["VerticalFarmAdv"] });
 
-RecipeLib.add(RecipeType.Research, "Medicine",				{ },										3, { researchUnit: 5, researchStructureUnderground: 1 },	{ technology: ["MedicalStructure"], theory: ["Medicine"] });
+RecipeLib.add(RecipeType.Research, "Medicine",				{ },										6, { researchUnit: 4, researchStructureAuto: 1 },	{ technology: ["MedicalStructure", "CryoCenter"], theory: ["Medicine"] });
 RecipeLib.add(RecipeType.Research, "AdvancedMedicine",		{ theory: ["Medicine"] },					3, { researchUnit: 5, researchStructureDeep: 1 },			{ technology: ["MedicalStructureAdv"] });
-RecipeLib.add(RecipeType.Research, "Pharmacology",			{ theory: ["Medicine"] },					3, { researchUnit: 5, researchStructureUnderground: 1 },	{ technology: ["PharmaceuticalIndustry"] });
+RecipeLib.add(RecipeType.Research, "Pharmacology",			{ theory: ["Medicine"] },					6, { researchUnit: 4, researchStructureAuto: 1 },	{ technology: ["PharmaceuticalIndustry"] });
 RecipeLib.add(RecipeType.Research, "Embryology",			{ theory: ["Medicine"] },					3, { researchUnit: 5, researchStructureUnderground: 1 },	{ technology: ["Nursery"] });
 
 RecipeLib.add(RecipeType.Research, "ComputerScience",		{ },										8, { researchUnit: 10, researchStructureSurface: 2 },		{ theory: ["ComputerScience"] });
-RecipeLib.add(RecipeType.Research, "AI",					{ theory: ["ComputerScience"] },			8, { researchUnit: 10, researchStructureSurface: 2 },		{ theory: ["AI"], technology: ["HotLabAdv", "LabAdv", "RoboCommanderAdv", "UnivesityAdv"] });
+RecipeLib.add(RecipeType.Research, "AI",					{ theory: ["ComputerScience"] },			8, { researchUnit: 10, researchStructureSurface: 2 },		{ theory: ["AI"], technology: ["HotLabAdv", "LabAdv", "DeepLabAdv", "RoboCommanderAdv", "UnivesityAdv"] });
 
 RecipeLib.add(RecipeType.Research, "HumanScience",		{ },										4, { researchUnit: 12, researchStructureSurface: 1 },		{ theory: ["HumanScience"] });
 RecipeLib.add(RecipeType.Research, "Psicology",			{ theory: ["HumanScience"] },				8, { researchUnit: 20, researchStructureSurface: 1 },		{ theory: ["Psicology"] });

@@ -5,7 +5,7 @@ import { GenerationState } from "./Generations.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { RecipeLib } from "./RecipeLib.js";
 import { MaintenancePhase } from "./TurnMaintenance.js";
-import { PopulationPhase } from "./TurnPopulation.js";
+import { PopulationPhase, RevivalPhase } from "./TurnPopulation.js";
 
 /**
  * Turn: avanzamento di un turno della colonia.
@@ -32,8 +32,10 @@ function TurnConstructor()
 			ProductionQueuePhase,
 			ResearchPhase,
 			MaintenancePhase,
+			RobotWearPhase,
 			RobotPhase,
 			PopulationPhase,
+			RevivalPhase,
 			OutcomePhase
 		];
 	};
@@ -98,7 +100,9 @@ let GameOutcome = {
 
 let TurnEventType = {
 	NewCreation: "NEW_CREATION",
-	NewDiscovery: "NEW_DISCOVERY"
+	NewDiscovery: "NEW_DISCOVERY",
+	RobotBroken: "ROBOT_BROKEN",
+	ColonistsRevived: "COLONISTS_REVIVED"
 };
 
 // singleton
@@ -108,8 +112,11 @@ let Turn = new TurnConstructor();
 // fasi
 
 /**
- * Manodopera del turno (materiale "labor"): 1 unità per Lavoratore, ridotta dalla felicità
- * fino a un minimo di MIN_HAPPINESS_FACTOR, più 1 unità per RoboWorker. Non si accumula.
+ * Manodopera del turno, in due materiali distinti che non si accumulano:
+ *   roboLabor    1 unità per RoboWorker
+ *   workerLabor  1 unità per Lavoratore, ridotta dalla felicità fino a MIN_HAPPINESS_FACTOR
+ * Nei costi la voce "labor" si paga prima con i robot e poi con i Lavoratori; il personale
+ * degli edifici (staff) solo con i Lavoratori.
  */
 let WorkforcePhase = {
 	MIN_HAPPINESS_FACTOR: 0.5,
@@ -128,8 +135,36 @@ let WorkforcePhase = {
 			}
 		});
 		let factor = WorkforcePhase.MIN_HAPPINESS_FACTOR + (1 - WorkforcePhase.MIN_HAPPINESS_FACTOR) * population.happiness;
-		state.setMaterials({ labor: Math.floor(workers * factor) + state.getStored("roboWorker") });
+		state.setMaterials({ roboLabor: state.getStored("roboWorker"), workerLabor: Math.floor(workers * factor) });
 	}
+};
+
+/** traduce la voce "labor" di un costo in manodopera robotica, poi dei Lavoratori */
+let _withLabor = function(state, cost)
+{
+	let ret = Object.assign({}, cost);
+	let need = ret.labor || 0;
+	delete ret.labor;
+	if(need > 0)
+	{
+		let robots = Math.min(need, Math.max(0, state.getRemainder("roboLabor")));
+		if(robots > 0) { ret.roboLabor = robots; }
+		if(need > robots) { ret.workerLabor = need - robots; }
+	}
+	return ret;
+};
+let _canPay = function(state, cost) { return state.haveMaterials(_withLabor(state, cost)); };
+let _pay = function(state, cost) { state.delMaterials(_withLabor(state, cost)); };
+
+/** consumi di un edificio attivo, compreso il personale */
+let _runningCost = function(prototype)
+{
+	let cost = Object.assign({}, prototype.getConsumption());
+	if(prototype.getStaff() > 0)
+	{
+		cost.workerLabor = (cost.workerLabor || 0) + prototype.getStaff();
+	}
+	return cost;
 };
 
 /** smaltimento: elimina fino alla quantità indicata di ogni scarto disponibile */
@@ -174,9 +209,11 @@ let BuildingProductionPhase = {
 				{
 					if(building.isOperative())
 					{
-						if(state.haveMaterials(prototype.getConsumption()) && state.haveSpace(prototype.getProductionWaste()))
+						// senza materiali, energia o personale l'edificio resta inattivo
+						let running = _runningCost(prototype);
+						if(state.haveMaterials(running) && state.haveSpace(prototype.getProductionWaste()))
 						{
-							state.delMaterials(prototype.getConsumption());
+							state.delMaterials(running);
 							state.addMaterials(prototype.getProduction());
 							state.addMaterials(prototype.getProductionWaste());
 							state.addCapacity(prototype.getCapacity());
@@ -185,7 +222,7 @@ let BuildingProductionPhase = {
 						}
 						else
 						{
-							// edificio inattivo per la mancanza di materie prime
+							// edificio inattivo
 							state.addToInactiveList(building);
 						}
 					}
@@ -193,9 +230,9 @@ let BuildingProductionPhase = {
 					{
 						// senza materiali o manodopera il cantiere resta fermo questo turno
 						let cost = _constructionCost(prototype);
-						if(state.haveMaterials(cost))
+						if(_canPay(state, cost))
 						{
-							state.delMaterials(cost);
+							_pay(state, cost);
 							state.addToBuildList(building);
 						}
 					}
@@ -217,9 +254,9 @@ let _consumeRecipeWork = function(state, item)
 {
 	let cost = RecipeLib.get(item.getName()).getCost();
 	let value = 0;
-	while(state.haveMaterials(cost) && value < item.getRemainTime())
+	while(_canPay(state, cost) && value < item.getRemainTime())
 	{
-		state.delMaterials(cost);
+		_pay(state, cost);
 		value++;
 	}
 	return value;
@@ -294,6 +331,53 @@ let ResearchPhase = {
 	}
 };
 
+/**
+ * Deterioramento dei robot: ogni turno di lavoro accumula usura; ogni ROBOT_LIFE turni di usura un robot
+ * di quel tipo va fuori uso. La manutenzione (1 repairUnit per robot al lavoro) dimezza l'usura.
+ */
+let RobotWearPhase = {
+	ROBOT_LIFE: 40,
+	MAINTENANCE_REDUCTION: 0.5,
+
+	project: function(ctx)
+	{
+		let state = ctx.state;
+		let work = { roboWorker: state.getConsumed("roboLabor"), dozer: 0, digger: 0 };
+		ctx.map.getStructure().forEach(function(el)
+		{
+			if(el.getType() == StructureTypes.Robot)
+			{
+				if(el.getRobotType() == RobotTypes.Dozer) { work.dozer++; }
+				else if(el.getRobotType() == RobotTypes.Digger) { work.digger++; }
+			}
+		});
+		let total = work.roboWorker + work.dozer + work.digger;
+		let repaired = Math.min(total, Math.max(0, state.getRemainder("repairUnit")));
+		if(repaired > 0)
+		{
+			state.delMaterials({ repairUnit: repaired });
+		}
+		return { work: work, maintained: (total > 0) ? repaired / total : 1 };
+	},
+
+	apply: function(ctx, plan)
+	{
+		let state = ctx.state;
+		let wear = state.getRobotWear();
+		let rate = 1 - RobotWearPhase.MAINTENANCE_REDUCTION * plan.maintained;
+		Object.keys(plan.work).forEach(function(type)
+		{
+			wear[type] = (wear[type] || 0) + plan.work[type] * rate;
+			while(wear[type] >= RobotWearPhase.ROBOT_LIFE && state.getStored(type) > 0)
+			{
+				state.destroyMaterials({ [type]: 1 });
+				wear[type] -= RobotWearPhase.ROBOT_LIFE;
+				ctx.events.push({ type: TurnEventType.RobotBroken, name: type });
+			}
+		});
+	}
+};
+
 /** RoboDozer e RoboDigger: avanzamento del lavoro e disponibilità per il turno successivo */
 let RobotPhase = {
 	apply: function(ctx)
@@ -336,33 +420,37 @@ let RobotPhase = {
 
 /**
  * Esito della partita.
- * Vittoria: almeno VICTORY_POPULATION coloni in piena sussistenza per VICTORY_TURNS turni consecutivi.
- * Sconfitta: dopo l'arrivo dei coloni, tutti morti e nessuna Nursery attiva; oppure, dopo l'atterraggio,
- * nessun Headquarter rimasto in piedi.
+ * Vittoria: almeno VICTORY_POPULATION coloni contenti (piena sussistenza e felicità >= VICTORY_HAPPINESS)
+ * per VICTORY_TURNS turni consecutivi.
+ * Sconfitta, dopo la consegna del kit di atterraggio:
+ *   - nessun Headquarter in piedi;
+ *   - nessuna manodopera e nessun modo di riaverla: niente RoboWorker, Lavoratori o coloni giovani,
+ *     e nessun risveglio possibile (capsule finite o Centro Criogenico non attivo);
+ *   - nessun colono, nessuna nascita possibile (Asilo non attivo) e nessuna capsula.
  */
 let OutcomePhase = {
 	VICTORY_POPULATION: 200,
 	VICTORY_TURNS: 20,
+	VICTORY_HAPPINESS: 0.75,
 
 	apply: function(ctx)
 	{
 		let state = ctx.state;
+		let date = state.getDate();
 		let population = state.getPopulation();
-		let people = population.registry.reduce(function(n, generation) { return n + generation.getPopulation(); }, 0);
-		if(people > 0)
+		let people = 0, workers = 0, young = 0;
+		population.registry.forEach(function(generation)
 		{
-			state.setColonistsArrived();
-		}
+			let n = generation.getPopulation();
+			let phase = generation.getState(date);
+			people += n;
+			if(phase == GenerationState.Scientists) { workers += n; }
+			else if(phase == GenerationState.Infants || phase == GenerationState.Students || phase == GenerationState.Researchers) { young += n; }
+		});
 
 		// vittoria
-		if(people >= OutcomePhase.VICTORY_POPULATION && population.subsistence == 1)
-		{
-			state.setVictoryStreak(state.getVictoryStreak() + 1);
-		}
-		else
-		{
-			state.setVictoryStreak(0);
-		}
+		let content = population.subsistence == 1 && population.happiness >= OutcomePhase.VICTORY_HAPPINESS;
+		state.setVictoryStreak((people >= OutcomePhase.VICTORY_POPULATION && content) ? state.getVictoryStreak() + 1 : 0);
 		if(state.getVictoryStreak() >= OutcomePhase.VICTORY_TURNS)
 		{
 			state.setOutcome(GameOutcome.Victory);
@@ -370,19 +458,24 @@ let OutcomePhase = {
 		}
 
 		// sconfitta
-		let headquarters = ctx.map.getStructure().filter(function(el)
+		if(!state.isKitDelivered())
 		{
-			return el.getType() == StructureTypes.Building && el.isHeadquarter();
+			return;
+		}
+		let active = function(type) { return (state.getActiveList()[type] || []).length > 0; };
+		let headquarterStanding = ctx.map.getStructure().some(function(el)
+		{
+			return el.getType() == StructureTypes.Building && el.isHeadquarter() && !el.isDestroyed();
 		});
-		let landed = headquarters.length > 0 || state.haveColonistsArrived();
-		let headquarterStanding = headquarters.some(function(el) { return !el.isDestroyed(); });
-		let nurseryActive = (state.getActiveList()["Nursery"] || []).length > 0;
-		if((landed && !headquarterStanding) ||
-			(state.haveColonistsArrived() && people == 0 && !nurseryActive))
+		let capsules = state.getStored("cryoCapsule");
+		let revivalPossible = capsules > 0 && active("CryoCenter");
+		let noLabor = state.getStored("roboWorker") <= 0 && workers == 0 && young == 0 && !revivalPossible;
+		let noColonists = people == 0 && !active("Nursery") && capsules <= 0;
+		if(!headquarterStanding || noLabor || noColonists)
 		{
 			state.setOutcome(GameOutcome.Defeat);
 		}
 	}
 };
 
-export { GameOutcome, OutcomePhase, TurnConstructor, TurnEventType, Turn, WorkforcePhase, BuildingProductionPhase, ProductionQueuePhase, ResearchPhase, RobotPhase };
+export { GameOutcome, OutcomePhase, RobotWearPhase, TurnConstructor, TurnEventType, Turn, WorkforcePhase, BuildingProductionPhase, ProductionQueuePhase, ResearchPhase, RobotPhase };

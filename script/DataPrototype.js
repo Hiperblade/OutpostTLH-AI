@@ -1,6 +1,5 @@
 "use strict";
 
-import { createWorkers } from "./Generations.js";
 import { PipeType, TerrainLayer } from "./Enums.js";
 import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
 
@@ -10,7 +9,7 @@ import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
 //-------------------------------------------------------------
 // landing
 
-PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { controlUnit: 4, habitatUnit: 20 },
+PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { controlUnit: 4 },
 	builder: "LandingPoint",
 	ports: "nesw",
 	headquarter: true,
@@ -93,6 +92,7 @@ PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { c
 					//"ChemicalFactory",
 					//"PharmaceuticalIndustry",
 					//"SpacePort",
+				"AutoLab",
 				"HotLab",
 					//"HotLabAdv",
 				"Lab",
@@ -100,7 +100,9 @@ PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { c
 				"DeepLab"
 				] });
 
-			map.getState().createMaterials({ dozer: 3, digger: 1, miner: 2, foodUnit: 400 });
+			// robot di cantiere, scorta di cibo e 20 capsule criogeniche (coloni da risvegliare)
+			map.getState().createMaterials({ dozer: 3, digger: 1, miner: 2, foodUnit: 400, cryoCapsule: 20 });
+			map.getState().setKitDelivered();
 		}
 	});
 
@@ -121,9 +123,6 @@ PrototypeLib.add("CargoModule", TerrainLayer.Surface, 2, {}, { capacity: { gener
 	onCompleted: function(item, map)
 		{
 			item.setFrozen(true);
-			// coloni iniziali: 20 Lavoratori (4 lotti da 5)
-			let state = map.getState();
-			state.getPopulation().registry.push(createWorkers(state.getDate(), 4));
 		}
 	});
 
@@ -267,7 +266,7 @@ PrototypeLib.add("MineDeep", TerrainLayer.Deep, 1000, {});
 //-------------------------------------------------------------
 // sussistenza
 
-PrototypeLib.add("EnvironmentalControl", TerrainLayer.Surface, 10, {}, { consumption: { power: 80 }, production: { habitatUnit: 50, habitatResidentialUnit: 20 } } );
+PrototypeLib.add("EnvironmentalControl", TerrainLayer.Surface, 5, {}, { consumption: { power: 80 }, production: { habitatUnit: 50, habitatResidentialUnit: 20 } } );
 PrototypeLib.add("EnvironmentalControlAdv", TerrainLayer.Surface, 10, { ironBar: 1 }, { consumption: { power: 80 }, production: { habitatUnit: 100, habitatResidentialUnit: 50 } } );
 
 PrototypeLib.add("Agridome", TerrainLayer.Surface, 3, {}, { consumption: { power: 5 }, production: { foodUnit: 10 }, capacity: { foodUnit: 50 } });
@@ -280,18 +279,21 @@ PrototypeLib.add("VerticalFarmAdv", TerrainLayer.Deep, 8, { ironBar: 1 }, { cons
 PrototypeLib.add("Residential", TerrainLayer.Underground, 4, {}, { consumption: { power: 15, habitatResidentialUnit: 2 }, production: { residentialUnit: 16 } });
 PrototypeLib.add("ResidentialAdv", TerrainLayer.Underground, 5, { ironBar: 1 }, { consumption: { power: 25, habitatResidentialUnit: 4 }, production: { residentialUnit: 32 } });
 
-PrototypeLib.add("Nursery", TerrainLayer.Underground, 20, {}, { consumption: { power: 20 }, production: { nurseryUnit: 5 } });
+PrototypeLib.add("Nursery", TerrainLayer.Underground, 20, {}, { staff: 3, consumption: { power: 20 }, production: { nurseryUnit: 5 } });
 
-PrototypeLib.add("MedicalStructure", TerrainLayer.Underground, 10, {}, { consumption: { power: 20, pharmaceuticalUnit: 5, mediKit: 1 }, production: { medicalUnit: 15 } });
-PrototypeLib.add("MedicalStructureAdv", TerrainLayer.Underground, 10, { ironBar: 1 }, { consumption: { power: 30, pharmaceuticalUnit: 10, mediKit: 2 }, production: { medicalUnit: 30 } });
+// risveglio delle capsule criogeniche: fino a 5 coloni a turno, senza personale
+PrototypeLib.add("CryoCenter", TerrainLayer.Underground, 6, {}, { consumption: { power: 50 }, production: { cryoRevival: 5 } });
 
-PrototypeLib.add("School", TerrainLayer.Underground, 6, {}, { consumption: { power: 20 }, production: { educationUnit: 80 } });
-PrototypeLib.add("Univesity", TerrainLayer.Underground, 8, {}, { consumption: { power: 30 }, production: { highEducationUnit: 30 } });
-PrototypeLib.add("UnivesityAdv", TerrainLayer.Underground, 8, { ironBar: 1 }, { consumption: { power: 30 }, production: { highEducationUnit: 60 } });
+PrototypeLib.add("MedicalStructure", TerrainLayer.Underground, 10, {}, { staff: 3, consumption: { power: 20, pharmaceuticalUnit: 5, mediKit: 1 }, production: { medicalUnit: 15 } });
+PrototypeLib.add("MedicalStructureAdv", TerrainLayer.Underground, 10, { ironBar: 1 }, { staff: 3, consumption: { power: 30, pharmaceuticalUnit: 10, mediKit: 2 }, production: { medicalUnit: 30 } });
 
-PrototypeLib.add("RecreationalFacility", TerrainLayer.Underground, 15, {}, { consumption: { power: 80 }, production: { recreationalUnit: 60 } });
+PrototypeLib.add("School", TerrainLayer.Underground, 6, {}, { staff: 3, consumption: { power: 20 }, production: { educationUnit: 80 } });
+PrototypeLib.add("Univesity", TerrainLayer.Underground, 8, {}, { staff: 3, consumption: { power: 30 }, production: { highEducationUnit: 30 } });
+PrototypeLib.add("UnivesityAdv", TerrainLayer.Underground, 8, { ironBar: 1 }, { staff: 3, consumption: { power: 30 }, production: { highEducationUnit: 60 } });
 
-PrototypeLib.add("Park", TerrainLayer.Deep, 4, {}, { consumption: { power: 80 }, production: { recreationalUnit: 120 },
+PrototypeLib.add("RecreationalFacility", TerrainLayer.Underground, 15, {}, { staff: 3, consumption: { power: 80 }, production: { recreationalUnit: 60 } });
+
+PrototypeLib.add("Park", TerrainLayer.Deep, 4, {}, { staff: 3, consumption: { power: 80 }, production: { recreationalUnit: 120 },
 	imageId: "Park_mini",
 	areaType: AreaTypes.Four,
 	parts: [
@@ -314,20 +316,24 @@ PrototypeLib.add("Warehouse", TerrainLayer.Surface, 2, {}, { consumption: { powe
 PrototypeLib.add("Smelter", TerrainLayer.Surface, 6, {}, { consumption: { power: 40, metalOre: 5 }, production: { ironBar: 3 }});
 PrototypeLib.add("SmelterAdv", TerrainLayer.Surface, 7, { ironBar: 1 }, { consumption: { power: 40, metalOre: 10 }, production: { ironBar: 8 }});
 
-PrototypeLib.add("GoodsFactory", TerrainLayer.Surface, 10, {}, { consumption: { power: 40, mineralOre: 4, metalOre: 2 }, production: { goodsUnit: 30 }});
-PrototypeLib.add("PharmaceuticalIndustry", TerrainLayer.Surface, 20, {}, { consumption: { power: 40, mineralOre: 10, cristalOre: 4 }, production: { pharmaceuticalUnit: 60 }});
+PrototypeLib.add("GoodsFactory", TerrainLayer.Surface, 10, {}, { staff: 5, consumption: { power: 40, mineralOre: 4, metalOre: 2 }, production: { goodsUnit: 30 }});
+PrototypeLib.add("PharmaceuticalIndustry", TerrainLayer.Surface, 20, {}, { staff: 5, consumption: { power: 40, mineralOre: 10, cristalOre: 4 }, production: { pharmaceuticalUnit: 60 }});
 
 PrototypeLib.add("IndustrialFactory", TerrainLayer.Surface, 12, {}, { consumption: { power: 40 }, production: { productionUnit: 40, productionStandardStructure: 1 } });
-PrototypeLib.add("ChemicalFactory", TerrainLayer.Surface, 15, {}, { consumption: { power: 80 }, production: { productionUnit: 80, productionChemicalStructure: 1  } });
+PrototypeLib.add("ChemicalFactory", TerrainLayer.Surface, 15, {}, { staff: 5, consumption: { power: 80 }, production: { productionUnit: 80, productionChemicalStructure: 1  } });
 
 //-------------------------------------------------------------
 // ricerca
 
-PrototypeLib.add("HotLab", TerrainLayer.Surface, 4, {}, { consumption: { power: 20 }, production: { researchUnit: 8, researchStructureSurface: 3 } });
-PrototypeLib.add("HotLabAdv", TerrainLayer.Surface, 8, { ironBar: 1 }, { consumption: { power: 80 }, production: { researchUnit: 32, researchStructureSurface: 6, researchStructureSurfaceAdv: 1 } });
-PrototypeLib.add("Lab", TerrainLayer.Underground, 6, {}, { consumption: { power: 25 }, production: { researchUnit: 10, researchStructureUnderground: 2 } });
-PrototypeLib.add("LabAdv", TerrainLayer.Underground, 8, { ironBar: 1 }, { consumption: { power: 50 }, production: { researchUnit: 15, researchStructureUnderground: 4, researchStructureUndergroundAdv: 1 } });
-PrototypeLib.add("DeepLab", TerrainLayer.Deep, 10, {}, { consumption: { power: 100 }, production: { researchUnit: 20, researchStructureDeep: 1, researchStructureDeepAdv: 1 } });
+PrototypeLib.add("HotLab", TerrainLayer.Surface, 4, {}, { staff: 5, consumption: { power: 20 }, production: { researchUnit: 8, researchStructureSurface: 3 } });
+PrototypeLib.add("HotLabAdv", TerrainLayer.Surface, 8, { ironBar: 1 }, { staff: 5, consumption: { power: 80 }, production: { researchUnit: 32, researchStructureSurface: 6, researchStructureSurfaceAdv: 1 } });
+PrototypeLib.add("Lab", TerrainLayer.Underground, 6, {}, { staff: 5, consumption: { power: 25 }, production: { researchUnit: 10, researchStructureUnderground: 2 } });
+PrototypeLib.add("LabAdv", TerrainLayer.Underground, 8, { ironBar: 1 }, { staff: 5, consumption: { power: 50 }, production: { researchUnit: 15, researchStructureUnderground: 4, researchStructureUndergroundAdv: 1 } });
+PrototypeLib.add("DeepLab", TerrainLayer.Deep, 10, {}, { staff: 5, consumption: { power: 100 }, production: { researchUnit: 20, researchStructureDeep: 1 } });
+PrototypeLib.add("DeepLabAdv", TerrainLayer.Deep, 10, { ironBar: 1 }, { staff: 5, consumption: { power: 150 }, production: { researchUnit: 30, researchStructureDeep: 2, researchStructureDeepAdv: 1 } });
+
+// fase di preparazione: ricerca senza coloni
+PrototypeLib.add("AutoLab", TerrainLayer.Surface, 4, {}, { consumption: { power: 30 }, production: { researchUnit: 4, researchStructureAuto: 1 } });
 
 //-------------------------------------------------------------
 // speciali

@@ -176,6 +176,10 @@ imagesList.push({ id: "CargoModule", fileName: "buildings/CargoModule.gif" });
 imagesList.push({ id: "ChemicalFactory", fileName: "buildings/ChemicalFactory.gif" });
 imagesList.push({ id: "CommandCenter", fileName: "buildings/CommandCenter.gif" });
 imagesList.push({ id: "DeepLab", fileName: "buildings/DeepLab.gif" });
+// segnaposto finché non c'è un'immagine dedicata
+imagesList.push({ id: "DeepLabAdv", fileName: "buildings/DeepLab.gif" });
+imagesList.push({ id: "AutoLab", fileName: "buildings/AutoLab.gif" });
+imagesList.push({ id: "CryoCenter", fileName: "buildings/CryoCenter.gif" });
 imagesList.push({ id: "ElectrostaticCoil", fileName: "buildings/ElectrostaticCoil.gif" });
 imagesList.push({ id: "EnvironmentalControl", fileName: "buildings/EnvironmentalControl.gif" });
 imagesList.push({ id: "EnvironmentalControlAdv", fileName: "buildings/EnvironmentalControlAdv.gif" });
@@ -251,8 +255,7 @@ imagesList.push({ id: "UnivesityAdv", fileName: "buildings/UnivesityAdv.gif" });
 imagesList.push({ id: "VerticalFarm", fileName: "buildings/VerticalFarm.gif" });
 imagesList.push({ id: "VerticalFarmAdv", fileName: "buildings/VerticalFarmAdv.gif" });
 imagesList.push({ id: "Warehouse", fileName: "buildings/Warehouse.gif" });
-// segnaposto finché non c'è un'immagine dedicata
-imagesList.push({ id: "WasteTreatment", fileName: "buildings/Warehouse.gif" });
+imagesList.push({ id: "WasteTreatment", fileName: "buildings/WasteTreatment.gif" });
 imagesList.push({ id: "AdvancedMedicine", fileName: "illustrations/AdvancedMedicine.png" });
 imagesList.push({ id: "Aquaponics", fileName: "illustrations/Aquaponics.png" });
 imagesList.push({ id: "controlUnit", fileName: "illustrations/controlUnit.png" });
