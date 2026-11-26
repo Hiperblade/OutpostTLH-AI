@@ -491,23 +491,50 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 			return;
 		}
 		let report = Turn.advance(terrainMap);
-		report.events.forEach(function(event)
+
+		// prima si aggiorna la mappa, così i messaggi del turno si leggono sopra la situazione nuova
+		_redraw();
+		buildingInfo.refresh();
+
+		let messages = report.events.map(function(event)
 		{
-Log.dialog(TextRepository.get("Event_" + event.type) + ": " + (event.count !== undefined ? event.count : TextRepository.get(event.name)));
+			return TextRepository.get("Event_" + event.type) + ": " + (event.count !== undefined ? event.count : TextRepository.get(event.name));
 		});
 		if(report.outcome == null)
 		{
-			SaveGame.save(terrainMap, site);
+			// un salvataggio non riuscito non deve fermare la partita
+			if(!_save() && !saveWarningShown)
+			{
+				saveWarningShown = true;
+				messages.push(TextRepository.get("SaveFailed"));
+			}
 		}
 		else
 		{
 			// partita conclusa: alla prossima apertura se ne crea una nuova
 			SaveGame.clear();
 			_setAbilitationButton(MainCommand.DoNext, false);
-Log.dialog(TextRepository.get(report.outcome == GameOutcome.Victory ? "GameVictory" : "GameDefeat"));
+			messages.push(TextRepository.get(report.outcome == GameOutcome.Victory ? "GameVictory" : "GameDefeat"));
 		}
-		_redraw();
-		buildingInfo.refresh();
+		if(messages.length > 0)
+		{
+			// i messaggi bloccano la pagina: si mostrano dopo che la mappa è stata ridisegnata
+			window.setTimeout(function() { messages.forEach(function(text) { Log.dialog(text); }); }, 50);
+		}
+	};
+
+	let saveWarningShown = false;
+
+	let _save = function()
+	{
+		try
+		{
+			return SaveGame.save(terrainMap, site);
+		}
+		catch(e)
+		{
+			return false;
+		}
 	};
 
 	let _setAbsolutePosition = function(point)

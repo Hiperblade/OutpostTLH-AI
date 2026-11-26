@@ -90,6 +90,7 @@ TextRepository.add("habitatUnit", "Unità di Supporto Ambientale");
 TextRepository.add("repairUnit", "Manutenzione");
 TextRepository.add("labor", "Manodopera");
 TextRepository.add("TimeUnit", "turni");
+TextRepository.add("SaveFailed", "Attenzione: il salvataggio automatico non è riuscito (spazio del browser esaurito o archiviazione bloccata). La partita continua, ma non viene salvata.");
 TextRepository.add("Summary_turn", "Turno %s");
 TextRepository.add("Summary_colonists", "Coloni");
 TextRepository.add("Summary_inCapsule", "in capsula");
