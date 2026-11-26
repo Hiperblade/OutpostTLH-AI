@@ -177,7 +177,7 @@ imagesList.push({ id: "ChemicalFactory", fileName: "buildings/ChemicalFactory.gi
 imagesList.push({ id: "CommandCenter", fileName: "buildings/CommandCenter.gif" });
 imagesList.push({ id: "DeepLab", fileName: "buildings/DeepLab.gif" });
 // segnaposto finché non c'è un'immagine dedicata
-imagesList.push({ id: "DeepLabAdv", fileName: "buildings/DeepLab.gif" });
+imagesList.push({ id: "DeepLabAdv", fileName: "buildings/DeepLabAdv.gif" });
 imagesList.push({ id: "AutoLab", fileName: "buildings/AutoLab.gif" });
 imagesList.push({ id: "CryoCenter", fileName: "buildings/CryoCenter.gif" });
 imagesList.push({ id: "ElectrostaticCoil", fileName: "buildings/ElectrostaticCoil.gif" });
