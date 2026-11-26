@@ -156,6 +156,7 @@ function PrototypeLibConstructor()
  *   consumption, production, productionWaste, capacity   materiali per turno
  *   staff              coloni richiesti a ogni turno per funzionare (edificio con personale): staff * Work.COLONIST
  *                      punti dei Lavoratori o dei cloni; con meno punti l'edificio rende in proporzione
+ *   cures              cure possibili a turno quando l'edificio è attivo (Strutture Mediche)
  *   disposal           scarti eliminati a turno, fino a esaurimento (quando l'edificio è attivo)
  *   builder            immagine del cantiere
  *   imageId, areaType  immagine e area mostrate nelle schede
@@ -204,6 +205,7 @@ function BasePrototype(buildingType, terrainLayer, buildingTime, buildingCost, p
 	this.getCapacity = function() { return capacity; };
 	this.getDisposal = function() { return disposal; };
 	this.getStaff = function() { return parameters.staff || 0; };
+	this.getCures = function() { return parameters.cures || 0; };
 	/** punti lavoro del personale necessari a pieno rendimento */
 	this.getStaffLabor = function() { return (parameters.staff || 0) * Work.COLONIST; };
 	this.getRequiredResource = function() { return requiredResource; };

@@ -1,5 +1,6 @@
 "use strict";
 
+import { Cure } from "./Cure.js";
 import { GenerationState } from "./Generations.js";
 import { TextRepository } from "./TextRepository.js";
 import { RobotWearPhase } from "./Turn.js";
@@ -41,6 +42,11 @@ function ColonySummaryView(elementId, map)
 
 		let text = '<div class="summaryTitle">' + TextRepository.get("Summary_turn").replace("%s", date) + '</div>';
 		text += _row(TextRepository.get("Summary_colonists"), awake + (capsules > 0 ? " + " + capsules + " " + TextRepository.get("Summary_inCapsule") : ""), false);
+		let sick = Cure.sick(state);
+		if(sick > 0)
+		{
+			text += _row(TextRepository.get("SickColonists"), sick, true);
+		}
 		if(colonists)
 		{
 			text += _row(TextRepository.get("subsistence"), _percent(population.subsistence), population.subsistence < 1);

@@ -12,14 +12,26 @@ let BuildingInfoView;
  * @param {function(Building)} getIssue motivo per cui un edificio non funziona (o null)
  * @param {function(Building)} onChangePriority la precedenza del personale dell'edificio è cambiata
  */
-function InitializeBuildingInfoView(onChangePosition, onClearCurrentItem, getIssue, onChangePriority)
+function InitializeBuildingInfoView(onChangePosition, onClearCurrentItem, getIssue, onChangePriority, getColony)
 {
-	BuildingInfoView = new BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority);
+	BuildingInfoView = new BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority, getColony);
 	return BuildingInfoView;
 }
 
-function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority)
+/** @param {function(): ColonyState} getColony stato della colonia, per gli interruttori validi per tutta la colonia */
+function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority, getColony)
 {
+	// interruttori di tutta la colonia, mostrati nel pannello degli edifici interessati
+	const COLONY_SWITCHES = {
+		Nursery: { get: function(c) { return !c.areBirthsSuspended(); }, set: function(c, on) { c.setBirthsSuspended(!on); }, on: "Births_active", off: "Births_suspended", hint: "BirthsHint" },
+		MedicalStructure: { get: function(c) { return c.isAutoCure(); }, set: function(c, on) { c.setAutoCure(on); }, on: "AutoCure_on", off: "AutoCure_off", hint: "AutoCureHint" }
+	};
+	COLONY_SWITCHES.MedicalStructureAdv = COLONY_SWITCHES.MedicalStructure;
+	let _colonySwitch = function()
+	{
+		return (currentItem != null && currentItem.getBuildingType && getColony) ? COLONY_SWITCHES[currentItem.getBuildingType()] : undefined;
+	};
+
 	const PRIORITY_TEXT = ["StaffPriority_high", "StaffPriority_normal", "StaffPriority_low"];
 	let currentItem;
 
@@ -40,14 +52,15 @@ function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIs
 			}
 			_refresh();
 		});
-		// sospensione delle nascite dell'Asilo
+		// interruttore di tutta la colonia (nascite, cure automatiche)
 		$("#buildingInfoDataSuspend").on("click", function()
 		{
-			if(currentItem == null || !currentItem.setSuspended)
+			let colonySwitch = _colonySwitch();
+			if(colonySwitch === undefined)
 			{
 				return;
 			}
-			currentItem.setSuspended(!currentItem.isSuspended());
+			colonySwitch.set(getColony(), !colonySwitch.get(getColony()));
 			if(onChangePriority)
 			{
 				onChangePriority(currentItem);
@@ -57,17 +70,18 @@ function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIs
 		_hide();
 	};
 
-	/** il comando delle nascite c'è solo per l'Asilo */
+	/** l'interruttore c'è solo per gli edifici che ne hanno uno (Asilo, Strutture Mediche) */
 	let _refreshSuspend = function()
 	{
 		let element = $("#buildingInfoDataSuspend");
-		if(currentItem == null || !currentItem.isSuspended || !currentItem.getBuildingType || currentItem.getBuildingType() != "Nursery")
+		let colonySwitch = _colonySwitch();
+		if(colonySwitch === undefined)
 		{
 			element.hide();
 			return;
 		}
-		element.text(TextRepository.get(currentItem.isSuspended() ? "Births_suspended" : "Births_active"));
-		element.attr("title", TextRepository.get("BirthsHint"));
+		element.text(TextRepository.get(colonySwitch.get(getColony()) ? colonySwitch.on : colonySwitch.off));
+		element.attr("title", TextRepository.get(colonySwitch.hint));
 		element.show();
 	};
 

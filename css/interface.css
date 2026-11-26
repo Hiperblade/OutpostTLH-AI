@@ -76,6 +76,12 @@ body
 	background-size: 24px 24px;
 }
 
+.buttonCure
+{
+	background: url("../images/buildings/MedicalStructure.gif") no-repeat center;
+	background-size: 24px 24px;
+}
+
 .buttonTime
 {
 	background: url("../images/interface/button_time.gif") no-repeat center;

@@ -135,6 +135,17 @@ function Generation(date, nurseryUnit, educationLevel, clone)
 	this.getBirthDate = function() { return birthDate; };
 	this.getLots = function() { return lots; };
 	this.isClone = function() { return clone; };
+	/** coloni malati e sani della generazione */
+	this.getSick = function() { return lots.reduce(function(n, lot) { return n + lot.getSick(); }, 0); };
+	this.getHealthy = function() { return _getPopulation() - this.getSick(); };
+	/** toglie i lotti in cui non resta nessuno */
+	this.prune = function()
+	{
+		for(let i = lots.length - 1; i >= 0; i--)
+		{
+			if(lots[i].getPopulation() <= 0) { lots.splice(i, 1); }
+		}
+	};
 	/** i cloni a fine vita lavorativa muoiono tutti insieme */
 	this.expire = function(date)
 	{
@@ -157,23 +168,40 @@ function Generation(date, nurseryUnit, educationLevel, clone)
 	//-----------------------------------------
 }
 
-function GenerationalLot(date, initialEducationLevel, initialDeadCount)
+function GenerationalLot(date, initialEducationLevel, initialDeadCount, initialSickCount)
 {
 	const INITIAL_POPULATION = 5;
 
 	let birthDate = date;
 	let deadCount = initialDeadCount || 0;
 	let educationLevel = initialEducationLevel || 0;
+	let sickCount = initialSickCount || 0;
 
 	let _getPopulation = function()
 	{
 		return INITIAL_POPULATION - deadCount;
 	};
 
+	/** morte di un colono qualsiasi: è un malato in proporzione a quanti sono */
 	let _kill = function()
 	{
 		if(deadCount < INITIAL_POPULATION)
 		{
+			if(sickCount > 0 && Math.random() * _getPopulation() < sickCount)
+			{
+				sickCount--;
+			}
+			deadCount++;
+		}
+		return _getPopulation();
+	};
+
+	/** morte di un colono malato */
+	let _killSick = function()
+	{
+		if(sickCount > 0)
+		{
+			sickCount--;
 			deadCount++;
 		}
 		return _getPopulation();
@@ -223,7 +251,15 @@ function GenerationalLot(date, initialEducationLevel, initialDeadCount)
 	//-----------------------------------------
 
 	this.getEducationLevel = function() { return educationLevel; };
-	this.toData = function() { return { educationLevel: educationLevel, deadCount: deadCount }; };
+	this.toData = function() { return { educationLevel: educationLevel, deadCount: deadCount, sickCount: sickCount }; };
+
+	this.getSick = function() { return sickCount; };
+	this.getHealthy = function() { return _getPopulation() - sickCount; };
+	/** si ammalano fino a count coloni sani; restituisce quanti */
+	this.fallIll = function(count) { let n = Math.max(0, Math.min(count, _getPopulation() - sickCount)); sickCount += n; return n; };
+	/** guariscono fino a count malati; restituisce quanti */
+	this.heal = function(count) { let n = Math.max(0, Math.min(count, sickCount)); sickCount -= n; return n; };
+	this.killSick = _killSick;
 
 	this.getPopulation = _getPopulation;
 	this.kill = _kill;
@@ -253,7 +289,7 @@ function generationFromData(data)
 	let generation = new Generation(data.birthDate, 0, undefined, data.clone);
 	data.lots.forEach(function(lot)
 	{
-		generation.getLots().push(new GenerationalLot(data.birthDate, lot.educationLevel, lot.deadCount));
+		generation.getLots().push(new GenerationalLot(data.birthDate, lot.educationLevel, lot.deadCount, lot.sickCount));
 	});
 	return generation;
 }

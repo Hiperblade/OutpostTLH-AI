@@ -77,11 +77,23 @@ _Evitare_: Infants, Students, Researchers, Scientists, Retirees; Scienziati, Ric
 Il grado di soddisfazione dei coloni (istruzione, svago, beni); quando è bassa i coloni forniscono meno manodopera.
 _Evitare_: happiness, morale
 
+**Benessere**:
+Quanto alloggi e cure mediche bastano ai coloni; è basso se manca anche solo uno dei due. Per gli alloggi contano anche i cloni, per le cure mediche no. Più è basso, più coloni si ammalano.
+_Evitare_: wellness, salute
+
+**Colono malato**:
+Un colono nato sul pianeta che non lavora, non studia e rischia di morire finché non guarisce, da solo o con una cura. I cloni non si ammalano.
+_Evitare_: infortunato, invalido
+
+**Cura**:
+Il comando con cui il giocatore guarisce i coloni malati, consumando un Kit Medico per malato; a ogni turno se ne possono fare tante quante ne permettono le Strutture Mediche attive. Con le cure automatiche, scelta di tutta la colonia, avviene da sola a ogni turno.
+_Evitare_: guarigione (che può anche avvenire da sola)
+
 **Coloni contenti**:
 I coloni vivi di ogni età, quando la colonia è in piena sussistenza e la felicità è alta; cloni e capsule non contano.
 
 **Nascita**:
-Un gruppo di 5 bambini nati dall'Asilo: ogni Asilo a pieno personale ne prepara uno ogni 2 turni, e nasce solo se la colonia è in piena sussistenza e cibo, alloggi e habitat bastano anche per i nuovi nati. Il giocatore può sospendere le nascite di un Asilo, che resta a riposo.
+Un gruppo di 5 bambini nati dall'Asilo: ogni Asilo a pieno personale ne prepara uno ogni 2 turni, e nasce solo se la colonia è in piena sussistenza e cibo, alloggi e habitat bastano anche per i nuovi nati. Il giocatore può sospendere le nascite di tutta la colonia: gli Asili restano a riposo.
 
 **Mortalità naturale**:
 La morte per vecchiaia dei Pensionati, rallentata dalle cure mediche.

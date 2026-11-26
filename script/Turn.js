@@ -7,7 +7,7 @@ import { PrototypeLib } from "./PrototypeLib.js";
 import { RecipeLib } from "./RecipeLib.js";
 import { MaintenancePhase } from "./TurnMaintenance.js";
 import { Work } from "./Work.js";
-import { CapsulePhase, PopulationPhase, RevivalPhase } from "./TurnPopulation.js";
+import { CapsulePhase, IllnessPhase, PopulationPhase, RevivalPhase } from "./TurnPopulation.js";
 
 /**
  * Turn: avanzamento di un turno della colonia.
@@ -37,6 +37,7 @@ function TurnConstructor()
 			RobotWearPhase,
 			RobotPhase,
 			PopulationPhase,
+			IllnessPhase,
 			CapsulePhase,
 			RevivalPhase,
 			OutcomePhase
@@ -134,13 +135,14 @@ let WorkforcePhase = {
 		population.registry.forEach(function(generation)
 		{
 			let phase = generation.getState(date);
+			// i malati non lavorano
 			if(phase == GenerationState.Scientists)
 			{
-				colonists += generation.getPopulation() * Work.COLONIST;
+				colonists += generation.getHealthy() * Work.COLONIST;
 			}
 			else if(phase == GenerationState.Retirees)
 			{
-				colonists += generation.getPopulation() * Work.RETIREE;
+				colonists += generation.getHealthy() * Work.RETIREE;
 			}
 			else if(phase == GenerationState.Clones)
 			{
@@ -297,7 +299,7 @@ let _staffedBuildings = function(ctx, demand)
 			}
 			graph[buildingType].forEach(function(building)
 			{
-				if(building.isOperative() && !building.isSuspended())
+				if(building.isOperative() && !_isSuspended(ctx.state, building))
 				{
 					list.push({ building: building, prototype: prototype, order: order });
 				}
@@ -305,6 +307,12 @@ let _staffedBuildings = function(ctx, demand)
 		});
 	});
 	return list.sort(function(a, b) { return (a.building.getStaffPriority() - b.building.getStaffPriority()) || (a.order - b.order); });
+};
+
+/** sospeso dal giocatore: le nascite valgono per tutta la colonia, gli altri edifici uno per uno */
+let _isSuspended = function(state, building)
+{
+	return (building.getBuildingType() == "Nursery") ? state.areBirthsSuspended() : building.isSuspended();
 };
 
 /** edificio attivo: consumi, produzione (in proporzione al rendimento del personale), capacità e smaltimento */
@@ -380,7 +388,7 @@ let BuildingProductionPhase = {
 						// insufficiente funziona e produce in proporzione ai punti lavoro ricevuti
 						// laboratori e industrie senza studi o produzioni da servire restano a riposo,
 						// come gli edifici sospesi dal giocatore
-						if(building.isSuspended())
+						if(_isSuspended(state, building))
 						{
 							state.setBuildingIssue(building, { reason: "suspended", missing: [] });
 							return;
@@ -708,7 +716,7 @@ let OutcomePhase = {
 			let n = generation.getPopulation();
 			let phase = generation.getState(date);
 			people += n;
-			if(!generation.isClone()) { citizens += n; }
+			if(!generation.isClone()) { citizens += generation.getHealthy(); }	// i malati non sono contenti
 			if(phase == GenerationState.Scientists || phase == GenerationState.Clones || phase == GenerationState.Retirees) { workers += n; }
 			else if(phase == GenerationState.Infants || phase == GenerationState.Students || phase == GenerationState.Researchers) { young += n; }
 		});

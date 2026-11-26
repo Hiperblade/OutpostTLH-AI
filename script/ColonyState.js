@@ -40,6 +40,10 @@ import { RecipeLib } from "./RecipeLib.js";
 		state.pendingRevival = 0;
 		// avanzamento della prossima nascita, in unità dell'Asilo (vedi PopulationPhase.BIRTH_COST)
 		state.birthProgress = 0;
+		// cure prenotate dal giocatore per questo turno, cure automatiche e nascite sospese (scelte di tutta la colonia)
+		state.pendingCures = 0;
+		state.autoCure = false;
+		state.birthsSuspended = false;
 		// usura di ogni robot, per tipo: [{ wear, life }] (vedi RobotWearPhase)
 		state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 
@@ -259,6 +263,9 @@ import { RecipeLib } from "./RecipeLib.js";
 				kitDelivered: state.kitDelivered,
 				pendingRevival: state.pendingRevival,
 				birthProgress: state.birthProgress,
+				pendingCures: state.pendingCures,
+				autoCure: state.autoCure,
+				birthsSuspended: state.birthsSuspended,
 				robotWear: JSON.parse(JSON.stringify(state.robotWear)),
 				robotsAvailable: Object.assign({}, state.robotsAvailable),
 				knowledge: {
@@ -287,6 +294,9 @@ import { RecipeLib } from "./RecipeLib.js";
 			state.kitDelivered = data.kitDelivered;
 			state.pendingRevival = data.pendingRevival || 0;
 			state.birthProgress = data.birthProgress || 0;
+			state.pendingCures = data.pendingCures || 0;
+			state.autoCure = !!data.autoCure;
+			state.birthsSuspended = !!data.birthsSuspended;
 			// i salvataggi precedenti avevano un contatore per tipo: si ripartono da robot nuovi
 			state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 			Object.keys(data.robotWear || {}).forEach(function(type)
@@ -323,6 +333,12 @@ import { RecipeLib } from "./RecipeLib.js";
 		this.getPendingRevival = function() { return state.pendingRevival; };
 		this.getBirthProgress = function() { return state.birthProgress; };
 		this.setBirthProgress = function(value) { state.birthProgress = value; };
+		this.getPendingCures = function() { return state.pendingCures; };
+		this.setPendingCures = function(value) { state.pendingCures = value; };
+		this.isAutoCure = function() { return state.autoCure; };
+		this.setAutoCure = function(value) { state.autoCure = !!value; };
+		this.areBirthsSuspended = function() { return state.birthsSuspended; };
+		this.setBirthsSuspended = function(value) { state.birthsSuspended = !!value; };
 		this.setPendingRevival = function(value) { state.pendingRevival = value; };
 		this.getRobotWear = function() { return state.robotWear; };
 

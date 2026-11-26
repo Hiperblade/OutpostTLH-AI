@@ -24,8 +24,11 @@ import { Turn, OutcomePhase, GameOutcome, RobotWearPhase } from "../script/Turn.
 import { Revival } from "../script/Revival.js";
 import { createWorkers, createClones, Generation } from "../script/Generations.js";
 import { RecipeLib } from "../script/RecipeLib.js";
+import { Cure } from "../script/Cure.js";
+import { IllnessPhase } from "../script/TurnPopulation.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
+import { PrototypeLib } from "../script/PrototypeLib.js";
 import { Site, createGame, MAP_SIZE } from "../script/GameSetup.js";
 import { SiteTerrain } from "../script/SiteTerrain.js";
 import { PlanetTypes } from "../script/DataPlanets.js";
@@ -283,6 +286,8 @@ function checks()
 	for(let t = 0; t < 4; t++) Turn.advance(game);
 	expect("i cloni non contano per la vittoria", [gs.getOutcome(), gs.getVictoryStreak()], [null, 0]);
 	gs.getPopulation().registry.push(createWorkers(gs.getDate(), 1));
+	let illnessRate = IllnessPhase.ILLNESS_RATE;
+	IllnessPhase.ILLNESS_RATE = 0; // la malattia ha le sue verifiche: qui contano solo le soglie di vittoria
 	let turns = 0;
 	while(gs.getOutcome() == null && turns < 30) { Turn.advance(game); turns++; }
 	expect("vittoria", gs.getOutcome(), GameOutcome.Victory);
@@ -290,6 +295,7 @@ function checks()
 	Turn.advance(game);
 	expect("partita conclusa: il tempo non avanza", gs.getDate(), dateAtEnd);
 	[OutcomePhase.VICTORY_POPULATION, OutcomePhase.VICTORY_TURNS, OutcomePhase.VICTORY_HAPPINESS] = limits;
+	IllnessPhase.ILLNESS_RATE = illnessRate;
 
 	// salvataggio: andata e ritorno identici, anche dopo un turno
 	let copy = TerrainMap.fromData(JSON.parse(JSON.stringify(game.toData())));
@@ -405,6 +411,8 @@ function checks()
 	expect("sconfitta senza manodopera", idle.getState().getOutcome(), GameOutcome.Defeat);
 
 	// nascite: un gruppo di 5 bambini ogni 2 turni a pieno personale, se cibo e alloggi bastano anche per loro
+	let illnessRateNest = IllnessPhase.ILLNESS_RATE;
+	IllnessPhase.ILLNESS_RATE = 0; // qui contano solo le nascite
 	let nest = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	let ns = nest.getState();
 	ns.addKnowledge({ technology: ["LandingModule"] });
@@ -418,17 +426,53 @@ function checks()
 	for(let t = 0; t < 4; t++) pattern.push(bornPerTurn());
 	expect("nascite: 5 bambini ogni 2 turni", pattern, [0, 5, 0, 5]);
 	expect("nascite: i bambini sono una nuova generazione", ns.getPopulation().registry.filter(g => g.getState(ns.getDate()) == "infants").reduce((n, g) => n + g.getPopulation(), 0), 10);
-	nursery.setSuspended(true);
+	ns.setBirthsSuspended(true);
 	pattern = [];
 	for(let t = 0; t < 3; t++) pattern.push(bornPerTurn());
 	Turn.project(nest);
 	expect("nascite sospese: asilo a riposo", [pattern, (ns.getActiveList()["Nursery"] || []).length, (ns.getInactiveList()["Nursery"] || []).length], [[0, 0, 0], 0, 0]);
-	nursery.setSuspended(false);
+	ns.setBirthsSuspended(false);
 	Turn.advance(nest);
 	ns.destroyMaterials({ foodUnit: ns.getStored("foodUnit") });
 	ns.createMaterials({ foodUnit: 22 });
 	expect("nascite: senza cibo per i nuovi nati non nasce nessuno", bornPerTurn(), 0);
 	expect("nascite: avanzamento salvato", TerrainMap.fromData(JSON.parse(JSON.stringify(nest.toData()))).getState().getBirthProgress(), ns.getBirthProgress());
+	IllnessPhase.ILLNESS_RATE = illnessRateNest;
+
+	// malattia: con il Benessere a zero si ammalano i coloni nati, non i cloni; i malati non lavorano
+	let ward = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let ws = ward.getState();
+	ws.addKnowledge({ technology: ["LandingModule"] });
+	ws.createMaterials({ foodUnit: 5000, residentialUnit: 5000, habitatUnit: 500 });
+	ward.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(ward);
+	let healthyWorkers = createWorkers(ws.getDate(), 20);
+	let wardClones = createClones(ws.getDate(), 4);
+	ws.getPopulation().registry.push(healthyWorkers, wardClones);
+	let fellIll = 0;
+	for(let t = 0; t < 3; t++) fellIll += Turn.advance(ward).events.filter(e => e.type == "FELL_ILL").reduce((n, e) => n + e.count, 0);
+	expect("malattia: senza cure mediche i coloni si ammalano, i cloni no", [fellIll > 0, healthyWorkers.getSick() > 0, wardClones.getSick()], [true, true, 0]);
+	Turn.project(ward);
+	let wardFactor = 0.5 + 0.5 * ws.getPopulation().happiness;
+	expect("malattia: i malati non lavorano", ws.getStored("workerLabor"), Math.floor(healthyWorkers.getHealthy() * 4 * wardFactor) + wardClones.getPopulation());
+	expect("malattia: malati salvati", TerrainMap.fromData(JSON.parse(JSON.stringify(ward.toData()))).getState().getPopulation().registry[0].getSick(), healthyWorkers.getSick());
+	// cura: un Kit Medico per malato, nei limiti delle Strutture Mediche attive (1 cura la base)
+	expect("cura: senza struttura medica", Cure.check(ward).reason, "noMedicalStructure");
+	ward.addBuilding("MedicalStructure", { x: 9, y: 13 }, true);
+	ws.createMaterials({ pharmaceuticalUnit: 1000 });
+	Turn.project(ward);
+	expect("cura: senza kit medici", Cure.check(ward).reason, "noMediKit");
+	ws.createMaterials({ mediKit: 10 });
+	Turn.project(ward);
+	let cure = Cure.request(ward);
+	expect("cura prenotata: una sola con una struttura base", [cure.ok, ws.getPendingCures(), Cure.check(ward).reason], [true, 1, "allScheduled"]);
+	let sickBefore = Cure.sick(ws);
+	Turn.advance(ward);
+	expect("cura: consuma un kit medico", [ws.getStored("mediKit"), ws.getPendingCures()], [9, 0]);
+	ws.setAutoCure(true);
+	Turn.advance(ward);
+	expect("cure automatiche: un altro kit", ws.getStored("mediKit"), 8);
+	expect("strutture mediche: niente kit medici nei consumi", Object.keys(PrototypeLib.get("MedicalStructure").getConsumption()).indexOf("mediKit"), -1);
 
 	// i cloni a fine vita lavorativa muoiono invece di andare in pensione
 	let aging = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });

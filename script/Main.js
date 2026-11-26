@@ -2,6 +2,7 @@
 
 import { PipeType, RobotTypes, TerrainLayer } from "./Enums.js";
 import { Placement, PlacementReason } from "./Placement.js";
+import { Cure } from "./Cure.js";
 import { Revival } from "./Revival.js";
 import { SaveGame } from "./SaveGame.js";
 import { Log } from "./SystemLib.js";
@@ -50,6 +51,7 @@ let MainCommand =
 	ShowResearch: "ShowResearch",
 	DoNext: "DoNext",
 	WakeUp: "WakeUp",
+	Cure: "Cure",
 	ClearSelection: "ClearSelection"
 };
 
@@ -146,6 +148,10 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 					_executeCommand(MainCommand.WakeUp);
 					break;
 
+				case 71: // g
+					_executeCommand(MainCommand.Cure);
+					break;
+
 				case 13: // enter
 					_executeCommand(MainCommand.DoNext);
 					break;
@@ -195,11 +201,12 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 		buildingInfo = InitializeBuildingInfoView(_onChangePosition, _onClearCurrentItem, function(building) { return state.getBuildingIssue(building); },
 			function()
 			{
-				// nuova assegnazione del personale: si ricalcola la proiezione del turno
+				// nuova assegnazione del personale o interruttore della colonia: si ricalcola la proiezione del turno
 				Turn.project(terrainMap);
 				_redraw();
 				_save();
-			});
+			},
+			function() { return state; });
 		queueView = InitializeQueueView("queueDiv", canvasSize);
 
 		// pulsanti spostamento
@@ -475,6 +482,14 @@ Log.dialog(_placementMessage(result));
 Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(result));
 	};
 
+	/** prenota le cure dei coloni malati (avvengono a fine turno) */
+	let _cure = function()
+	{
+		let result = Cure.request(terrainMap);
+		Log.dialog(result.ok ? TextRepository.get("CureScheduled").replace("%s", state.getPendingCures()) : TextRepository.get("Cure_" + result.reason));
+		summaryView.redraw();
+	};
+
 	/** motivo del rifiuto, con l'edificio responsabile e cosa gli manca */
 	let _revivalMessage = function(result)
 	{
@@ -633,6 +648,10 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 
 			case MainCommand.WakeUp:
 				_wakeUp();
+				break;
+
+			case MainCommand.Cure:
+				_cure();
 				break;
 
 			case MainCommand.ClearSelection:

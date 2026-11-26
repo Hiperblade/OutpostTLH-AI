@@ -1,6 +1,7 @@
 "use strict";
 
 import { Generation, GenerationState, createClones } from "./Generations.js";
+import { Cure } from "./Cure.js";
 import { BuildingGraph } from "./PipeNetwork.js";
 
 /** popolazione: consumi di sussistenza, istruzione, nascite, morti e stato della popolazione */
@@ -107,14 +108,11 @@ let PopulationPhase = {
 				overcrowding = 0;
 			}
 
-			// medicinali (copertura sanitaria mancante)
+			// medicinali (copertura sanitaria mancante): servono solo ai coloni nati, i cloni non si ammalano
+			let citizens = generations.reduce(function(n, generation) { return n + (generation.isClone() ? 0 : generation.getPopulation()); }, 0);
 			let medicalUnit = colonyState.getRemainder("medicalUnit");
-			colonyState.delMaterials( { medicalUnit: Math.min(medicalUnit, people) } );
-			missingHealthCover = 1 - (medicalUnit / people);
-			if(missingHealthCover < 0)
-			{
-				missingHealthCover = 0;
-			}
+			colonyState.delMaterials( { medicalUnit: Math.min(medicalUnit, citizens) } );
+			missingHealthCover = (citizens > 0) ? Math.max(0, 1 - (medicalUnit / citizens)) : 0;
 
 			// istruzione (mancanza di istruzione)
 			let educationUnit = colonyState.getRemainder("educationUnit");
@@ -141,22 +139,22 @@ let PopulationPhase = {
 				{
 					if(generations[i].getState(date) == GenerationState.Students)
 					{
-						// Students
-						students += lots[index % lots.length].getPopulation();
-						// avanzamento istruzione
-						if(students <= educationUnit)
+						// Students: i malati non studiano; il gruppo avanza in proporzione ai sani
+						let lot = lots[index % lots.length];
+						students += lot.getHealthy();
+						if(students <= educationUnit && lot.getPopulation() > 0 && Math.random() * lot.getPopulation() < lot.getHealthy())
 						{
-							lots[index % lots.length].teach();
+							lot.teach();
 						}
 					}
 					else if(generations[i].getState(date) == GenerationState.Researchers)
 					{
-						// Researchers
-						researchers += lots[index % lots.length].getPopulation();
-						// avanzamento istruzione
-						if(researchers <= highEducationUnit)
+						// Researchers: i malati non studiano; il gruppo avanza in proporzione ai sani
+						let lot = lots[index % lots.length];
+						researchers += lot.getHealthy();
+						if(researchers <= highEducationUnit && lot.getPopulation() > 0 && Math.random() * lot.getPopulation() < lot.getHealthy())
 						{
-							lots[index % lots.length].teach();
+							lot.teach();
 						}
 					}
 				}
@@ -300,6 +298,97 @@ let PopulationPhase = {
 	}
 };
 
+/** numero intero con media "expected": la parte decimale diventa una probabilità */
+let _randomCount = function(expected)
+{
+	let whole = Math.floor(expected);
+	return whole + ((Math.random() < expected - whole) ? 1 : 0);
+};
+
+/**
+ * Malattia dei coloni nati (i cloni non si ammalano). A fine turno, in quest'ordine:
+ *   cure: prenotate dal giocatore o automatiche, un Kit Medico per malato, nei limiti delle Strutture Mediche,
+ *         prima i Lavoratori, poi Universitari e Studenti, poi Bambini, per ultimi i Pensionati;
+ *   guarigione spontanea (RECOVERY_RATE) e morte dei malati (DEATH_RATE, RETIREE_DEATH_RATE per i Pensionati);
+ *   nuovi malati: ILLNESS_RATE dei sani quando il Benessere è 0, nessuno con il Benessere pieno.
+ */
+let IllnessPhase = {
+	ILLNESS_RATE: 0.1,
+	RECOVERY_RATE: 0.1,
+	DEATH_RATE: 0.05,
+	RETIREE_DEATH_RATE: 0.1,
+	CURE_ORDER: [GenerationState.Scientists, GenerationState.Researchers, GenerationState.Students, GenerationState.Infants, GenerationState.Retirees],
+
+	apply: function(ctx)
+	{
+		let state = ctx.state;
+		let date = state.getDate();
+		let population = state.getPopulation();
+		let colonists = population.registry.filter(function(generation) { return !generation.isClone() && generation.getPopulation() > 0; });
+		if(colonists.length == 0)
+		{
+			state.setPendingCures(0);
+			return;
+		}
+
+		// cure
+		let cures = state.isAutoCure() ? Cure.available(state) : Math.min(state.getPendingCures(), Cure.available(state));
+		let treated = 0;
+		IllnessPhase.CURE_ORDER.forEach(function(stage)
+		{
+			colonists.forEach(function(generation)
+			{
+				if(generation.getState(date) != stage)
+				{
+					return;
+				}
+				generation.getLots().forEach(function(lot)
+				{
+					treated += lot.heal(cures - treated);
+				});
+			});
+		});
+		if(treated > 0)
+		{
+			state.destroyMaterials({ mediKit: treated });
+		}
+		state.setPendingCures(0);
+
+		// guarigione spontanea e morte dei malati
+		let recovered = 0, deaths = 0;
+		colonists.forEach(function(generation)
+		{
+			let rate = (generation.getState(date) == GenerationState.Retirees) ? IllnessPhase.RETIREE_DEATH_RATE : IllnessPhase.DEATH_RATE;
+			generation.getLots().forEach(function(lot)
+			{
+				recovered += lot.heal(_randomCount(lot.getSick() * IllnessPhase.RECOVERY_RATE));
+				let dead = Math.min(lot.getSick(), _randomCount(lot.getSick() * rate));
+				for(let d = 0; d < dead; d++)
+				{
+					lot.killSick();
+				}
+				deaths += dead;
+			});
+			generation.prune();
+		});
+
+		// nuovi malati, in proporzione al Benessere che manca
+		let rate = IllnessPhase.ILLNESS_RATE * Math.max(0, 1 - population.wellness);
+		let ill = 0;
+		colonists.forEach(function(generation)
+		{
+			generation.getLots().forEach(function(lot)
+			{
+				ill += lot.fallIll(_randomCount(lot.getHealthy() * rate));
+			});
+		});
+
+		if(ill > 0) { ctx.events.push({ type: "FELL_ILL", count: ill }); }
+		if(treated + recovered > 0) { ctx.events.push({ type: "RECOVERED", count: treated + recovered }); }
+		if(deaths > 0) { ctx.events.push({ type: "ILLNESS_DEATHS", count: deaths }); }
+	}
+};
+
 /**
  * Produzione delle capsule criogeniche: ogni Centro Criogenico attivo prepara una capsula a turno
  * con CAPSULE_COST, finché le capsule non riempiono la capienza dei centri (10 ciascuno).
@@ -355,4 +444,4 @@ let RevivalPhase = {
 	}
 };
 
-export { CapsulePhase, PopulationPhase, RevivalPhase };
+export { CapsulePhase, IllnessPhase, PopulationPhase, RevivalPhase };

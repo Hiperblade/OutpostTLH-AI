@@ -1,6 +1,7 @@
 "use strict";
 
 import { describeBuildingIssue } from "./BuildingIssueText.js";
+import { Cure } from "./Cure.js";
 import { GenerationState } from "./Generations.js";
 import { PopulationPhase } from "./TurnPopulation.js";
 import { ImagesLib } from "./ImagesLib.js";
@@ -411,6 +412,11 @@ function ReportHumans(colonyState, image)
 		});
 		text += _row(TextRepository.get("clones"), clones, false);
 		text += _row(TextRepository.get("BornColonists"), born, false);
+		let sick = Cure.sick(colonyState);
+		if(born > 0)
+		{
+			text += _row(TextRepository.get("SickColonists"), sick, sick > 0);
+		}
 		// le fasi di vita dei coloni nati, come dettaglio del totale
 		stages.forEach(function(stage)
 		{
@@ -432,6 +438,18 @@ function ReportHumans(colonyState, image)
 			text += _ratio(TextRepository.get("residentialUnit"), habitability.housing);
 			text += _ratio(TextRepository.get("foodUnit"), habitability.food);
 			text += _row(TextRepository.get("cryoRevival"), habitability.revivalCapacity, habitability.capsules > 0 && habitability.revivalCapacity == 0);
+			if(born > 0)
+			{
+				text += _separator;
+				text += '<tr><td colspan="4">' + TextRepository.get("Cures") + '</td></tr>';
+				text += _row(TextRepository.get("mediKit"), colonyState.getStored("mediKit"), sick > 0 && colonyState.getStored("mediKit") == 0);
+				text += _row(TextRepository.get("CureCapacity"), Cure.capacity(colonyState), sick > 0 && Cure.capacity(colonyState) == 0);
+				text += _row(TextRepository.get("AutoCure"), TextRepository.get(colonyState.isAutoCure() ? "Yes" : "No"), false);
+				if(colonyState.getPendingCures() > 0)
+				{
+					text += _row(TextRepository.get("PendingCures"), colonyState.getPendingCures(), false);
+				}
+			}
 		}
 		text += '</table>';
 		return text;

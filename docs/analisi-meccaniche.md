@@ -8,7 +8,7 @@ Stato: ✅ risolto · ⏳ aperto
 
 | # | Problema | Area | Stato |
 |---|---|---|---|
-| 1 | Il Benessere non ha effetti | Regole | ⏳ |
+| 1 | Il Benessere non ha effetti | Regole | ✅ |
 | 2 | Barre di Ferro e minerali senza magazzino | Regole | ⏳ |
 | 3 | I cloni di un risveglio muoiono tutti nello stesso turno | Regole | ⏳ |
 | 4 | Energia a microonde illimitata e quasi gratuita | Regole | ⏳ |
@@ -24,7 +24,7 @@ Stato: ✅ risolto · ⏳ aperto
 | 14 | Il report Energia non distingue gli edifici a riposo | Informazioni | ✅ |
 | 15 | Refusi e descrizioni segnaposto nei testi | Informazioni | ✅ |
 
-**Da dove partire:** 1, 2, 4 e 13. Sono interventi piccoli che cambiano molto la sensazione di gioco.
+**Da dove partire:** 2, 4 e 13. Sono interventi piccoli che cambiano molto la sensazione di gioco.
 
 ## A. Regole che non funzionano o si contraddicono
 
@@ -33,6 +33,8 @@ Stato: ✅ risolto · ⏳ aperto
 Il Benessere si calcola da alloggi e cure mediche e compare nei report, ma il turno non lo usa per nient'altro. Tutta la filiera medica (Industria Farmaceutica, Fabbrica Chimica per i Kit Medici, Struttura Medica: 13 addetti in tutto) serve solo a dimezzare la mortalità dei Pensionati.
 
 **Proposta:** far dipendere dal Benessere qualcosa di visibile: il ritmo delle nascite, la mortalità di tutti i coloni o un tetto alla felicità.
+
+**Risolto ✅** con la malattia: più il Benessere è basso, più coloni nati si ammalano (fino al 10% dei sani a turno). I malati non lavorano e non studiano, rischiano di morire (5% a turno, 10% i Pensionati) e guariscono da soli (10% a turno) o con una Cura. Ogni Cura consuma un Kit Medico ed è limitata dalle Strutture Mediche attive: 1 a turno la base, 3 l'avanzata. I cloni non si ammalano e per le cure mediche non contano. Le Strutture Mediche non consumano più Kit Medici.
 
 ### 2. Barre di Ferro e minerali senza magazzino
 
