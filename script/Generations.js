@@ -1,6 +1,7 @@
 "use strict";
 
 let GenerationState = {
+	Clones: "clones",
 	Infants: "infants",
 	Students: "students",
 	Researchers: "researchers",
@@ -21,9 +22,12 @@ const GenerationConst = {
  * @param {number} date data di nascita
  * @param {number} nurseryUnit numero di lotti (5 coloni ciascuno)
  * @param {number} [educationLevel] istruzione già completata (coloni che arrivano adulti)
+ * @param {boolean} [clone] cloni: adulti dal Centro Criogenico, che a fine vita lavorativa muoiono
+ *                          invece di diventare Pensionati e non contano per la vittoria
  */
-function Generation(date, nurseryUnit, educationLevel)
+function Generation(date, nurseryUnit, educationLevel, clone)
 {
+	clone = !!clone;
 	let birthDate = date;
 	let lots = [];
 	for(let i = 0; i < nurseryUnit; i++)
@@ -71,6 +75,10 @@ function Generation(date, nurseryUnit, educationLevel)
 		}
 
 		let age = date - birthDate;
+		if(clone)
+		{
+			return (age > GenerationConst.AGE_RETIREES) ? GenerationState.Deads : GenerationState.Clones;
+		}
 		if(age < GenerationConst.AGE_INFANTS)
 		{
 			return GenerationState.Infants;
@@ -126,7 +134,19 @@ function Generation(date, nurseryUnit, educationLevel)
 
 	this.getBirthDate = function() { return birthDate; };
 	this.getLots = function() { return lots; };
-	this.toData = function() { return { birthDate: birthDate, lots: lots.map(function(lot) { return lot.toData(); }) }; };
+	this.isClone = function() { return clone; };
+	/** i cloni a fine vita lavorativa muoiono tutti insieme */
+	this.expire = function(date)
+	{
+		if(clone && date - birthDate > GenerationConst.AGE_RETIREES)
+		{
+			let dead = _getPopulation();
+			lots.length = 0;
+			return dead;
+		}
+		return 0;
+	};
+	this.toData = function() { return { birthDate: birthDate, clone: clone, lots: lots.map(function(lot) { return lot.toData(); }) }; };
 
 	this.getPopulation = _getPopulation;
 	this.kill = _kill;
@@ -220,10 +240,17 @@ function createWorkers(date, lots)
 		GenerationConst.EDUCATIONAL_PRIMARY + GenerationConst.EDUCATIONAL_SECONDARY);
 }
 
+/** una generazione di cloni adulti e istruiti, usciti dalle capsule del Centro Criogenico */
+function createClones(date, lots)
+{
+	return new Generation(date - GenerationConst.AGE_ADULTS, lots,
+		GenerationConst.EDUCATIONAL_PRIMARY + GenerationConst.EDUCATIONAL_SECONDARY, true);
+}
+
 /** ricostruisce una generazione salvata */
 function generationFromData(data)
 {
-	let generation = new Generation(data.birthDate, 0);
+	let generation = new Generation(data.birthDate, 0, undefined, data.clone);
 	data.lots.forEach(function(lot)
 	{
 		generation.getLots().push(new GenerationalLot(data.birthDate, lot.educationLevel, lot.deadCount));
@@ -231,4 +258,4 @@ function generationFromData(data)
 	return generation;
 }
 
-export { createWorkers, generationFromData, GenerationState, GenerationConst, Generation, GenerationalLot };
+export { createClones, createWorkers, generationFromData, GenerationState, GenerationConst, Generation, GenerationalLot };

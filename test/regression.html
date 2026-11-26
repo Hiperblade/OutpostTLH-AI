@@ -22,7 +22,7 @@ import { TerrainMap } from "../script/TerrainMap.js";
 import { Typology, TerrainLayer, PipeType, RobotTypes } from "../script/Enums.js";
 import { Turn, OutcomePhase, GameOutcome, RobotWearPhase } from "../script/Turn.js";
 import { Revival } from "../script/Revival.js";
-import { createWorkers, Generation } from "../script/Generations.js";
+import { createWorkers, createClones, Generation } from "../script/Generations.js";
 import { RecipeLib } from "../script/RecipeLib.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
@@ -179,12 +179,12 @@ function checks()
 	let game = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	let gs = game.getState();
 	// magazzini condivisi come in una partita vera (GameSetup.createGame)
-	["mediKit", "goods", "toxicWaste", "fusionWaste", "cryoCapsule"].forEach(m => gs.configureMaterial(m, "genericStorage"));
+	["mediKit", "goods", "toxicWaste", "fusionWaste"].forEach(m => gs.configureMaterial(m, "genericStorage"));
 	["dozer", "digger", "miner", "roboWorker", "MicrowaveSatellite"].forEach(m => gs.configureMaterial(m, "roboticStorage"));
 	gs.addKnowledge({ technology: ["LandingModule"] });
 	game.addBuilding("LandingModule", { x: 10, y: 10 });
 	for(let t = 0; t < 4; t++) Turn.advance(game);
-	expect("kit: capsule e nessun colono sveglio", [gs.getStored("cryoCapsule"), gs.getPopulation().registry.length], [20, 0]);
+	expect("kit: niente capsule, niente cibo, nessun colono", [gs.getStored("cryoCapsule"), gs.getStored("foodUnit"), gs.getPopulation().registry.length], [0, 0, 0]);
 	game.addBuilding("EnvironmentalControl", { x: 8, y: 10 }, true);
 	game.addBuilding("AutoLab", { x: 12, y: 9 }, true);
 	game.addBuilding("HotLab", { x: 10, y: 8 }, true);
@@ -196,10 +196,19 @@ function checks()
 	for(let t = 0; t < 4; t++) Turn.advance(game);
 	let active = type => (gs.getActiveList()[type] || []).length;
 	expect("edifici automatici attivi, laboratorio senza personale fermo", [active("AutoLab"), active("CryoCenter"), active("HotLab")], [1, 1, 0]);
+	expect("senza minerali nessuna capsula", [gs.getStored("cryoCapsule"), Revival.check(game).reason], [0, "noCapsules"]);
+	gs.createMaterials({ mineralOre: 200 });
+	Turn.advance(game);
+	expect("capsula preparata con 5 minerali", [gs.getStored("cryoCapsule"), gs.getStored("mineralOre")], [1, 195]);
+	for(let t = 0; t < 15; t++) Turn.advance(game);
+	expect("capsule fino alla capienza del centro", [gs.getStored("cryoCapsule"), gs.getStored("mineralOre")], [10, 150]);
+	gs.createMaterials({ foodUnit: 100 });
+	Turn.project(game);
 	expect("risveglio prenotato", Revival.request(game).ok, true);
 	Turn.advance(game);
 	let awake = () => gs.getPopulation().registry.reduce((n, g) => n + g.getPopulation(), 0);
-	expect("risveglio: 5 coloni svegli, 15 capsule", [awake(), gs.getStored("cryoCapsule"), gs.getPendingRevival()], [5, 15, 0]);
+	expect("risveglio: 5 cloni svegli, 5 capsule", [awake(), gs.getStored("cryoCapsule"), gs.getPendingRevival()], [5, 5, 0]);
+	expect("i risvegliati sono cloni", gs.getPopulation().registry.map(g => [g.isClone(), g.getState(gs.getDate())]), [[true, "clones"]]);
 	expect("manodopera separata", [gs.getStored("roboLabor") >= 0, gs.getStored("workerLabor") > 0], [true, true]);
 
 	// i robot prodotti vengono consegnati: il modulo cargo dà posto al kit e ai primi robot
@@ -229,7 +238,7 @@ function checks()
 	gs.getPopulation().registry.push(retirees);
 	Turn.project(game);
 	let factor = 0.5 + 0.5 * gs.getPopulation().happiness;
-	expect("pensionati: mezza manodopera", gs.getStored("workerLabor"), Math.floor((gs.getPopulation().registry.filter(g => g !== retirees).reduce((n, g) => n + (g.getState(gs.getDate()) == "scientists" ? g.getPopulation() : 0), 0) + 10 * 0.5) * factor));
+	expect("pensionati: mezza manodopera", gs.getStored("workerLabor"), Math.floor((gs.getPopulation().registry.filter(g => g !== retirees).reduce((n, g) => n + (["scientists", "clones"].indexOf(g.getState(gs.getDate())) >= 0 ? g.getPopulation() : 0), 0) + 10 * 0.5) * factor));
 	gs.getPopulation().registry.splice(gs.getPopulation().registry.indexOf(retirees), 1);
 
 	// vittoria (soglie ridotte per il test): coloni contenti per 3 turni
@@ -237,6 +246,10 @@ function checks()
 	OutcomePhase.VICTORY_POPULATION = 5;
 	OutcomePhase.VICTORY_TURNS = 3;
 	OutcomePhase.VICTORY_HAPPINESS = 0;
+	gs.createMaterials({ foodUnit: 200 });
+	for(let t = 0; t < 4; t++) Turn.advance(game);
+	expect("i cloni non contano per la vittoria", [gs.getOutcome(), gs.getVictoryStreak()], [null, 0]);
+	gs.getPopulation().registry.push(createWorkers(gs.getDate(), 1));
 	let turns = 0;
 	while(gs.getOutcome() == null && turns < 30) { Turn.advance(game); turns++; }
 	expect("vittoria", gs.getOutcome(), GameOutcome.Victory);
@@ -298,10 +311,10 @@ function checks()
 	// spiegazione del rifiuto: alloggi fermi per mancanza di habitat residenziale, centro criogenico senza energia
 	let housing = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	let hs = housing.getState();
-	hs.configureMaterial("cryoCapsule", "genericStorage");
 	hs.addKnowledge({ technology: ["LandingModule"] });
 	housing.addBuilding("LandingModule", { x: 10, y: 10 });
 	for(let t = 0; t < 4; t++) Turn.advance(housing);
+	hs.createMaterials({ cryoCapsule: 20, foodUnit: 100 });
 	housing.addBuilding("Pipe_d_surface", { x: 9, y: 12 }, true);
 	for(let py = 13; py <= 17; py++) housing.addPipe(PipeType.NorthEastSouthWest, TerrainLayer.Underground, { x: 9, y: py }, true);
 	[[10, 13], [10, 15], [10, 17], [8, 13], [8, 15], [8, 17]].forEach(p => housing.addBuilding("Residential", { x: p[0], y: p[1] }, true));
@@ -334,6 +347,22 @@ function checks()
 	idle.getState().destroyMaterials({ roboWorker: 100 });
 	Turn.advance(idle);
 	expect("sconfitta senza manodopera", idle.getState().getOutcome(), GameOutcome.Defeat);
+
+	// i cloni a fine vita lavorativa muoiono invece di andare in pensione
+	let aging = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let ag = aging.getState();
+	ag.addKnowledge({ technology: ["LandingModule"] });
+	aging.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(aging);
+	ag.createMaterials({ foodUnit: 100 });
+	let oldClones = createClones(ag.getDate() - 56, 1);
+	let oldWorkers = createWorkers(ag.getDate() - 56, 1);
+	ag.getPopulation().registry.push(oldClones, oldWorkers);
+	let expiry = Turn.advance(aging);
+	expect("cloni a fine vita", [oldClones.getPopulation(), oldWorkers.getState(ag.getDate()), expiry.events.some(e => e.type == "CLONES_EXPIRED")], [0, "retirees", true]);
+	expect("turno dopo una generazione estinta", (() => { try { Turn.advance(aging); return "ok"; } catch(e) { return String(e); } })(), "ok");
+	let reloaded = TerrainMap.fromData(JSON.parse(JSON.stringify(aging.toData())));
+	expect("salvataggio dei cloni", reloaded.getState().getPopulation().registry.map(g => g.isClone()), [true, false]);
 
 	return failures;
 }

@@ -100,8 +100,8 @@ PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { c
 				"DeepLab"
 				] });
 
-			// robot di cantiere, scorta di cibo e 20 capsule criogeniche (coloni da risvegliare)
-			map.getState().createMaterials({ dozer: 3, digger: 1, miner: 2, foodUnit: 400, cryoCapsule: 20 });
+			// robot di cantiere (niente scorte di cibo né capsule: le prepara il Centro Criogenico)
+			map.getState().createMaterials({ dozer: 3, digger: 1, miner: 2 });
 			map.getState().setKitDelivered();
 		}
 	});
@@ -282,8 +282,8 @@ PrototypeLib.add("ResidentialAdv", TerrainLayer.Underground, 5, { ironBar: 1 }, 
 
 PrototypeLib.add("Nursery", TerrainLayer.Underground, 20, {}, { staff: 3, consumption: { power: 20 }, production: { nurseryUnit: 5 } });
 
-// risveglio delle capsule criogeniche: fino a 5 coloni a turno, senza personale
-PrototypeLib.add("CryoCenter", TerrainLayer.Underground, 6, {}, { consumption: { power: 50 }, production: { cryoRevival: 5 } });
+// capsule criogeniche: ne prepara una a turno con i minerali (CapsulePhase), fino a 10; risveglia fino a 5 cloni a turno, senza personale
+PrototypeLib.add("CryoCenter", TerrainLayer.Underground, 6, {}, { consumption: { power: 50 }, production: { cryoRevival: 5 }, capacity: { cryoCapsule: 10 } });
 
 PrototypeLib.add("MedicalStructure", TerrainLayer.Underground, 10, {}, { staff: 3, consumption: { power: 20, pharmaceuticalUnit: 5, mediKit: 1 }, production: { medicalUnit: 15 } });
 PrototypeLib.add("MedicalStructureAdv", TerrainLayer.Underground, 10, { ironBar: 1 }, { staff: 3, consumption: { power: 30, pharmaceuticalUnit: 10, mediKit: 2 }, production: { medicalUnit: 30 } });

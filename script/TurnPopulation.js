@@ -1,6 +1,6 @@
 "use strict";
 
-import { Generation, GenerationState, createWorkers } from "./Generations.js";
+import { Generation, GenerationState, createClones } from "./Generations.js";
 import { BuildingGraph } from "./PipeNetwork.js";
 
 /** popolazione: consumi di sussistenza, istruzione, nascite, morti e stato della popolazione */
@@ -122,6 +122,10 @@ let PopulationPhase = {
 			for(let i = 0; i < generations.length; i++)
 			{
 				let lots = generations[i].getLots();
+				if(lots.length == 0)
+				{
+					continue; // generazione estinta
+				}
 				let minEducationLevel = lots[lots.length - 1].getEducationLevel();
 				let ii;
 				for(ii = 0; ii < lots.length; ii++)
@@ -263,6 +267,13 @@ let PopulationPhase = {
 			}
 		}
 
+		// i cloni non vanno in pensione: a fine vita lavorativa muoiono
+		let expired = generations.reduce(function(n, generation) { return n + generation.expire(date); }, 0);
+		if(expired > 0)
+		{
+			ctx.events.push({ type: "CLONES_EXPIRED", count: expired });
+		}
+
 		// mortalità naturale dei Pensionati, rallentata dalle cure mediche
 		let healthCover = 1 - missingHealthCover;
 		let deathRate = PopulationPhase.RETIREE_DEATH_RATE * (1 - PopulationPhase.MEDICAL_DEATH_REDUCTION * healthCover);
@@ -282,6 +293,32 @@ let PopulationPhase = {
 		population.subsistence = subsistence;
 		population.wellness = wellness;
 		population.happiness = happiness;
+	}
+};
+
+/**
+ * Produzione delle capsule criogeniche: ogni Centro Criogenico attivo prepara una capsula a turno
+ * con CAPSULE_COST, finché le capsule non riempiono la capienza dei centri (10 ciascuno).
+ */
+let CapsulePhase = {
+	CAPSULE_COST: { mineralOre: 5 },
+
+	project: function(ctx)
+	{
+		let state = ctx.state;
+		let centers = (state.getActiveList()["CryoCenter"] || []).length;
+		let room = state.getCapacity("cryoCapsule") - state.getStored("cryoCapsule");
+		let n = 0;
+		while(n < Math.min(centers, room) && state.haveMaterials(CapsulePhase.CAPSULE_COST))
+		{
+			state.delMaterials(CapsulePhase.CAPSULE_COST);
+			n++;
+		}
+		if(n > 0)
+		{
+			state.addMaterials({ cryoCapsule: n });
+		}
+		return n;
 	}
 };
 
@@ -308,10 +345,10 @@ let RevivalPhase = {
 		}
 		state.delMaterials({ cryoRevival: n });
 		state.destroyMaterials({ cryoCapsule: n });
-		state.getPopulation().registry.push(createWorkers(state.getDate(), n / RevivalPhase.REVIVAL_GROUP));
+		state.getPopulation().registry.push(createClones(state.getDate(), n / RevivalPhase.REVIVAL_GROUP));
 		state.setPendingRevival(pending - n);
 		ctx.events.push({ type: "COLONISTS_REVIVED", count: n });
 	}
 };
 
-export { PopulationPhase, RevivalPhase };
+export { CapsulePhase, PopulationPhase, RevivalPhase };

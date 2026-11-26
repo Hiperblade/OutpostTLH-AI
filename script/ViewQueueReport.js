@@ -1,6 +1,7 @@
 "use strict";
 
 import { describeBuildingIssue } from "./BuildingIssueText.js";
+import { GenerationState } from "./Generations.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { inherits } from "./SystemLib.js";
@@ -379,11 +380,22 @@ function ReportHumans(colonyState, image)
 		text += _separator;
 
 		let date = colonyState.getDate();
+		// le generazioni sono riunite per fase di vita
+		let stages = [GenerationState.Clones, GenerationState.Infants, GenerationState.Students, GenerationState.Researchers, GenerationState.Scientists, GenerationState.Retirees];
+		let byStage = {};
 		let people = 0;
 		population.registry.forEach(function(generation)
 		{
+			let stage = generation.getState(date);
+			byStage[stage] = (byStage[stage] || 0) + generation.getPopulation();
 			people += generation.getPopulation();
-			text += _row(TextRepository.get(generation.getState(date)), generation.getPopulation(), false);
+		});
+		stages.forEach(function(stage)
+		{
+			if(byStage[stage] > 0)
+			{
+				text += _row(TextRepository.get(stage), byStage[stage], false);
+			}
 		});
 		text += _row(TextRepository.get("AwakeColonists"), people, false);
 

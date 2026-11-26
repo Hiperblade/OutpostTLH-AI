@@ -6,7 +6,7 @@ import { BuildingGraph } from "./PipeNetwork.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { RecipeLib } from "./RecipeLib.js";
 import { MaintenancePhase } from "./TurnMaintenance.js";
-import { PopulationPhase, RevivalPhase } from "./TurnPopulation.js";
+import { CapsulePhase, PopulationPhase, RevivalPhase } from "./TurnPopulation.js";
 
 /**
  * Turn: avanzamento di un turno della colonia.
@@ -36,6 +36,7 @@ function TurnConstructor()
 			RobotWearPhase,
 			RobotPhase,
 			PopulationPhase,
+			CapsulePhase,
 			RevivalPhase,
 			OutcomePhase
 		];
@@ -132,7 +133,7 @@ let WorkforcePhase = {
 		population.registry.forEach(function(generation)
 		{
 			let phase = generation.getState(date);
-			if(phase == GenerationState.Scientists)
+			if(phase == GenerationState.Scientists || phase == GenerationState.Clones)
 			{
 				workers += generation.getPopulation();
 			}
@@ -492,12 +493,13 @@ let RobotPhase = {
 /**
  * Esito della partita.
  * Vittoria: almeno VICTORY_POPULATION coloni contenti (piena sussistenza e felicità >= VICTORY_HAPPINESS)
- * per VICTORY_TURNS turni consecutivi.
+ * per VICTORY_TURNS turni consecutivi; i cloni non contano.
  * Sconfitta, dopo la consegna del kit di atterraggio:
  *   - nessun Headquarter in piedi;
- *   - nessuna manodopera e nessun modo di riaverla: niente RoboWorker, Lavoratori, Pensionati o coloni giovani,
- *     e nessun risveglio possibile (capsule finite o Centro Criogenico non attivo);
- *   - nessun colono, nessuna nascita possibile (Asilo non attivo) e nessuna capsula.
+ *   - nessuna manodopera e nessun modo di riaverla: niente RoboWorker, Lavoratori, cloni, Pensionati o coloni
+ *     giovani, e nessun Centro Criogenico attivo che prepari e risvegli capsule;
+ *   - dopo l'arrivo dei primi coloni: nessun colono, nessuna nascita possibile (Asilo non attivo),
+ *     nessuna capsula e nessun Centro Criogenico in piedi.
  */
 let OutcomePhase = {
 	VICTORY_POPULATION: 200,
@@ -509,19 +511,20 @@ let OutcomePhase = {
 		let state = ctx.state;
 		let date = state.getDate();
 		let population = state.getPopulation();
-		let people = 0, workers = 0, young = 0;	// workers: chi fornisce manodopera (Lavoratori e Pensionati)
+		let people = 0, citizens = 0, workers = 0, young = 0;	// citizens: coloni non clonati; workers: chi fornisce manodopera
 		population.registry.forEach(function(generation)
 		{
 			let n = generation.getPopulation();
 			let phase = generation.getState(date);
 			people += n;
-			if(phase == GenerationState.Scientists || phase == GenerationState.Retirees) { workers += n; }
+			if(!generation.isClone()) { citizens += n; }
+			if(phase == GenerationState.Scientists || phase == GenerationState.Clones || phase == GenerationState.Retirees) { workers += n; }
 			else if(phase == GenerationState.Infants || phase == GenerationState.Students || phase == GenerationState.Researchers) { young += n; }
 		});
 
 		// vittoria
 		let content = population.subsistence == 1 && population.happiness >= OutcomePhase.VICTORY_HAPPINESS;
-		state.setVictoryStreak((people >= OutcomePhase.VICTORY_POPULATION && content) ? state.getVictoryStreak() + 1 : 0);
+		state.setVictoryStreak((citizens >= OutcomePhase.VICTORY_POPULATION && content) ? state.getVictoryStreak() + 1 : 0);
 		if(state.getVictoryStreak() >= OutcomePhase.VICTORY_TURNS)
 		{
 			state.setOutcome(GameOutcome.Victory);
@@ -539,9 +542,13 @@ let OutcomePhase = {
 			return el.getType() == StructureTypes.Building && el.isHeadquarter() && !el.isDestroyed();
 		});
 		let capsules = state.getStored("cryoCapsule");
-		let revivalPossible = capsules > 0 && active("CryoCenter");
-		let noLabor = state.getStored("roboWorker") <= 0 && workers == 0 && young == 0 && !revivalPossible;
-		let noColonists = people == 0 && !active("Nursery") && capsules <= 0;
+		let cryoStanding = ctx.map.getStructure().some(function(el)
+		{
+			return el.getType() == StructureTypes.Building && el.getBuildingType() == "CryoCenter" && !el.isDestroyed();
+		});
+		let noLabor = state.getStored("roboWorker") <= 0 && workers == 0 && young == 0 && !active("CryoCenter");
+		let colonistsArrived = population.registry.length > 0;
+		let noColonists = colonistsArrived && people == 0 && !active("Nursery") && capsules <= 0 && !cryoStanding;
 		if(!headquarterStanding || noLabor || noColonists)
 		{
 			state.setOutcome(GameOutcome.Defeat);

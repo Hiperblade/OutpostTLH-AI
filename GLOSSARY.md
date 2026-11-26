@@ -40,25 +40,29 @@ Quanto è praticabile una casella: spianata, sgombra, accidentata, impervia, ina
 _Evitare_: detriti, difficoltà del terreno
 
 **Vittoria**:
-La colonia mantiene una popolazione minima di coloni contenti per un numero stabilito di turni consecutivi.
+La colonia mantiene una popolazione minima di coloni contenti per un numero stabilito di turni consecutivi; i cloni non contano.
 
 **Sconfitta**:
-Non resta in piedi nessun Headquarter; oppure non resta manodopera e non c'è modo di riaverla (nessun RoboWorker, nessun Lavoratore, nessun risveglio possibile); oppure non ci sono più coloni, né nascite possibili, né capsule criogeniche.
+Non resta in piedi nessun Headquarter; oppure non resta manodopera e non c'è modo di riaverla (nessun RoboWorker, nessun Lavoratore o clone, nessun Centro Criogenico attivo); oppure, dopo l'arrivo dei primi coloni, non ci sono più coloni, né nascite possibili, né capsule criogeniche, né un Centro Criogenico.
 
 ### Coloni
 
 **Kit di atterraggio**:
-Ciò che la colonia riceve atterrando: i moduli di base, i robot di cantiere, i RoboWorker, una scorta di cibo e le capsule criogeniche.
+Ciò che la colonia riceve atterrando: i moduli di base, i robot di cantiere e i RoboWorker; niente cibo e niente coloni.
 
 **Capsula criogenica**:
-Un colono adulto ibernato, arrivato con il kit di atterraggio; non consuma risorse e non lavora finché non viene risvegliato.
+Un clone in attesa di risveglio, preparato dal Centro Criogenico con i minerali; non consuma risorse e non lavora finché non viene risvegliato.
 _Evitare_: coloni iniziali, ibernato
 
+**Clone**:
+Un colono adulto e già istruito uscito da una capsula criogenica: lavora come un Lavoratore, ma a fine vita lavorativa muore invece di diventare Pensionato e non conta per la vittoria.
+_Evitare_: replicante, colono artificiale
+
 **Risveglio**:
-La trasformazione di capsule criogeniche in Lavoratori, a gruppi di 5, compiuta da un Centro Criogenico quando cibo, alloggi e habitat bastano per tutti.
+La trasformazione di capsule criogeniche in cloni, a gruppi di 5, compiuta da un Centro Criogenico quando cibo, alloggi e habitat bastano per tutti.
 
 **Centro Criogenico**:
-Edificio sotterraneo automatico che risveglia i coloni dalle capsule criogeniche.
+Edificio sotterraneo automatico che prepara una capsula criogenica a turno con i minerali, fino a 10, e risveglia i cloni.
 _Evitare_: crio-centro, centro di risveglio
 _Evitare_: scongelamento
 
@@ -74,7 +78,7 @@ Il grado di soddisfazione dei coloni (istruzione, svago, beni); quando è bassa 
 _Evitare_: happiness, morale
 
 **Coloni contenti**:
-I coloni vivi di ogni età, quando la colonia è in piena sussistenza e la felicità è alta; le capsule non risvegliate non contano.
+I coloni vivi di ogni età, quando la colonia è in piena sussistenza e la felicità è alta; cloni e capsule non contano.
 
 **Mortalità naturale**:
 La morte per vecchiaia dei Pensionati, rallentata dalle cure mediche.
@@ -82,7 +86,7 @@ La morte per vecchiaia dei Pensionati, rallentata dalle cure mediche.
 ### Lavoro
 
 **Manodopera**:
-Il lavoro disponibile in un turno, fornito dai Lavoratori, dai Pensionati (che valgono metà) e dai RoboWorker; cantieri e produzione usano prima quella dei robot, gli edifici con personale solo quella dei Lavoratori. Non si accumula tra un turno e l'altro.
+Il lavoro disponibile in un turno, fornito dai Lavoratori, dai cloni, dai Pensionati (che valgono metà) e dai RoboWorker; cantieri e produzione usano prima quella dei robot, gli edifici con personale solo quella dei Lavoratori. Non si accumula tra un turno e l'altro.
 _Evitare_: workforce, work unit, forza lavoro
 
 **RoboWorker**:

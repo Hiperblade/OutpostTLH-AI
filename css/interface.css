@@ -361,6 +361,22 @@ body
 	width: 24px;
 }
 
+.queueItemIssue
+{
+	float: right;
+	margin: 6px 6px 0 2px;
+	height: 16px;
+	width: 16px;
+	border-radius: 50%;
+	border: 1px solid rgb(20,20,20);
+	background-color: rgb(210,60,50);
+	color: #fff;
+	font: bold 12px sans-serif;
+	line-height: 16px;
+	text-align: center;
+	cursor: help;
+}
+
 .queueItemText
 {
 	overflow: hidden;

@@ -13,7 +13,7 @@ import { PrototypeLib } from "./PrototypeLib.js";
  * In caso di rifiuto, detail indica l'edificio responsabile: { building, status, missing }
  *   status "missing": non costruito; "building": in costruzione; "inactive": fermo, missing = cosa gli manca.
  * Il risveglio avviene a fine turno (RevivalPhase), nei limiti della capacità dei Centri Criogenici.
- * Per risvegliare servono capsule, un Centro Criogenico attivo e, per tutti i coloni svegli più i
+ * Per risvegliare servono un Centro Criogenico attivo, capsule e, per tutti i coloni svegli più i
  * nuovi, cibo, alloggi e habitat per ogni elemento collegato a un Headquarter.
  */
 let RevivalReason = {
@@ -73,13 +73,14 @@ function RevivalConstructor()
 		count = count || GROUP;
 		let state = map.getState();
 		let pending = state.getPendingRevival();
-		if(state.getStored("cryoCapsule") - pending < count)
-		{
-			return _fail(RevivalReason.NoCapsules);
-		}
+		// prima il centro: è lui che prepara le capsule
 		if((state.getActiveList()["CryoCenter"] || []).length == 0)
 		{
 			return _fail(RevivalReason.NoCryoCenter, _diagnose(map, CRYO));
+		}
+		if(state.getStored("cryoCapsule") - pending < count)
+		{
+			return _fail(RevivalReason.NoCapsules);
 		}
 		let awake = state.getPopulation().registry.reduce(function(n, generation) { return n + generation.getPopulation(); }, 0);
 		let people = awake + pending + count;

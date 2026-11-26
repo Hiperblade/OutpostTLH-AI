@@ -123,7 +123,12 @@ function QueueViewConstructor(divId, size)
 
 	let _addItem = function(itemName)
 	{
-		queueData.appends(tags["SortedItem_" + itemName]);
+		let item = tags["SortedItem_" + itemName];
+		if(item == null || queueData.getMissing(item).length > 0)
+		{
+			return; // senza i requisiti non si mette in coda
+		}
+		queueData.appends(item);
 		_inizializeQueue();
 	};
 
@@ -239,6 +244,7 @@ function QueueViewConstructor(divId, size)
 			currentId = item.getName();
 		}
 
+		let missing = queueData.getMissing(item);
 		let tmp = '<div class="queueItem" data-current="' + currentId + '">';
 		let imageId = item.getName();
 		if(item.getImageId != undefined)
@@ -246,7 +252,12 @@ function QueueViewConstructor(divId, size)
 			imageId = item.getImageId();
 		}
 		tmp += '<img class="queueItemImage" src="' + ImagesLib.getFileName(imageId) + '">';
-		if(canAppends)
+		if(missing.length > 0)
+		{
+			let tip = TextRepository.get("RequirementsMissing") + " (" + missing.map(function(name) { return TextRepository.get(name); }).join(", ") + ")";
+			tmp += '<div class="queueItemIssue" title="' + tip + '">!</div>';
+		}
+		else if(canAppends)
 		{
 			tmp += '<div class="queueItemButton" data-add="' + item.getName() + '"></div>';
 		}
@@ -286,6 +297,8 @@ function QueueData(queue, available)
 	this.getAvailableTitle = function() { return "Available"; };
 
 	this.getInfo = undefined;
+	/** materiali del costo che non bastano mai in un turno: la riga non si può mettere in coda */
+	this.getMissing = function(item) { return []; };
 
 	//-----------------------------------------
 }
@@ -293,6 +306,27 @@ function QueueData(queue, available)
 function BaseQueueData(colonyState, queue, available)
 {
 	QueueData.call(this, queue, available);
+
+	// disponibilità in un turno: la manodopera è quella di robot e Lavoratori, gli altri materiali scorta più produzione
+	let _availablePerTurn = function(resource)
+	{
+		if(resource == "labor")
+		{
+			return colonyState.getStored("roboLabor") + colonyState.getStored("workerLabor");
+		}
+		return colonyState.getStored(resource) + colonyState.getProduced(resource);
+	};
+
+	let _costOf = function(item)
+	{
+		return (item.getBase != undefined) ? item.getBase().getCost() : item.getCost();
+	};
+
+	this.getMissing = function(item)
+	{
+		let cost = _costOf(item);
+		return Object.keys(cost).filter(function(resource) { return cost[resource] > _availablePerTurn(resource); });
+	};
 
 	this.getInfo = function(item)
 	{
@@ -302,15 +336,6 @@ function BaseQueueData(colonyState, queue, available)
 			let cost;
 			let time;
 			let remainTime;
-			// disponibilità in un turno: la manodopera è quella di robot e Lavoratori, gli altri materiali scorta più produzione
-			let _availablePerTurn = function(resource)
-			{
-				if(resource == "labor")
-				{
-					return colonyState.getStored("roboLabor") + colonyState.getStored("workerLabor");
-				}
-				return colonyState.getStored(resource) + colonyState.getProduced(resource);
-			};
 
 			if(item.getBase != undefined)
 			{
@@ -353,6 +378,10 @@ function BaseQueueData(colonyState, queue, available)
 			}
 
 			text += '</table>';
+			if(item.getBase == undefined && this.getMissing(item).length > 0)
+			{
+				text += '<div class="colorError">' + TextRepository.get("RequirementsMissing") + '</div>';
+			}
 			text += '</div>';
 			text += '</div>';
 		}

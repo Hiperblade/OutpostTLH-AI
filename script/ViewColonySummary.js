@@ -23,13 +23,14 @@ function ColonySummaryView(elementId, map)
 		let state = map.getState();
 		let date = state.getDate();
 		let population = state.getPopulation();
-		let awake = 0, workers = 0, retirees = 0;
+		let awake = 0, workers = 0, clones = 0, retirees = 0;
 		population.registry.forEach(function(generation)
 		{
 			let n = generation.getPopulation();
 			let phase = generation.getState(date);
 			awake += n;
 			if(phase == GenerationState.Scientists) { workers += n; }
+			else if(phase == GenerationState.Clones) { clones += n; }
 			else if(phase == GenerationState.Retirees) { retirees += n; }
 		});
 		let capsules = state.getStored("cryoCapsule");
@@ -45,7 +46,7 @@ function ColonySummaryView(elementId, map)
 			text += _row(TextRepository.get("subsistence"), _percent(population.subsistence), population.subsistence < 1);
 			text += _row(TextRepository.get("wellness"), _percent(population.wellness), population.wellness < 1);
 			text += _row(TextRepository.get("happiness"), _percent(population.happiness), population.happiness < 0.75);
-			text += _row(TextRepository.get("Summary_workers"), workers + (retirees > 0 ? " + " + retirees + " " + TextRepository.get("Summary_retirees") : ""), false);
+			text += _row(TextRepository.get("Summary_workers"), workers + (clones > 0 ? " + " + clones + " " + TextRepository.get("Summary_clones") : "") + (retirees > 0 ? " + " + retirees + " " + TextRepository.get("Summary_retirees") : ""), false);
 		}
 		text += _row(TextRepository.get("Summary_labor"), state.getStored("workerLabor") + " + " + state.getStored("roboLabor") + " " + TextRepository.get("Summary_robotic"), false);
 		text += _row(TextRepository.get("roboWorker"), robots + " \u00B7 " + TextRepository.get("Summary_wear").replace("%s", _percent(wear)), wear >= 0.75);

@@ -104,7 +104,7 @@ function createGame(site)
 	state.addKnowledge({ theory: ["Find_Metal", "Find_Mineral", "Find_Radioactive", "Find_Fumarole"] });
 
 	// magazzini condivisi
-	["mediKit", "goods", "toxicWaste", "fusionWaste", "cryoCapsule"].forEach(function(name) { state.configureMaterial(name, "genericStorage"); });
+	["mediKit", "goods", "toxicWaste", "fusionWaste"].forEach(function(name) { state.configureMaterial(name, "genericStorage"); });
 	["dozer", "digger", "miner", "roboWorker", "MicrowaveSatellite"].forEach(function(name) { state.configureMaterial(name, "roboticStorage"); });
 	["radioactiveBar", "radioactiveWaste"].forEach(function(name) { state.configureMaterial(name, "radioactiveStorage"); });
 
