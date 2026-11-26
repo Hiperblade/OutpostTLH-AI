@@ -192,7 +192,14 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 		mapView = new MapView(terrainMap, miniMapCanvas, site.getBackground(), areaSize, _onChangePosition);
 		selectorView = new BuildingSelectorView(selectorCanvas, canvasSize.x, state, _onSelected);
 
-		buildingInfo = InitializeBuildingInfoView(_onChangePosition, _onClearCurrentItem, function(building) { return state.getBuildingIssue(building); });
+		buildingInfo = InitializeBuildingInfoView(_onChangePosition, _onClearCurrentItem, function(building) { return state.getBuildingIssue(building); },
+			function()
+			{
+				// nuova assegnazione del personale: si ricalcola la proiezione del turno
+				Turn.project(terrainMap);
+				_redraw();
+				_save();
+			});
 		queueView = InitializeQueueView("queueDiv", canvasSize);
 
 		// pulsanti spostamento

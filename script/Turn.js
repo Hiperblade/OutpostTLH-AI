@@ -6,6 +6,7 @@ import { BuildingGraph } from "./PipeNetwork.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { RecipeLib } from "./RecipeLib.js";
 import { MaintenancePhase } from "./TurnMaintenance.js";
+import { Work } from "./Work.js";
 import { CapsulePhase, PopulationPhase, RevivalPhase } from "./TurnPopulation.js";
 
 /**
@@ -114,36 +115,40 @@ let Turn = new TurnConstructor();
 // fasi
 
 /**
- * Manodopera del turno, in due materiali distinti che non si accumulano:
- *   roboLabor    1 unità per RoboWorker
- *   workerLabor  1 unità per Lavoratore e RETIREE_LABOR per Pensionato, ridotta dalla felicità fino a MIN_HAPPINESS_FACTOR
- * Nei costi la voce "labor" si paga prima con i robot e poi con i Lavoratori; il personale
- * degli edifici (staff) solo con i Lavoratori.
+ * Manodopera del turno in punti lavoro (vedi Work), in due materiali distinti che non si accumulano:
+ *   roboLabor    Work.ROBOT punti per RoboWorker
+ *   workerLabor  Work.COLONIST per Lavoratore e Work.RETIREE per Pensionato, ridotti dalla felicità fino a
+ *                MIN_HAPPINESS_FACTOR, più Work.CLONE per clone (i cloni non risentono della felicità)
+ * Nei costi la voce "labor" si paga prima con i robot e poi con Lavoratori e cloni; il personale
+ * degli edifici (staff) solo con Lavoratori e cloni.
  */
 let WorkforcePhase = {
 	MIN_HAPPINESS_FACTOR: 0.5,
-	RETIREE_LABOR: 0.5,
 
 	project: function(ctx)
 	{
 		let state = ctx.state;
 		let date = state.getDate();
 		let population = state.getPopulation();
-		let workers = 0;
+		let colonists = 0, clones = 0;
 		population.registry.forEach(function(generation)
 		{
 			let phase = generation.getState(date);
-			if(phase == GenerationState.Scientists || phase == GenerationState.Clones)
+			if(phase == GenerationState.Scientists)
 			{
-				workers += generation.getPopulation();
+				colonists += generation.getPopulation() * Work.COLONIST;
 			}
 			else if(phase == GenerationState.Retirees)
 			{
-				workers += generation.getPopulation() * WorkforcePhase.RETIREE_LABOR;
+				colonists += generation.getPopulation() * Work.RETIREE;
+			}
+			else if(phase == GenerationState.Clones)
+			{
+				clones += generation.getPopulation() * Work.CLONE;
 			}
 		});
 		let factor = WorkforcePhase.MIN_HAPPINESS_FACTOR + (1 - WorkforcePhase.MIN_HAPPINESS_FACTOR) * population.happiness;
-		state.setMaterials({ roboLabor: state.getStored("roboWorker"), workerLabor: Math.floor(workers * factor) });
+		state.setMaterials({ roboLabor: state.getStored("roboWorker") * Work.ROBOT, workerLabor: Math.floor(colonists * factor) + clones });
 	}
 };
 
@@ -177,15 +182,26 @@ let _missing = function(state, cost)
 	});
 };
 
-/** consumi di un edificio attivo, compreso il personale */
-let _runningCost = function(prototype)
+/** manodopera disponibile in questo turno: robot più Lavoratori e cloni */
+let _laborAvailable = function(state)
 {
-	let cost = Object.assign({}, prototype.getConsumption());
-	if(prototype.getStaff() > 0)
+	return Math.max(0, state.getRemainder("roboLabor")) + Math.max(0, state.getRemainder("workerLabor"));
+};
+
+/** produzione ridotta in proporzione al rendimento del personale (per difetto) */
+let _scaled = function(amounts, ratio)
+{
+	if(ratio >= 1)
 	{
-		cost.workerLabor = (cost.workerLabor || 0) + prototype.getStaff();
+		return amounts;
 	}
-	return cost;
+	let ret = {};
+	Object.keys(amounts).forEach(function(name)
+	{
+		let value = Math.floor(amounts[name] * ratio);
+		if(value > 0) { ret[name] = value; }
+	});
+	return ret;
 };
 
 /** smaltimento: elimina fino alla quantità indicata di ogni scarto disponibile */
@@ -204,12 +220,117 @@ let _dispose = function(state, disposal)
 	}
 };
 
-/** costo di un turno di cantiere: costo di costruzione più 1 unità di manodopera */
-let _constructionCost = function(prototype)
+
+/**
+ * Materiali che servono solo a studi e produzioni in coda (o ad altri edifici): non si accumulano,
+ * quindi un laboratorio o un'industria che produce soltanto questi, quando nessuno li usa, resta a
+ * riposo senza consumare energia né personale.
+ */
+const WORK_MATERIALS = ["researchUnit", "researchStructureAuto", "researchStructureSurface", "researchStructureSurfaceAdv",
+	"researchStructureUnderground", "researchStructureUndergroundAdv", "researchStructureDeep", "researchStructureDeepAdv",
+	"productionUnit", "productionStandardStructure", "productionChemicalStructure", "goodsUnit", "pharmaceuticalUnit"];
+
+/** materiali richiesti in questo turno: costi degli elementi in coda e consumi degli edifici */
+let _demand = function(ctx)
 {
-	let cost = Object.assign({}, prototype.getBuildingCost());
-	cost.labor = (cost.labor || 0) + 1;
-	return cost;
+	let demand = new Set();
+	let state = ctx.state;
+	state.getResearchQueue().concat(state.getProductionQueue()).forEach(function(item)
+	{
+		if(item.getRemainTime() > 0)
+		{
+			Object.keys(RecipeLib.get(item.getName()).getCost()).forEach(function(name) { demand.add(name); });
+		}
+	});
+	ctx.networks.forEach(function(graph)
+	{
+		Object.keys(graph).forEach(function(buildingType)
+		{
+			let prototype = PrototypeLib.get(buildingType);
+			if(prototype == undefined || !Array.isArray(graph[buildingType]) || !graph[buildingType].some(function(b) { return b.isOperative(); }))
+			{
+				return;
+			}
+			Object.keys(prototype.getConsumption()).forEach(function(name) { demand.add(name); });
+		});
+	});
+	return demand;
+};
+
+/** unità generiche prodotte da molti edifici: da sole non bastano a far lavorare un laboratorio o un'industria */
+const GENERIC_WORK_MATERIALS = ["researchUnit", "productionUnit"];
+
+/**
+ * L'edificio produce solo materiali per studi e produzioni, e nessuno di questi serve ora.
+ * Per gli edifici con personale contano i materiali specifici (le strutture di ricerca e di produzione):
+ * un laboratorio lavora se produce la struttura richiesta da uno studio in coda, non per le sole unità
+ * di ricerca; gli edifici automatici lavorano anche solo per le unità generiche.
+ */
+let _isIdle = function(prototype, demand)
+{
+	let production = Object.keys(prototype.getProduction());
+	if(production.length == 0 || !production.every(function(name) { return WORK_MATERIALS.indexOf(name) >= 0; }))
+	{
+		return false;
+	}
+	// gli edifici automatici (senza personale) lavorano anche solo per le unità generiche
+	let specific = production.filter(function(name) { return GENERIC_WORK_MATERIALS.indexOf(name) < 0; });
+	let relevant = (specific.length > 0 && prototype.getStaff() > 0) ? specific : production;
+	return !relevant.some(function(name) { return demand.has(name); });
+};
+
+/**
+ * Edifici con personale pronti a lavorare, nell'ordine in cui ricevono la manodopera di Lavoratori
+ * e cloni: prima la precedenza Alta, poi Normale, poi Bassa; a pari precedenza l'ordine dei tipi.
+ */
+let _staffedBuildings = function(ctx, demand)
+{
+	let list = [];
+	ctx.networks.forEach(function(graph)
+	{
+		PrototypeLib.getPriorityList().forEach(function(buildingType, order)
+		{
+			let prototype = PrototypeLib.get(buildingType);
+			if(prototype.getStaffLabor() <= 0 || graph[buildingType] == undefined || _isIdle(prototype, demand))
+			{
+				return;
+			}
+			graph[buildingType].forEach(function(building)
+			{
+				if(building.isOperative() && !building.isSuspended())
+				{
+					list.push({ building: building, prototype: prototype, order: order });
+				}
+			});
+		});
+	});
+	return list.sort(function(a, b) { return (a.building.getStaffPriority() - b.building.getStaffPriority()) || (a.order - b.order); });
+};
+
+/** edificio attivo: consumi, produzione (in proporzione al rendimento del personale), capacità e smaltimento */
+let _runBuilding = function(state, building, prototype, ratio)
+{
+	state.delMaterials(prototype.getConsumption());
+	if(ratio < 1)
+	{
+		state.setBuildingIssue(building, { reason: "understaffed", missing: [], ratio: ratio });
+	}
+	state.addMaterials(_scaled(prototype.getProduction(), ratio));
+	state.addMaterials(prototype.getProductionWaste());
+	state.addCapacity(prototype.getCapacity());
+	_dispose(state, prototype.getDisposal());
+	state.addToActiveList(building);
+};
+
+let _stopBuilding = function(state, building, prototype, missing)
+{
+	state.addToInactiveList(building);
+	state.setBuildingIssue(building, { reason: "inactive", missing: missing, noSpace: !state.haveSpace(prototype.getProductionWaste()) });
+};
+
+let _canRun = function(state, prototype)
+{
+	return state.haveMaterials(prototype.getConsumption()) && state.haveSpace(prototype.getProductionWaste());
 };
 
 /** produzione e consumi degli edifici, in ordine di priorità; costi dei cantieri */
@@ -217,6 +338,25 @@ let BuildingProductionPhase = {
 	project: function(ctx)
 	{
 		let state = ctx.state;
+		let demand = _demand(ctx);
+		// la manodopera di Lavoratori e cloni va prima al personale, per precedenza, ed è riservata subito:
+		// cantieri e produzione usano il resto. Il personale di un edificio che non può funzionare
+		// (energia o materiali mancanti) passa agli edifici con personale elaborati dopo.
+		let staffing = new Map();
+		let available = Math.max(0, state.getRemainder("workerLabor"));
+		let reserved = 0;
+		_staffedBuildings(ctx, demand).forEach(function(entry)
+		{
+			let points = Math.min(entry.prototype.getStaffLabor(), available);
+			available -= points;
+			reserved += points;
+			staffing.set(entry.building, points);
+		});
+		if(reserved > 0)
+		{
+			state.delMaterials({ workerLabor: reserved });
+		}
+		let released = 0;
 		ctx.networks.forEach(function(graph)
 		{
 			let connected = BuildingGraph.hasHeadquarter(graph);
@@ -235,33 +375,52 @@ let BuildingProductionPhase = {
 					}
 					if(building.isOperative())
 					{
-						// senza materiali, energia o personale l'edificio resta inattivo
-						let running = _runningCost(prototype);
-						if(state.haveMaterials(running) && state.haveSpace(prototype.getProductionWaste()))
+						// senza materiali, energia o personale l'edificio resta inattivo; con personale
+						// insufficiente funziona e produce in proporzione ai punti lavoro ricevuti
+						// laboratori e industrie senza studi o produzioni da servire restano a riposo,
+						// come gli edifici sospesi dal giocatore
+						if(building.isSuspended())
 						{
-							state.delMaterials(running);
-							state.addMaterials(prototype.getProduction());
-							state.addMaterials(prototype.getProductionWaste());
-							state.addCapacity(prototype.getCapacity());
-							_dispose(state, prototype.getDisposal());
-							state.addToActiveList(building);
+							state.setBuildingIssue(building, { reason: "suspended", missing: [] });
+							return;
 						}
-						else
+						if(_isIdle(prototype, demand))
 						{
-							// edificio inattivo
-							state.addToInactiveList(building);
-							state.setBuildingIssue(building, { reason: "inactive", missing: _missing(state, running), noSpace: !state.haveSpace(prototype.getProductionWaste()) });
+							state.setBuildingIssue(building, { reason: "idle", missing: [] });
+							return;
 						}
+						let need = prototype.getStaffLabor();
+						let staff = staffing.get(building) || 0;
+						if(!_canRun(state, prototype))
+						{
+							released += staff;
+							_stopBuilding(state, building, prototype, _missing(state, prototype.getConsumption()));
+							return;
+						}
+						if(staff < need)
+						{
+							let extra = Math.min(need - staff, released);
+							released -= extra;
+							staff += extra;
+						}
+						if(need > 0 && staff <= 0)
+						{
+							_stopBuilding(state, building, prototype, ["workerLabor"]);
+							return;
+						}
+						_runBuilding(state, building, prototype, (need > 0) ? staff / need : 1);
 					}
 					// le parti delle strutture composite sono costruite dall'edificio principale
 					else if(building.underConstruction() && !building.getFrozen())
 					{
-						// senza materiali o manodopera il cantiere resta fermo questo turno
-						let cost = _constructionCost(prototype);
-						if(_canPay(state, cost))
+						// senza materiali o manodopera il cantiere resta fermo questo turno; avanza dei punti
+						// lavoro ricevuti, al massimo Work.UNITS_PER_TURN
+						let points = Math.min(Work.UNITS_PER_TURN, -building.getProgressState(), _laborAvailable(state));
+						let cost = Object.assign({ labor: Math.max(1, points) }, prototype.getBuildingCost());
+						if(points > 0 && _canPay(state, cost))
 						{
 							_pay(state, cost);
-							state.addToBuildList(building);
+							state.addToBuildList(building, points);
 						}
 						else
 						{
@@ -275,6 +434,12 @@ let BuildingProductionPhase = {
 				});
 			});
 		});
+
+		// la manodopera riservata e non usata torna disponibile
+		if(released > 0)
+		{
+			state.addMaterials({ workerLabor: released });
+		}
 	}
 };
 
@@ -286,10 +451,28 @@ let _consumeRecipeWork = function(state, item)
 {
 	let cost = RecipeLib.get(item.getName()).getCost();
 	let value = 0;
-	while(_canPay(state, cost) && value < item.getRemainTime())
+	if(!cost.labor)
 	{
-		_pay(state, cost);
-		value++;
+		// ricerca: ogni passo paga il costo e avanza di 1
+		while(_canPay(state, cost) && value < item.getRemainTime())
+		{
+			_pay(state, cost);
+			value++;
+		}
+		return value;
+	}
+	// produzione: ogni passo paga i materiali e riceve fino a Work.UNITS_PER_TURN punti di manodopera
+	let materials = Object.assign({}, cost);
+	delete materials.labor;
+	while(value < item.getRemainTime())
+	{
+		let points = Math.min(Work.UNITS_PER_TURN, item.getRemainTime() - value, _laborAvailable(state));
+		if(points <= 0 || !state.haveMaterials(materials))
+		{
+			break;
+		}
+		_pay(state, Object.assign({}, materials, { labor: points }));
+		value += points;
 	}
 	return value;
 };
@@ -406,7 +589,7 @@ let RobotWearPhase = {
 	project: function(ctx)
 	{
 		let state = ctx.state;
-		let work = { roboWorker: state.getConsumed("roboLabor"), dozer: 0, digger: 0 };
+		let work = { roboWorker: state.getConsumed("roboLabor") / Work.ROBOT, dozer: 0, digger: 0 };
 		ctx.map.getStructure().forEach(function(el)
 		{
 			if(el.getType() == StructureTypes.Robot)

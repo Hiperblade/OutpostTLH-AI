@@ -316,6 +316,21 @@ body
 	color: rgb(230,110,100);
 }
 
+.buildingInfoDataPriority
+{
+	margin-top: 4px;
+	font-size: 12px;
+	cursor: pointer;
+	border: 1px solid;
+	padding: 1px 4px;
+	display: inline-block;
+}
+
+.buildingInfoDataPriority:hover
+{
+	background-color: #2f6A08;
+}
+
 /* building form */
 
 .buildingArea

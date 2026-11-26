@@ -1,5 +1,7 @@
 "use strict";
 
+import { Work } from "./Work.js";
+
 let RecipeType = {
 	Production: "production",
 	Research: "research"
@@ -96,6 +98,8 @@ function RecipeLibConstructor()
 
 function BaseRecipe(recipeType, name, requirement, time, cost, result)
 {
+	// il tempo è dato in turni di un colono e conservato in punti lavoro
+	time = time * Work.UNITS_PER_TURN;
 	let _create = function()
 	{
 		return new Recipe(this);

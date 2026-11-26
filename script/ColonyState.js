@@ -38,6 +38,8 @@ import { RecipeLib } from "./RecipeLib.js";
 		state.kitDelivered = false;
 		// capsule criogeniche di cui il giocatore ha chiesto il risveglio
 		state.pendingRevival = 0;
+		// avanzamento della prossima nascita, in unità dell'Asilo (vedi PopulationPhase.BIRTH_COST)
+		state.birthProgress = 0;
 		// usura di ogni robot, per tipo: [{ wear, life }] (vedi RobotWearPhase)
 		state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 
@@ -46,6 +48,7 @@ import { RecipeLib } from "./RecipeLib.js";
 
 		/** perché un edificio non funziona in questo turno: { reason: "inactive" | "stalled" | "disconnected", missing: [...] } */
 		let buildingIssues = new Map();
+		let buildPoints = new Map();
 		/** abitabilità del turno: per supporto vitale, alloggi e cibo { available, needed } */
 		let habitability = null;
 
@@ -58,12 +61,15 @@ import { RecipeLib } from "./RecipeLib.js";
 			state.activeList = {};
 			state.inactiveList = {};
 			buildingIssues = new Map();
+			buildPoints = new Map();
 			habitability = null;
 		};
 
-		let _addToBuildList = function(building)
+		/** cantiere che lavora in questo turno, con i punti lavoro ricevuti */
+		let _addToBuildList = function(building, points)
 		{
 			state.buildList.push(building);
+			buildPoints.set(building, (points === undefined) ? 1 : points);
 		};
 
 		let _addToDestroyedList = function(building)
@@ -252,6 +258,7 @@ import { RecipeLib } from "./RecipeLib.js";
 				victoryStreak: state.victoryStreak,
 				kitDelivered: state.kitDelivered,
 				pendingRevival: state.pendingRevival,
+				birthProgress: state.birthProgress,
 				robotWear: JSON.parse(JSON.stringify(state.robotWear)),
 				robotsAvailable: Object.assign({}, state.robotsAvailable),
 				knowledge: {
@@ -279,6 +286,7 @@ import { RecipeLib } from "./RecipeLib.js";
 			state.victoryStreak = data.victoryStreak;
 			state.kitDelivered = data.kitDelivered;
 			state.pendingRevival = data.pendingRevival || 0;
+			state.birthProgress = data.birthProgress || 0;
 			// i salvataggi precedenti avevano un contatore per tipo: si ripartono da robot nuovi
 			state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 			Object.keys(data.robotWear || {}).forEach(function(type)
@@ -313,6 +321,8 @@ import { RecipeLib } from "./RecipeLib.js";
 		this.isKitDelivered = function() { return state.kitDelivered; };
 		this.setKitDelivered = function() { state.kitDelivered = true; };
 		this.getPendingRevival = function() { return state.pendingRevival; };
+		this.getBirthProgress = function() { return state.birthProgress; };
+		this.setBirthProgress = function(value) { state.birthProgress = value; };
 		this.setPendingRevival = function(value) { state.pendingRevival = value; };
 		this.getRobotWear = function() { return state.robotWear; };
 
@@ -358,6 +368,7 @@ import { RecipeLib } from "./RecipeLib.js";
 
 		this.addToBuildList = _addToBuildList;
 		this.getBuildList = function() { return state.buildList; };
+		this.getBuildPoints = function(building) { return buildPoints.get(building) || 0; };
 		this.addToDestroyedList = _addToDestroyedList;
 		this.getDestroyedList = function() { return state.destroyedList; };
 		this.addToActiveList = _addToActiveList;

@@ -1,6 +1,7 @@
 "use strict";
 
 import { ImagesLib } from "./ImagesLib.js";
+import { PrototypeLib } from "./PrototypeLib.js";
 import { RecipeLib } from "./RecipeLib.js";
 import { inherits } from "./SystemLib.js";
 import { TextRepository } from "./TextRepository.js";
@@ -314,7 +315,24 @@ function BaseQueueData(colonyState, queue, available)
 		{
 			return colonyState.getStored("roboLabor") + colonyState.getStored("workerLabor");
 		}
-		return colonyState.getStored(resource) + colonyState.getProduced(resource);
+		return colonyState.getStored(resource) + colonyState.getProduced(resource) + _idlePotential(resource);
+	};
+
+	// gli edifici a riposo (nessuno studio o produzione li usa) produrrebbero appena messo in coda qualcosa;
+	// quelli con personale solo in proporzione alla manodopera di Lavoratori e cloni del turno
+	let _idlePotential = function(resource)
+	{
+		return colonyState.getBuildingIssues().reduce(function(sum, entry)
+		{
+			if(entry.issue.reason != "idle")
+			{
+				return sum;
+			}
+			let prototype = PrototypeLib.get(entry.building.getBuildingType());
+			let need = prototype.getStaffLabor();
+			let ratio = (need > 0) ? Math.min(1, Math.max(0, colonyState.getStored("workerLabor")) / need) : 1;
+			return sum + Math.floor((prototype.getProduction()[resource] || 0) * ratio);
+		}, 0);
 	};
 
 	let _costOf = function(item)

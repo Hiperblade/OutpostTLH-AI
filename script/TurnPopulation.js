@@ -32,6 +32,8 @@ let PopulationPhase = {
 
 
 	RETIREE_DEATH_RATE: 0.05,
+	BIRTH_COST: 8,		// unità dell'Asilo per un gruppo di bambini
+	BIRTH_GROUP: 5,		// bambini per nascita (un lotto)
 	MEDICAL_DEATH_REDUCTION: 0.5,
 	GOODS_PER_PEOPLE: 10,
 	GOODS_HAPPINESS_BONUS: 0.25,
@@ -247,17 +249,19 @@ let PopulationPhase = {
 
 		let subsistenceAverage = (population.subsistence + subsistence) / 2;
 		let wellnessAverage = (population.wellness + wellness) / 2;
-		// nascite: piena sussistenza e alloggi sufficienti (le cure mediche non servono per nascere)
-		if(subsistenceAverage == 1 && overcrowding == 0)
+		// nascite: l'Asilo accumula avanzamento; a BIRTH_COST nasce un gruppo di BIRTH_GROUP bambini, se la
+		// colonia è in piena sussistenza e cibo, alloggi e habitat avanzano per i nuovi nati
+		let progress = Math.min(PopulationPhase.BIRTH_COST, colonyState.getBirthProgress() + Math.max(0, colonyState.getRemainder("nurseryUnit")));
+		if(progress >= PopulationPhase.BIRTH_COST && subsistenceAverage == 1 && overcrowding == 0 &&
+			colonyState.getRemainder("foodUnit") >= PopulationPhase.BIRTH_GROUP &&
+			colonyState.getRemainder("residentialUnit") >= PopulationPhase.BIRTH_GROUP)
 		{
-			// nascite (se le condizioni sono favorevoli)
-			let nurseryUnit = colonyState.getRemainder("nurseryUnit");
-			if(nurseryUnit > 0)
-			{
-				generations.push(new Generation(date, nurseryUnit));
-			}
+			generations.push(new Generation(date, 1));
+			progress = 0;
+			ctx.events.push({ type: "BIRTHS", count: PopulationPhase.BIRTH_GROUP });
 		}
-		else if(subsistenceAverage < 1)
+		colonyState.setBirthProgress(progress);
+		if(subsistenceAverage < 1)
 		{
 			// morti
 			let dead = Math.floor(people * (1 - subsistenceAverage));

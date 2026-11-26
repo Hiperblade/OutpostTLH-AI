@@ -1,5 +1,12 @@
 "use strict";
 
+/** precedenza degli edifici con personale: prima Alta, poi Normale, poi Bassa */
+let StaffPriority = {
+	High: 0,
+	Normal: 1,
+	Low: 2
+};
+
 // enumerazioni condivise del dominio (nessuna dipendenza)
 
 let Typology = {
@@ -56,4 +63,4 @@ let RobotTypes = {
 	Miner: "RoboMiner"
 };
 
-export { Typology, TerrainLayer, Morphology, StructureTypes, PipeType, PipePorts, RobotTypes };
+export { StaffPriority, Typology, TerrainLayer, Morphology, StructureTypes, PipeType, PipePorts, RobotTypes };

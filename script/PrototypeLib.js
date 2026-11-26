@@ -1,6 +1,7 @@
 "use strict";
 
 import { Building, Pipe, Resource } from "./TerrainMap.js";
+import { Work } from "./Work.js";
 
 let AreaTypes = {
 	One: "1",
@@ -27,7 +28,7 @@ function PrototypeLibConstructor()
 		let item = new BasePrototype(buildingType, terrainLayer, buildingTime, buildingCost, parameters);
 		item.createItem = function(position)
 		{
-			return new Pipe(pipeType, terrainLayer, position, buildingTime);
+			return new Pipe(pipeType, terrainLayer, position, item.getBuildingTime());
 		};
 		list[buildingType] = item;
 		priorityList.push(buildingType);
@@ -153,7 +154,8 @@ function PrototypeLibConstructor()
  * parameters:
  *   requiredResource   risorsa su cui va costruito
  *   consumption, production, productionWaste, capacity   materiali per turno
- *   staff              manodopera dei Lavoratori richiesta a ogni turno per funzionare (edificio con personale)
+ *   staff              coloni richiesti a ogni turno per funzionare (edificio con personale): staff * Work.COLONIST
+ *                      punti dei Lavoratori o dei cloni; con meno punti l'edificio rende in proporzione
  *   disposal           scarti eliminati a turno, fino a esaurimento (quando l'edificio è attivo)
  *   builder            immagine del cantiere
  *   imageId, areaType  immagine e area mostrate nelle schede
@@ -169,6 +171,8 @@ function PrototypeLibConstructor()
 function BasePrototype(buildingType, terrainLayer, buildingTime, buildingCost, parameters)
 {
 	parameters = parameters || {};
+	// il tempo di costruzione è dato in turni di un colono e conservato in punti lavoro
+	buildingTime = (buildingTime || 0) * Work.UNITS_PER_TURN;
 
 	let consumption = parameters.consumption || {};
 	let production = parameters.production || {};
@@ -200,6 +204,8 @@ function BasePrototype(buildingType, terrainLayer, buildingTime, buildingCost, p
 	this.getCapacity = function() { return capacity; };
 	this.getDisposal = function() { return disposal; };
 	this.getStaff = function() { return parameters.staff || 0; };
+	/** punti lavoro del personale necessari a pieno rendimento */
+	this.getStaffLabor = function() { return (parameters.staff || 0) * Work.COLONIST; };
 	this.getRequiredResource = function() { return requiredResource; };
 	this.getBuildingImageId = function() { return parameters.imageId || buildingType; };
 	this.getAreaType = function() { return parameters.areaType || AreaTypes.One; };

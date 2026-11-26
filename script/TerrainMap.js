@@ -1,7 +1,7 @@
 "use strict";
 
 import { ColonyState } from "./ColonyState.js";
-import { Morphology, PipePorts, RobotTypes, StructureTypes, TerrainLayer } from "./Enums.js";
+import { Morphology, PipePorts, RobotTypes, StaffPriority, StructureTypes, TerrainLayer } from "./Enums.js";
 import { PipeNetwork } from "./PipeNetwork.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { inherits } from "./SystemLib.js";
@@ -478,6 +478,8 @@ function TerrainMap(terrainTypology, size, surfaceMorphology)
 			integrity: el.getIntegrity(),
 			progressState: el.getProgressState(),
 			frozen: el.getFrozen(),
+			staffPriority: el.getStaffPriority(),
+			suspended: el.isSuspended(),
 			main: (main === el) ? -1 : structure.indexOf(main)
 		});
 	};
@@ -616,6 +618,8 @@ function Building(buildingType, terrainLayer, position, buildingTime, builder)
 	let integrity = MAX_INTEGRITY;
 	let progressState = - (buildingTime || 0);
 	let frozen = false;
+	let staffPriority = StaffPriority.Normal;
+	let suspended = false;
 	//let owner = null;
 
 	//var	builder = builder;
@@ -632,11 +636,12 @@ function Building(buildingType, terrainLayer, position, buildingTime, builder)
 		}
 	};
 
-	let _progressBuild = function()
+	/** avanza il cantiere di amount punti lavoro (1 se non indicato); true a costruzione finita */
+	let _progressBuild = function(amount)
 	{
 		if(!frozen && progressState < 0)
 		{
-			progressState++;
+			progressState = Math.min(0, progressState + (amount === undefined ? 1 : amount));
 		}
 		return (progressState == 0);
 	};
@@ -720,7 +725,21 @@ function Building(buildingType, terrainLayer, position, buildingTime, builder)
 	this.getIntegrity = function() { return integrity; };
 	this.getProgressState = function() { return progressState; };
 	this.getFrozen = function() { return frozen; };
-	this.restoreState = function(data) { integrity = data.integrity; progressState = data.progressState; frozen = data.frozen; return this; };
+	this.restoreState = function(data)
+	{
+		integrity = data.integrity;
+		progressState = data.progressState;
+		frozen = data.frozen;
+		staffPriority = (data.staffPriority === undefined) ? StaffPriority.Normal : data.staffPriority;
+		suspended = !!data.suspended;
+		return this;
+	};
+	/** sospeso dal giocatore (es. le nascite dell'Asilo): resta a riposo */
+	this.isSuspended = function() { return suspended; };
+	this.setSuspended = function(value) { suspended = !!value; return this; };
+	/** precedenza nell'assegnazione del personale (StaffPriority) */
+	this.getStaffPriority = function() { return staffPriority; };
+	this.setStaffPriority = function(value) { staffPriority = value; return this; };
 	this.setFrozen = function(value) { frozen = value; return this; };
 	//this.getOwner = function() { return owner; };
 

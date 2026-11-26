@@ -55,7 +55,7 @@ Un clone in attesa di risveglio, preparato dal Centro Criogenico con i minerali;
 _Evitare_: coloni iniziali, ibernato
 
 **Clone**:
-Un colono adulto e già istruito uscito da una capsula criogenica: lavora come un Lavoratore, ma a fine vita lavorativa muore invece di diventare Pensionato e non conta per la vittoria.
+Un colono adulto e già istruito uscito da una capsula criogenica: lavora con un quarto del rendimento di un Lavoratore (1 punto lavoro contro 4), non risente della felicità, a fine vita lavorativa muore invece di diventare Pensionato e non conta per la vittoria.
 _Evitare_: replicante, colono artificiale
 
 **Risveglio**:
@@ -80,13 +80,20 @@ _Evitare_: happiness, morale
 **Coloni contenti**:
 I coloni vivi di ogni età, quando la colonia è in piena sussistenza e la felicità è alta; cloni e capsule non contano.
 
+**Nascita**:
+Un gruppo di 5 bambini nati dall'Asilo: ogni Asilo a pieno personale ne prepara uno ogni 2 turni, e nasce solo se la colonia è in piena sussistenza e cibo, alloggi e habitat bastano anche per i nuovi nati. Il giocatore può sospendere le nascite di un Asilo, che resta a riposo.
+
 **Mortalità naturale**:
 La morte per vecchiaia dei Pensionati, rallentata dalle cure mediche.
 
 ### Lavoro
 
 **Manodopera**:
-Il lavoro disponibile in un turno, fornito dai Lavoratori, dai cloni, dai Pensionati (che valgono metà) e dai RoboWorker; cantieri e produzione usano prima quella dei robot, gli edifici con personale solo quella dei Lavoratori. Non si accumula tra un turno e l'altro.
+Il lavoro disponibile in un turno, in punti lavoro: 4 per Lavoratore, 4 per RoboWorker, 2 per Pensionato, 1 per clone; la felicità riduce solo quella di Lavoratori e Pensionati. Cantieri e produzione usano prima quella dei robot, gli edifici con personale solo quella di Lavoratori, Pensionati e cloni. Non si accumula tra un turno e l'altro.
+
+**Punti lavoro**:
+L'unità di misura della manodopera e dei tempi: costruzioni, produzioni e ricerche durano un certo numero di punti, e un cantiere o una produzione riceve al massimo 4 punti a turno (un Lavoratore a tempo pieno).
+_Evitare_: turni di lavoro, ore uomo
 _Evitare_: workforce, work unit, forza lavoro
 
 **RoboWorker**:
@@ -103,7 +110,15 @@ _Evitare_: degrado, rottura
 Edificio che funziona con la sola energia, senza personale; è ciò che si costruisce nella fase di preparazione.
 
 **Edificio con personale**:
-Edificio che a ogni turno richiede manodopera dei Lavoratori per funzionare (laboratori, istruzione, cure mediche, svago, industrie specializzate).
+Edificio che a ogni turno richiede manodopera di Lavoratori o cloni per funzionare (laboratori, istruzione, cure mediche, svago, industrie specializzate): 4 punti per ogni addetto; con meno punti funziona e produce in proporzione, senza nessun punto è fermo. I robot non possono farne il personale.
+
+**Edificio a riposo**:
+Laboratorio o industria che in questo turno non lavora perché nessuno studio o produzione in coda (né altro edificio) usa ciò che produce: non consuma energia né personale.
+_Evitare_: edificio spento, in pausa
+
+**Precedenza del personale**:
+L'ordine in cui la manodopera di Lavoratori, Pensionati e cloni va agli edifici con personale, scelto dal giocatore per ogni edificio: Alta, Normale (predefinita) o Bassa; a pari precedenza decide il tipo di edificio.
+_Evitare_: priorità (riservato all'ordine fisso dei tipi di edificio)
 _Evitare_: edificio presidiato
 
 **Costo per turno di cantiere**:

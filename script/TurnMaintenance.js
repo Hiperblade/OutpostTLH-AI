@@ -99,7 +99,7 @@ let MaintenancePhase = (function()
 				BuildingGraph.forEachBuilding(graph, function(building)
 				{
 					building.progress();
-					if(buildList.indexOf(building) >= 0 && building.progressBuild())
+					if(buildList.indexOf(building) >= 0 && building.progressBuild(ctx.state.getBuildPoints(building)))
 					{
 						ctx.map.onBuildingCompleted(building);
 					}

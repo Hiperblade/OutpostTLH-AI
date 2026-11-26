@@ -10,6 +10,10 @@ function describeBuildingIssue(issue)
 		return "";
 	}
 	let text = TextRepository.get("Issue_" + issue.reason);
+	if(issue.ratio !== undefined)
+	{
+		text = text.replace("%s", Math.round(issue.ratio * 100) + "%");
+	}
 	let missing = issue.missing.map(function(name) { return TextRepository.get(name == "labor" ? "Manodopera" : name); });
 	if(issue.noSpace)
 	{

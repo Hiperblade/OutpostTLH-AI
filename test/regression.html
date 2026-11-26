@@ -19,7 +19,7 @@ window.alert = function(m){ (window.__alerts = window.__alerts || []).push(m); }
 </script>
 <script type="module">
 import { TerrainMap } from "../script/TerrainMap.js";
-import { Typology, TerrainLayer, PipeType, RobotTypes } from "../script/Enums.js";
+import { Typology, TerrainLayer, PipeType, RobotTypes, StaffPriority } from "../script/Enums.js";
 import { Turn, OutcomePhase, GameOutcome, RobotWearPhase } from "../script/Turn.js";
 import { Revival } from "../script/Revival.js";
 import { createWorkers, createClones, Generation } from "../script/Generations.js";
@@ -188,6 +188,8 @@ function checks()
 	game.addBuilding("EnvironmentalControl", { x: 8, y: 10 }, true);
 	game.addBuilding("AutoLab", { x: 12, y: 9 }, true);
 	game.addBuilding("HotLab", { x: 10, y: 8 }, true);
+	// studi in coda per il centro automatico (Medicina) e per il laboratorio di superficie (Fisica)
+	gs.getResearchQueue().push(RecipeLib.create("Medicine"), RecipeLib.create("Physics"));
 	game.addBuilding("Pipe_d_surface", { x: 9, y: 12 }, true);
 	Turn.project(game);
 	expect("risveglio senza centro criogenico", [Revival.check(game).reason, Revival.check(game).detail.status], ["noCryoCenter", "missing"]);
@@ -211,6 +213,36 @@ function checks()
 	expect("i risvegliati sono cloni", gs.getPopulation().registry.map(g => [g.isClone(), g.getState(gs.getDate())]), [[true, "clones"]]);
 	expect("manodopera separata", [gs.getStored("roboLabor") >= 0, gs.getStored("workerLabor") > 0], [true, true]);
 
+	// punti lavoro: robot 2, clone 1 (senza effetto della felicità)
+	Turn.project(game);
+	expect("punti lavoro di robot e cloni", [gs.getStored("roboLabor"), gs.getStored("workerLabor")], [gs.getStored("roboWorker") * 4, 5]);
+	// il laboratorio (personale 5 = 20 punti) con 5 cloni funziona a un quarto
+	let hotLab = gs.getActiveList()["HotLab"] || [];
+	expect("laboratorio con i cloni: attivo a un quarto", [hotLab.length, hotLab.length ? gs.getBuildingIssue(hotLab[0]) : null], [1, { reason: "understaffed", missing: [], ratio: 0.25 }]);
+	expect("laboratorio con i cloni: ricerca ridotta", gs.getProduced("researchStructureSurface"), 3);
+	// precedenza del personale: il secondo laboratorio con precedenza Alta prende i cloni
+	let firstLab = hotLab[0];
+	let power = game.addBuilding("SupportModule", { x: 14, y: 11 }, true); // energia per il secondo laboratorio
+	let secondLab = game.addBuilding("HotLab", { x: 14, y: 9 }, true);
+	Turn.project(game);
+	let labs = () => [(gs.getActiveList()["HotLab"] || []).indexOf(firstLab) >= 0, (gs.getActiveList()["HotLab"] || []).indexOf(secondLab) >= 0];
+	expect("precedenza normale: un solo laboratorio attivo", labs().filter(x => x).length, 1);
+	secondLab.setStaffPriority(StaffPriority.High);
+	Turn.project(game);
+	expect("precedenza alta: il personale va al secondo laboratorio", labs(), [false, true]);
+	expect("laboratorio senza personale: manca la manodopera", firstLab && gs.getBuildingIssue(firstLab) && gs.getBuildingIssue(firstLab).missing[0], "workerLabor");
+	let savedLab = TerrainMap.fromData(JSON.parse(JSON.stringify(game.toData()))).findBuilding({ x: 14, y: 9 });
+	expect("precedenza salvata", savedLab.getStaffPriority(), StaffPriority.High);
+	game.delBuilding({ x: 14, y: 9 });
+	game.delBuilding({ x: 14, y: 11 });
+	Turn.project(game);
+	// senza studi in coda il laboratorio resta a riposo e libera il personale
+	let queued = gs.getResearchQueue().splice(0);
+	Turn.project(game);
+	expect("laboratorio a riposo senza studi", [gs.getBuildingIssue(firstLab), (gs.getActiveList()["HotLab"] || []).length, gs.getRemainder("workerLabor")], [{ reason: "idle", missing: [] }, 0, 5]);
+	gs.getResearchQueue().push(...queued);
+	Turn.project(game);
+
 	// i robot prodotti vengono consegnati: il modulo cargo dà posto al kit e ai primi robot
 	game.addBuilding("IndustrialFactory", { x: 8, y: 11 }, true);
 	game.addBuilding("MicrowavePlant", { x: 11, y: 8 }, true);
@@ -232,14 +264,15 @@ function checks()
 	Turn.advance(game);
 	expect("usura: due robot fuori uso", gs.getStored("roboWorker"), robots - 2);
 
-	// i Pensionati forniscono mezza manodopera
-	let before = gs.getStored("workerLabor");
+	// punti lavoro: Lavoratore 4, Pensionato 2, ridotti dalla felicità; i cloni 1 a testa
+	let clonesNow = gs.getPopulation().registry.filter(g => g.isClone()).reduce((n, g) => n + g.getPopulation(), 0);
 	let retirees = new Generation(gs.getDate() - 90, 2, 18);
-	gs.getPopulation().registry.push(retirees);
+	let workers = createWorkers(gs.getDate(), 1);
+	gs.getPopulation().registry.push(retirees, workers);
 	Turn.project(game);
 	let factor = 0.5 + 0.5 * gs.getPopulation().happiness;
-	expect("pensionati: mezza manodopera", gs.getStored("workerLabor"), Math.floor((gs.getPopulation().registry.filter(g => g !== retirees).reduce((n, g) => n + (["scientists", "clones"].indexOf(g.getState(gs.getDate())) >= 0 ? g.getPopulation() : 0), 0) + 10 * 0.5) * factor));
-	gs.getPopulation().registry.splice(gs.getPopulation().registry.indexOf(retirees), 1);
+	expect("punti lavoro di Lavoratori, Pensionati e cloni", gs.getStored("workerLabor"), Math.floor((5 * 4 + 10 * 2) * factor) + clonesNow);
+	gs.getPopulation().registry.splice(gs.getPopulation().registry.indexOf(retirees), 2);
 
 	// vittoria (soglie ridotte per il test): coloni contenti per 3 turni
 	let limits = [OutcomePhase.VICTORY_POPULATION, OutcomePhase.VICTORY_TURNS, OutcomePhase.VICTORY_HAPPINESS];
@@ -340,6 +373,16 @@ function checks()
 	let parkIssues = parts.getState().getBuildingIssues().filter(e => e.building.getBuildingType().indexOf("Park") == 0);
 	expect("parco scollegato segnalato una volta sola", parkIssues.map(e => e.building.getBuildingType() + ":" + e.issue.reason), ["Park:disconnected"]);
 
+	// un cantiere riceve al massimo 4 punti a turno; i tempi sono in punti (turni di un colono x 4)
+	let works = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	works.getState().addKnowledge({ technology: ["LandingModule"] });
+	works.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(works);
+	let control = works.addBuilding("EnvironmentalControl", { x: 8, y: 10 });
+	let start = control.getProgressState();
+	Turn.advance(works);
+	expect("cantiere: tempo in punti e 4 punti a turno", [start, control.getProgressState()], [-20, -16]);
+
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
 	idle.addBuilding("LandingModule", { x: 10, y: 10 });
@@ -347,6 +390,32 @@ function checks()
 	idle.getState().destroyMaterials({ roboWorker: 100 });
 	Turn.advance(idle);
 	expect("sconfitta senza manodopera", idle.getState().getOutcome(), GameOutcome.Defeat);
+
+	// nascite: un gruppo di 5 bambini ogni 2 turni a pieno personale, se cibo e alloggi bastano anche per loro
+	let nest = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let ns = nest.getState();
+	ns.addKnowledge({ technology: ["LandingModule"] });
+	ns.createMaterials({ foodUnit: 500, residentialUnit: 500, habitatUnit: 500 });
+	nest.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(nest);
+	ns.getPopulation().registry.push(createWorkers(ns.getDate(), 2));
+	let nursery = nest.addBuilding("Nursery", { x: 9, y: 13 }, true);
+	let bornPerTurn = () => Turn.advance(nest).events.filter(e => e.type == "BIRTHS").map(e => e.count).reduce((a, b) => a + b, 0);
+	let pattern = [];
+	for(let t = 0; t < 4; t++) pattern.push(bornPerTurn());
+	expect("nascite: 5 bambini ogni 2 turni", pattern, [0, 5, 0, 5]);
+	expect("nascite: i bambini sono una nuova generazione", ns.getPopulation().registry.filter(g => g.getState(ns.getDate()) == "infants").reduce((n, g) => n + g.getPopulation(), 0), 10);
+	nursery.setSuspended(true);
+	pattern = [];
+	for(let t = 0; t < 3; t++) pattern.push(bornPerTurn());
+	Turn.project(nest);
+	expect("nascite sospese: asilo a riposo", [pattern, (ns.getActiveList()["Nursery"] || []).length, (ns.getInactiveList()["Nursery"] || []).length], [[0, 0, 0], 0, 0]);
+	nursery.setSuspended(false);
+	Turn.advance(nest);
+	ns.destroyMaterials({ foodUnit: ns.getStored("foodUnit") });
+	ns.createMaterials({ foodUnit: 22 });
+	expect("nascite: senza cibo per i nuovi nati non nasce nessuno", bornPerTurn(), 0);
+	expect("nascite: avanzamento salvato", TerrainMap.fromData(JSON.parse(JSON.stringify(nest.toData()))).getState().getBirthProgress(), ns.getBirthProgress());
 
 	// i cloni a fine vita lavorativa muoiono invece di andare in pensione
 	let aging = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });

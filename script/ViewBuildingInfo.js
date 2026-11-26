@@ -2,25 +2,89 @@
 
 import { describeBuildingIssue } from "./BuildingIssueText.js";
 import { ImagesLib } from "./ImagesLib.js";
+import { StaffPriority } from "./Enums.js";
 import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
 import { TextRepository } from "./TextRepository.js";
 
 let BuildingInfoView;
 
-/** @param {function(Building)} getIssue motivo per cui un edificio non funziona (o null) */
-function InitializeBuildingInfoView(onChangePosition, onClearCurrentItem, getIssue)
+/**
+ * @param {function(Building)} getIssue motivo per cui un edificio non funziona (o null)
+ * @param {function(Building)} onChangePriority la precedenza del personale dell'edificio è cambiata
+ */
+function InitializeBuildingInfoView(onChangePosition, onClearCurrentItem, getIssue, onChangePriority)
 {
-	BuildingInfoView = new BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue);
+	BuildingInfoView = new BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority);
 	return BuildingInfoView;
 }
 
-function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue)
+function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority)
 {
+	const PRIORITY_TEXT = ["StaffPriority_high", "StaffPriority_normal", "StaffPriority_low"];
 	let currentItem;
 
 	let _initialize = function()
 	{
+		// precedenza del personale: Normale -> Alta -> Bassa -> Normale
+		$("#buildingInfoDataPriority").on("click", function()
+		{
+			if(currentItem == null || !currentItem.getStaffPriority)
+			{
+				return;
+			}
+			let next = { [StaffPriority.Normal]: StaffPriority.High, [StaffPriority.High]: StaffPriority.Low, [StaffPriority.Low]: StaffPriority.Normal };
+			currentItem.setStaffPriority(next[currentItem.getStaffPriority()]);
+			if(onChangePriority)
+			{
+				onChangePriority(currentItem);
+			}
+			_refresh();
+		});
+		// sospensione delle nascite dell'Asilo
+		$("#buildingInfoDataSuspend").on("click", function()
+		{
+			if(currentItem == null || !currentItem.setSuspended)
+			{
+				return;
+			}
+			currentItem.setSuspended(!currentItem.isSuspended());
+			if(onChangePriority)
+			{
+				onChangePriority(currentItem);
+			}
+			_refresh();
+		});
 		_hide();
+	};
+
+	/** il comando delle nascite c'è solo per l'Asilo */
+	let _refreshSuspend = function()
+	{
+		let element = $("#buildingInfoDataSuspend");
+		if(currentItem == null || !currentItem.isSuspended || !currentItem.getBuildingType || currentItem.getBuildingType() != "Nursery")
+		{
+			element.hide();
+			return;
+		}
+		element.text(TextRepository.get(currentItem.isSuspended() ? "Births_suspended" : "Births_active"));
+		element.attr("title", TextRepository.get("BirthsHint"));
+		element.show();
+	};
+
+	/** il comando della precedenza c'è solo per gli edifici con personale */
+	let _refreshPriority = function()
+	{
+		let element = $("#buildingInfoDataPriority");
+		let staffed = currentItem != null && currentItem.getStaffPriority && currentItem.getBuildingType &&
+			PrototypeLib.get(currentItem.getBuildingType()).getStaff() > 0;
+		if(!staffed)
+		{
+			element.hide();
+			return;
+		}
+		element.text(TextRepository.get("StaffPriority") + ": " + TextRepository.get(PRIORITY_TEXT[currentItem.getStaffPriority()]));
+		element.attr("title", TextRepository.get("StaffPriorityHint"));
+		element.show();
 	};
 
 	let _refresh = function()
@@ -28,6 +92,8 @@ function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIs
 		let buildingInfoImage = $("#buildingInfoImage");
 		let issue = (currentItem != null && currentItem.getPosition && getIssue) ? getIssue(currentItem) : null;
 		$("#buildingInfoDataStatus").text(describeBuildingIssue(issue)).toggle(issue != null);
+		_refreshPriority();
+		_refreshSuspend();
 		if(currentItem == null)
 		{
 			$("#buildingInfoDataTitle").html("");

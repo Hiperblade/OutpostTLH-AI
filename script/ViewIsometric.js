@@ -1,5 +1,6 @@
 "use strict";
 
+import { StaffPriority } from "./Enums.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { TextRepository } from "./TextRepository.js";
 
@@ -174,13 +175,18 @@ function IsometricView(map, canvasId, viewSize, viewTileDimension)
 				{
 					_drawImage(ctx, _toRelativePosition(structurePosition), ImagesLib.getImage(structure[i].getImageId()));
 					_drawIssue(ctx, _toRelativePosition(structurePosition), map.getState().getBuildingIssue(structure[i]));
+					_drawPriority(ctx, _toRelativePosition(structurePosition), structure[i]);
 					lastStructure = structure[i];
 				}
 			}
 		}
 	};
 
-	/** segnale sopra un edificio che non funziona: rosso se fermo o scollegato, giallo se il cantiere è fermo */
+	/**
+	 * segnale sopra un edificio che non funziona:
+	 *   "!" rosso fermo o scollegato; "!" giallo rendimento ridotto o cantiere fermo;
+	 *   "z" grigia a riposo; "-" rosso disattivato dal giocatore
+	 */
 	let _drawIssue = function(ctx, point, issue)
 	{
 		if(issue == null)
@@ -189,9 +195,13 @@ function IsometricView(map, canvasId, viewSize, viewTileDimension)
 		}
 		let p = _toScreenPosition(point);
 		let x = p.x + 80, y = p.y - 72;
+		let symbol = "!", color = "rgb(210,60,50)";
+		if(issue.reason == "idle") { symbol = "z"; color = "rgb(130,140,150)"; }
+		else if(issue.reason == "suspended") { symbol = "\u2013"; }
+		else if(issue.reason == "stalled" || issue.reason == "understaffed") { color = "rgb(220,170,40)"; }
 		ctx.beginPath();
 		ctx.arc(x, y, 8, 0, Math.PI * 2);
-		ctx.fillStyle = (issue.reason == "stalled") ? "rgb(220,170,40)" : "rgb(210,60,50)";
+		ctx.fillStyle = color;
 		ctx.fill();
 		ctx.lineWidth = 1.5;
 		ctx.strokeStyle = "rgb(20,20,20)";
@@ -200,9 +210,40 @@ function IsometricView(map, canvasId, viewSize, viewTileDimension)
 		ctx.font = "bold 12px sans-serif";
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
-		ctx.fillText("!", x, y + 1);
+		ctx.fillText(symbol, x, y + (symbol == "!" ? 1 : 0));
 		ctx.textAlign = "start";
 		ctx.textBaseline = "alphabetic";
+	};
+
+	/** saetta gialla sopra un edificio con precedenza Alta che sta funzionando */
+	let _drawPriority = function(ctx, point, building)
+	{
+		if(!building.getStaffPriority || building.getStaffPriority() != StaffPriority.High)
+		{
+			return;
+		}
+		let running = map.getState().getActiveList()[building.getBuildingType()] || [];
+		if(running.indexOf(building) < 0)
+		{
+			return;
+		}
+		let p = _toScreenPosition(point);
+		// a sinistra dell'eventuale segnale di problema
+		let x = p.x + 60, y = p.y - 72;
+		let k = 1.4;
+		ctx.beginPath();
+		ctx.moveTo(x + 2 * k, y - 9 * k);
+		ctx.lineTo(x - 5 * k, y + 1 * k);
+		ctx.lineTo(x - 0.5 * k, y + 1 * k);
+		ctx.lineTo(x - 2 * k, y + 9 * k);
+		ctx.lineTo(x + 5 * k, y - 2 * k);
+		ctx.lineTo(x + 0.5 * k, y - 2 * k);
+		ctx.closePath();
+		ctx.fillStyle = "rgb(250,215,40)";
+		ctx.fill();
+		ctx.lineWidth = 1.2;
+		ctx.strokeStyle = "rgb(20,20,20)";
+		ctx.stroke();
 	};
 
 	let _drawImage = function(ctx, point, image)

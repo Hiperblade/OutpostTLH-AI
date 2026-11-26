@@ -2,13 +2,18 @@
 
 import { describeBuildingIssue } from "./BuildingIssueText.js";
 import { GenerationState } from "./Generations.js";
+import { PopulationPhase } from "./TurnPopulation.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { inherits } from "./SystemLib.js";
 import { TextRepository } from "./TextRepository.js";
 import { QueueData } from "./ViewQueueBase.js";
 
-function ReportProductionMaterial(colonyState, material, image)
+/**
+ * @param {number} [perColonist] consumo per colono a turno (il cibo: 1); i coloni compaiono tra i consumi,
+ *                               divisi tra cloni e coloni nati sul pianeta
+ */
+function ReportProductionMaterial(colonyState, material, image, perColonist)
 {
 	let productionBuildingList = [];
 	PrototypeLib.getPriorityList().forEach(function(buildingType)
@@ -111,6 +116,32 @@ function ReportProductionMaterial(colonyState, material, image)
 				}
 			}
 		}
+		// consumo dei coloni (avviene a fine turno, insieme alla sussistenza)
+		if(perColonist > 0)
+		{
+			let clones = 0, born = 0;
+			colonyState.getPopulation().registry.forEach(function(generation)
+			{
+				if(generation.isClone()) { clones += generation.getPopulation(); }
+				else { born += generation.getPopulation(); }
+			});
+			[["Population_clones", clones], ["Population_born", born]].forEach(function(row)
+			{
+				if(row[1] <= 0)
+				{
+					return;
+				}
+				if(!haveConsumption)
+				{
+					text += '<tr><td colspan="4" class="tableSeparator"></td></tr>';
+				}
+				let consumption = row[1] * perColonist;
+				totalConsumption += consumption;
+				text += '<tr><td>' + TextRepository.get(row[0]) + '</td><td class="tableDataRight">' + row[1] + '</td><td></td><td class="tableDataRight colorError">-' + consumption + '</td></tr>';
+				haveConsumption = true;
+			});
+		}
+
 		if(activePipe + idlePipe > 0)
 		{
 			if(!haveConsumption)
@@ -380,26 +411,8 @@ function ReportHumans(colonyState, image)
 		text += _separator;
 
 		let date = colonyState.getDate();
-		// le generazioni sono riunite per fase di vita
-		let stages = [GenerationState.Clones, GenerationState.Infants, GenerationState.Students, GenerationState.Researchers, GenerationState.Scientists, GenerationState.Retirees];
-		let byStage = {};
-		let people = 0;
-		population.registry.forEach(function(generation)
-		{
-			let stage = generation.getState(date);
-			byStage[stage] = (byStage[stage] || 0) + generation.getPopulation();
-			people += generation.getPopulation();
-		});
-		stages.forEach(function(stage)
-		{
-			if(byStage[stage] > 0)
-			{
-				text += _row(TextRepository.get(stage), byStage[stage], false);
-			}
-		});
-		text += _row(TextRepository.get("AwakeColonists"), people, false);
-
 		let habitability = colonyState.getHabitability();
+		// capsule, poi cloni, poi i coloni nati sul pianeta riuniti per fase di vita
 		if(habitability != null)
 		{
 			text += _row(TextRepository.get("cryoCapsule"), habitability.capsules, false);
@@ -407,6 +420,39 @@ function ReportHumans(colonyState, image)
 			{
 				text += _row(TextRepository.get("PendingRevival"), habitability.pendingRevival, false);
 			}
+		}
+		let stages = [GenerationState.Infants, GenerationState.Students, GenerationState.Researchers, GenerationState.Scientists, GenerationState.Retirees];
+		let byStage = {};
+		let clones = 0;
+		let born = 0;
+		population.registry.forEach(function(generation)
+		{
+			if(generation.isClone())
+			{
+				clones += generation.getPopulation();
+				return;
+			}
+			let stage = generation.getState(date);
+			byStage[stage] = (byStage[stage] || 0) + generation.getPopulation();
+			born += generation.getPopulation();
+		});
+		text += _row(TextRepository.get("clones"), clones, false);
+		text += _row(TextRepository.get("BornColonists"), born, false);
+		// le fasi di vita dei coloni nati, come dettaglio del totale
+		stages.forEach(function(stage)
+		{
+			if(byStage[stage] > 0)
+			{
+				text += _row('<span class="tableIndentation">' + TextRepository.get(stage) + '</span>', byStage[stage], false);
+			}
+		});
+		if((colonyState.getActiveList()["Nursery"] || []).length > 0 || colonyState.getBirthProgress() > 0)
+		{
+			text += _row(TextRepository.get("BirthProgress"), Math.round(100 * colonyState.getBirthProgress() / PopulationPhase.BIRTH_COST) + "%", false);
+		}
+
+		if(habitability != null)
+		{
 			text += _separator;
 			text += '<tr><td colspan="4">' + TextRepository.get("Habitability") + '</td></tr>';
 			text += _ratio(TextRepository.get("habitatUnit"), habitability.habitat);
@@ -465,7 +511,7 @@ function ReportQueueData(colonyState)
 	queue.push(new ReportMaintenance(colonyState, "Pipes"));
 	queue.push(new ReportProductionMaterial(colonyState, "power", "Power" ));
 	queue.push(new ReportHumans(colonyState, "Humans"));
-	queue.push(new ReportProductionMaterial(colonyState, "foodUnit", "Hydroponics"));
+	queue.push(new ReportProductionMaterial(colonyState, "foodUnit", "Hydroponics", 1));
 	queue.push(new ReportMetaMaterial(colonyState, "roboticStorage", "Pipes"));
 	queue.push(new ReportMetaMaterial(colonyState, "genericStorage", "Pipes"));
 	queue.push(new ReportMetaMaterial(colonyState, "radioactiveStorage", "PipesWaste"));

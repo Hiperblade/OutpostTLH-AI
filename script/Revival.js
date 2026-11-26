@@ -53,7 +53,7 @@ function RevivalConstructor()
 			let cost = Object.assign({}, prototype.getConsumption());
 			if(prototype.getStaff() > 0)
 			{
-				cost.workerLabor = (cost.workerLabor || 0) + prototype.getStaff();
+				cost.workerLabor = 1; // senza personale l'edificio è fermo; con poco rende meno
 			}
 			let missing = Object.keys(cost).filter(function(name) { return state.getRemainder(name) < cost[name]; });
 			return { building: inactive[0].getBuildingType(), status: "inactive", missing: missing };
