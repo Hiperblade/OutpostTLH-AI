@@ -72,14 +72,12 @@ body
 
 .buttonWakeUp
 {
-	background: url("../images/buildings/CryoCenter.gif") no-repeat center;
-	background-size: 24px 24px;
+	background: url("../images/interface/button_births.gif") no-repeat center;
 }
 
 .buttonCure
 {
-	background: url("../images/buildings/MedicalStructure.gif") no-repeat center;
-	background-size: 24px 24px;
+	background: url("../images/interface/button_cure.gif") no-repeat center;
 }
 
 .buttonTime

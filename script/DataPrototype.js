@@ -255,7 +255,7 @@ PrototypeLib.addResource("Fumarole", TerrainLayer.Deep, "#FF9900");
 PrototypeLib.addMine("Metal", TerrainLayer.Surface, 2, {}, { requiredResource: "Metal", consumption: { power: 5 }, production: { metalOre: 10 }, capacity: { metalOre: 50 },
 	parts: [ { type: "Mine" } ] });
 
-PrototypeLib.addMine("Mineral", TerrainLayer.Underground, 2, {}, { requiredResource: "Mineral", consumption: { power: 5 }, production: { cristalOre: 2, mineralOre: 10 }, capacity: { cristalOre: 10, mineralOre: 40 },
+PrototypeLib.addMine("Mineral", TerrainLayer.Underground, 2, {}, { requiredResource: "Mineral", consumption: { power: 5 }, production: { cristalOre: 6, mineralOre: 20 }, capacity: { cristalOre: 30, mineralOre: 80 },
 	parts: [ { type: "MineDeep" } ] });
 
 PrototypeLib.addMine("Radioactive", TerrainLayer.Deep, 2, {}, { requiredResource: "Radioactive", consumption: { power: 5 }, production: { radioactiveOre: 2 }, capacity: { radioactiveOre: 4 } });

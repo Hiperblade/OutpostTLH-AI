@@ -12,6 +12,7 @@ let PopulationPhase = {
 		let state = ctx.state;
 		let people = state.getPopulation().registry.reduce(function(n, generation) { return n + generation.getPopulation(); }, 0);
 		let colonists = people + state.getPendingRevival();
+		let citizens = state.getPopulation().registry.reduce(function(n, generation) { return n + (generation.isClone() ? 0 : generation.getPopulation()); }, 0);
 		let elements = 0;
 		ctx.networks.forEach(function(graph)
 		{
@@ -27,7 +28,9 @@ let PopulationPhase = {
 			revivalCapacity: Math.max(0, state.getRemainder("cryoRevival")),
 			habitat: { available: Math.max(0, state.getRemainder("habitatUnit")), needed: elements },
 			housing: { available: Math.max(0, state.getRemainder("residentialUnit")), needed: colonists },
-			food: { available: Math.max(0, state.getRemainder("foodUnit")), needed: colonists }
+			food: { available: Math.max(0, state.getRemainder("foodUnit")), needed: colonists },
+			// copertura medica: servono solo ai coloni nati (i cloni non si ammalano)
+			medical: { available: Math.max(0, state.getRemainder("medicalUnit")), needed: citizens }
 		});
 	},
 

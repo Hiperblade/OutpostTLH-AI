@@ -37,75 +37,46 @@ function QueueViewConstructor(divId, size)
 	divViewBackground.width(size.x);
 	divViewBackground.height(size.y);
 
+	let resetQueueScroll = function() {};
+	let resetAreaScroll = function() {};
+
+	/**
+	 * Barra di scorrimento verticale: con il cursore in fondo si vede la fine del contenuto.
+	 * Lo spostamento massimo è la parte che non entra nella finestra (altezza del contenuto meno
+	 * altezza della finestra). Restituisce la funzione che riporta la barra all'inizio.
+	 */
+	let _bindScroll = function(pane, content, cursor, slider, bottomMargin)
+	{
+		let _move = function(value)
+		{
+			let maxCursor = slider.height() - COLUMN_SLIDER_WIDTH - bottomMargin;
+			cursor.css('top', Math.max(0, Math.min(maxCursor, Math.floor((100 - value) * slider.height() / 100))));
+			// altezza naturale del contenuto (senza lo spostamento attuale), più un margine per i bordi degli ultimi elementi
+			const EDGE = 6;
+			let overflow = content.outerHeight(true) - parseFloat(content.css("margin-top") || 0) + EDGE - pane.height();
+			content.css("margin-top", (overflow > 0) ? (-Math.round(overflow * (100 - value) / 100)) + "px" : 0);
+		};
+		slider.slider({
+			orientation: "vertical",
+			value: 100,
+			slide: function(event, ui) { _move(ui.value); }
+		});
+		return function()
+		{
+			slider.slider("value", 100);
+			_move(100);
+		};
+	};
+
 	let _initialize = function()
 	{
 		// click sugli elementi della coda (il pulsante "aggiungi" è dentro l'elemento: prima aggiunge, poi seleziona)
 		divViewBase.on("click", ".queueItemButton", function() { _addItem($(this).attr("data-add")); });
 		divViewBase.on("click", ".queueItem", function() { _setCurrent($(this).attr("data-current")); });
 
-		// Slider queue
-		let scrollPane = $('#' + divId);
-		let scrollContent = $('#' + divId + "_content");
-		let scrollCursor = $("#" + divId + "_sliderCursor");
-		let scrollSlider = $('#' + divId + "_slider");
-		scrollSlider.slider({
-			orientation: "vertical",
-			value: 100,
-			slide: function (event, ui) {
-				let topMargin = 0;
-				let cursorPosition = Math.floor((100 - ui.value) * scrollSlider.height() / 100);
-				if(cursorPosition < topMargin)
-				{
-					cursorPosition = topMargin;
-				}
-				else if(cursorPosition > scrollSlider.height() - COLUMN_SLIDER_WIDTH - 3)
-				{
-					cursorPosition = scrollSlider.height() - COLUMN_SLIDER_WIDTH - 3;
-				}
-				scrollCursor.css('top', cursorPosition);
-
-				if (scrollContent.height() > scrollPane.height())
-				{
-					scrollContent.css("margin-top", (-1 * (scrollPane.height() - ((scrollPane.height() * ui.value) / 100))) + "px");
-				}
-				else
-				{
-					scrollContent.css("margin-top", 0);
-				}
-			}
-		});
-
-		// Slider area
-		let scrollPaneArea = $('#' + divId + "Area");
-		let scrollContentArea = $('#' + divId + "Area_content");
-		let scrollCursorArea = $("#" + divId + "Area_sliderCursor");
-		let scrollSliderArea = $('#' + divId + "Area_slider");
-		scrollSliderArea.slider({
-			orientation: "vertical",
-			value: 100,
-			slide: function (event, ui) {
-				let topMargin = 0;
-				let cursorPosition = Math.floor((100 - ui.value) * scrollSliderArea.height() / 100);
-				if(cursorPosition < topMargin)
-				{
-					cursorPosition = topMargin;
-				}
-				else if(cursorPosition > scrollSliderArea.height() - COLUMN_SLIDER_WIDTH)
-				{
-					cursorPosition = scrollSliderArea.height() - COLUMN_SLIDER_WIDTH;
-				}
-				scrollCursorArea.css('top', cursorPosition);
-
-				if (scrollContentArea.height() > scrollPaneArea.height())
-				{
-					scrollContentArea.css("margin-top", (-1 * (scrollPaneArea.height() - ((scrollPaneArea.height() * ui.value) / 100))) + "px");
-				}
-				else
-				{
-					scrollContentArea.css("margin-top", 0);
-				}
-			}
-		});
+		// barre di scorrimento della lista (a sinistra) e del dettaglio (a destra)
+		resetQueueScroll = _bindScroll($('#' + divId), $('#' + divId + "_content"), $("#" + divId + "_sliderCursor"), $('#' + divId + "_slider"), 3);
+		resetAreaScroll = _bindScroll($('#' + divId + "Area"), $('#' + divId + "Area_content"), $("#" + divId + "Area_sliderCursor"), $('#' + divId + "Area_slider"), 0);
 
 		_hide();
 	};
@@ -115,6 +86,7 @@ function QueueViewConstructor(divId, size)
 		currentItem = current;
 
 		$("#queueDivArea_content").html(queueData.getInfo(currentItem));
+		resetAreaScroll();
 	};
 
 	let _setCurrent = function(itemName)
@@ -231,11 +203,8 @@ function QueueViewConstructor(divId, size)
 			list.disableSelection();
 		}
 
-		// Azzeramento barra di scorrimento
-		$("#" + divId + "_sliderCursor").top = 3 + "px";
-
-		// Slider
-		$('#' + divId + "_content").css("margin-top", 0);
+		// barra di scorrimento della lista di nuovo all'inizio
+		resetQueueScroll();
 	};
 
 	let _createCanvas = function(item, canAppends, haveBar, currentId)

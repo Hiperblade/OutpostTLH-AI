@@ -402,6 +402,20 @@ function checks()
 	Turn.advance(foundry);
 	expect("cantieri con le barre della fonderia", advanced.map((b, i) => b.getProgressState() - before[i]), [4, 4]);
 
+	// chi produce lavora prima di chi consuma: la Struttura Medica usa le unità farmaceutiche dello stesso turno
+	let pharma = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let ps = pharma.getState();
+	ps.addKnowledge({ technology: ["LandingModule"] });
+	ps.createMaterials({ foodUnit: 500, residentialUnit: 500, habitatUnit: 500 });
+	pharma.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(pharma);
+	ps.getPopulation().registry.push(createWorkers(ps.getDate(), 4));
+	ps.createMaterials({ mineralOre: 100, cristalOre: 100 });
+	pharma.addBuilding("PharmaceuticalIndustry", { x: 12, y: 9 }, true);
+	pharma.addBuilding("MedicalStructure", { x: 9, y: 13 }, true);
+	Turn.project(pharma);
+	expect("filiera medica nello stesso turno", [(ps.getActiveList()["PharmaceuticalIndustry"] || []).length, (ps.getActiveList()["MedicalStructure"] || []).length], [1, 1]);
+
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
 	idle.addBuilding("LandingModule", { x: 10, y: 10 });

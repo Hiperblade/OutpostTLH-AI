@@ -437,6 +437,12 @@ function ReportHumans(colonyState, image)
 			text += _ratio(TextRepository.get("habitatUnit"), habitability.habitat);
 			text += _ratio(TextRepository.get("residentialUnit"), habitability.housing);
 			text += _ratio(TextRepository.get("foodUnit"), habitability.food);
+			if(habitability.medical.needed > 0)
+			{
+				let cover = Math.min(1, habitability.medical.available / habitability.medical.needed);
+				text += _row(TextRepository.get("medicalUnit") + " (" + TextRepository.get("MedicalCover") + " " + Math.round(cover * 100) + "%)",
+					habitability.medical.available + "/" + habitability.medical.needed, cover < 1);
+			}
 			text += _row(TextRepository.get("cryoRevival"), habitability.revivalCapacity, habitability.capsules > 0 && habitability.revivalCapacity == 0);
 			if(born > 0)
 			{

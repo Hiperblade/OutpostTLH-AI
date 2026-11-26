@@ -282,6 +282,55 @@ let _isIdle = function(prototype, demand)
 };
 
 /**
+ * Ordine in cui gli edifici lavorano nel turno: l'ordine di priorità dei tipi, ma chi produce un materiale
+ * viene sempre prima di chi lo consuma (es. Industria Farmaceutica prima della Struttura Medica), così i
+ * materiali che non si accumulano servono già nello stesso turno. Calcolato una volta sola.
+ */
+let _workOrder = null;
+let _productionOrder = function()
+{
+	if(_workOrder !== null && _workOrder.length == PrototypeLib.getPriorityList().length)
+	{
+		return _workOrder;
+	}
+	let types = PrototypeLib.getPriorityList();
+	let producers = {};
+	types.forEach(function(type)
+	{
+		Object.keys(PrototypeLib.get(type).getProduction()).forEach(function(name) { (producers[name] = producers[name] || []).push(type); });
+	});
+	// archi produttore -> consumatore; ordine topologico che a parità segue la priorità originale
+	let before = {};
+	types.forEach(function(type)
+	{
+		let set = new Set();
+		Object.keys(PrototypeLib.get(type).getConsumption()).forEach(function(name)
+		{
+			(producers[name] || []).forEach(function(producer) { if(producer != type) { set.add(producer); } });
+		});
+		before[type] = set;
+	});
+	let placed = new Set();
+	let order = [];
+	while(order.length < types.length)
+	{
+		let next = types.find(function(type)
+		{
+			return !placed.has(type) && Array.from(before[type]).every(function(producer) { return placed.has(producer); });
+		});
+		if(next === undefined)
+		{
+			// ciclo tra produttori e consumatori: si prosegue con il primo tipo rimasto, nell'ordine di priorità
+			next = types.find(function(type) { return !placed.has(type); });
+		}
+		placed.add(next);
+		order.push(next);
+	}
+	_workOrder = order;
+	return order;
+};
+
+/**
  * Edifici con personale pronti a lavorare, nell'ordine in cui ricevono la manodopera di Lavoratori
  * e cloni: prima la precedenza Alta, poi Normale, poi Bassa; a pari precedenza l'ordine dei tipi.
  */
@@ -290,7 +339,7 @@ let _staffedBuildings = function(ctx, demand)
 	let list = [];
 	ctx.networks.forEach(function(graph)
 	{
-		PrototypeLib.getPriorityList().forEach(function(buildingType, order)
+		_productionOrder().forEach(function(buildingType, order)
 		{
 			let prototype = PrototypeLib.get(buildingType);
 			if(prototype.getStaffLabor() <= 0 || graph[buildingType] == undefined || _isIdle(prototype, demand))
@@ -369,7 +418,7 @@ let BuildingProductionPhase = {
 		ctx.networks.forEach(function(graph)
 		{
 			let connected = BuildingGraph.hasHeadquarter(graph);
-			PrototypeLib.getPriorityList().forEach(function(buildingType)
+			_productionOrder().forEach(function(buildingType)
 			{
 				if(graph[buildingType] == undefined)
 				{

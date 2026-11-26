@@ -53,6 +53,7 @@ TextRepository.add("HelpTitle", "Guida");
 TextRepository.add("HelpBase", "Guide");
 TextRepository.add("Buildings", "Edifici");
 TextRepository.add("HelpTutorial_Base", "Interfaccia");
+TextRepository.add("HelpTutorial_BaseDescription", "Barra a sinistra: robot di cantiere (Ruspa, Scavatrice, Trivella), condutture e costruzione degli edifici. Barra a destra: fine turno (Invio), risveglio dei cloni (R), cura dei malati (G), ricerca, produzione, report e guida. Le frecce e WASD spostano la mappa; Pagina su e Pagina giù cambiano strato. Il segno sopra un edificio ne indica lo stato: \"!\" rosso fermo, \"!\" giallo rendimento ridotto, \"z\" a riposo, \"–\" disattivato, saetta precedenza alta.");
 
 TextRepository.add("TerrainLayer", "Livello");
 
@@ -200,7 +201,8 @@ TextRepository.add("educationUnit", "Unità Educative");
 TextRepository.add("highEducationUnit", "Unità Educative Superiore");
 TextRepository.add("recreationalUnit", "Unità Ricreative");
 TextRepository.add("pharmaceuticalUnit", "Unità Farmaceutiche");
-TextRepository.add("medicalUnit", "Unità Medicali");
+TextRepository.add("medicalUnit", "Unità Mediche");
+TextRepository.add("MedicalCover", "copertura");
 TextRepository.add("nurseryUnit", "Unità Pediatriche");
 TextRepository.add("goodsUnit", "Beni di Consumo");
 
@@ -386,3 +388,4 @@ TextRepository.add("repairUnitDescription", "Manutenzione degli edifici: unità 
 TextRepository.add("roboticStorageDescription", "Posti per i robot nelle rimesse.");
 TextRepository.add("genericStorageDescription", "Spazio nei magazzini per beni, kit medici e scarti.");
 TextRepository.add("radioactiveStorageDescription", "Spazio nelle aree di stoccaggio per i materiali radioattivi.");
+TextRepository.addDescription("MineMineral", "Miniera di Minerali", "Estrae 20 minerali e 6 cristalli a turno da un giacimento minerale.");
