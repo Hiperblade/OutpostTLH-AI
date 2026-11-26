@@ -292,6 +292,12 @@ TextRepository.addDescription("Robo-Worker", "Lavoratore Robotico", "Unità lavo
 TextRepository.addDescription("Robo-Digger", "Scavatrice Robotica", "Scavatrice Robotica ...");
 TextRepository.addDescription("Robo-Miner", "Trivella Robotica", "Trivella Robotica: avvia una miniera su una risorsa e viene consumata.");
 TextRepository.addDescription("Robo-Dozer", "Ruspa Robotica", "Ruspa Robotica ...");
+TextRepository.addDescription("Goods", "Beni", "Beni per i coloni: alzano la felicità.");
+TextRepository.addDescription("MediKit", "Kit Medici", "Kit medici usati dalle strutture mediche.");
+TextRepository.addDescription("RadioactiveBar", "Barre Radioattive", "Combustibile per i Tokamak.");
+TextRepository.add("goods", "Beni");
+TextRepository.add("mediKit", "Kit Medici");
+TextRepository.add("radioactiveBar", "Barre Radioattive");
 TextRepository.addDescription("Chemistry", "Chimica", "Chimica ...");
 TextRepository.addDescription("AdvancedMetallurgy", "Metallurgia Avanzata", "Metallurgia avanzata ...");
 TextRepository.addDescription("Physics", "Fisica", "Fisica ...");

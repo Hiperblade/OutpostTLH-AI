@@ -262,7 +262,7 @@ function QueueViewConstructor(divId, size)
 		{
 			tmp += '<div class="queueItemButton" data-add="' + item.getName() + '"></div>';
 		}
-		tmp += '<div class="queueItemText"><div class="queueItemTitle">' + TextRepository.get(item.getName()) + '</div>';
+		tmp += '<div class="queueItemText"><div class="queueItemTitle">' + TextRepository.get(item.getName()) + queueData.getItemNote(item) + '</div>';
 		if(haveBar)
 		{
 			tmp += '<div class="queueItemBar"><div class="queueItemBar2" style="width: ' + (100 - Math.floor(100 * item.getRemainTime() / item.getTime()))+ '%;"></div></div>';
@@ -300,6 +300,8 @@ function QueueData(queue, available)
 	this.getInfo = undefined;
 	/** materiali del costo che non bastano mai in un turno: la riga non si può mettere in coda */
 	this.getMissing = function(item) { return []; };
+	/** testo aggiunto dopo il nome della riga (es. la quantità disponibile del prodotto) */
+	this.getItemNote = function(item) { return ""; };
 
 	//-----------------------------------------
 }
@@ -464,6 +466,16 @@ function ProductionQueueData(colonyState)
 
 	this.getTitle = function() { return "ProductionTitle"; };
 	this.appends = _appends;
+	// quantità disponibile del prodotto principale, solo nelle righe disponibili (non in quelle in produzione)
+	this.getItemNote = function(item)
+	{
+		if(item.getBase != undefined)
+		{
+			return "";
+		}
+		let product = Object.keys(item.getResult())[0];
+		return (product === undefined) ? "" : " (" + colonyState.getStored(product) + ")";
+	};
 }
 inherits(ProductionQueueData, BaseQueueData);
 

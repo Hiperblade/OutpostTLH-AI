@@ -241,8 +241,8 @@ PrototypeLib.add("MaintenanceCenter", TerrainLayer.Surface, 3, { metalOre: 5 }, 
 PrototypeLib.add("RoboRemittance", TerrainLayer.Surface, 2, {}, { consumption: { power: 5 }, capacity: { roboticStorage: 10 } });
 PrototypeLib.add("RoboRemittanceAdv", TerrainLayer.Surface, 2, { ironBar: 1 }, { consumption: { power: 5 }, capacity: { roboticStorage: 20 } });
 
-PrototypeLib.add("RoboCommander", TerrainLayer.Surface, 0, {}, { consumption: { power: 25 }, production: { controlUnit: 8 } });
-PrototypeLib.add("RoboCommanderAdv", TerrainLayer.Surface, 0, { ironBar: 1 }, { consumption: { power: 30 }, production: { controlUnit: 16 } });
+PrototypeLib.add("RoboCommander", TerrainLayer.Surface, 3, {}, { consumption: { power: 25 }, production: { controlUnit: 8 } });
+PrototypeLib.add("RoboCommanderAdv", TerrainLayer.Surface, 4, { ironBar: 1 }, { consumption: { power: 30 }, production: { controlUnit: 16 } });
 
 //-------------------------------------------------------------
 // risorse

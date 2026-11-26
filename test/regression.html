@@ -383,6 +383,19 @@ function checks()
 	Turn.advance(works);
 	expect("cantiere: tempo in punti e 4 punti a turno", [start, control.getProgressState()], [-20, -16]);
 
+	// i cantieri pagano dopo la produzione: le barre di ferro della Fonderia servono già nello stesso turno
+	let foundry = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let fs = foundry.getState();
+	fs.addKnowledge({ technology: ["LandingModule"] });
+	foundry.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(foundry);
+	foundry.addBuilding("Smelter", { x: 8, y: 10 }, true);
+	fs.createMaterials({ metalOre: 100 });
+	let advanced = [foundry.addBuilding("AgridomeAdv", { x: 12, y: 9 }), foundry.addBuilding("AgridomeAdv", { x: 8, y: 11 })];
+	let before = advanced.map(b => b.getProgressState());
+	Turn.advance(foundry);
+	expect("cantieri con le barre della fonderia", advanced.map((b, i) => b.getProgressState() - before[i]), [4, 4]);
+
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
 	idle.addBuilding("LandingModule", { x: 10, y: 10 });

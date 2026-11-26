@@ -357,6 +357,7 @@ let BuildingProductionPhase = {
 			state.delMaterials({ workerLabor: reserved });
 		}
 		let released = 0;
+		let sites = [];
 		ctx.networks.forEach(function(graph)
 		{
 			let connected = BuildingGraph.hasHeadquarter(graph);
@@ -413,19 +414,8 @@ let BuildingProductionPhase = {
 					// le parti delle strutture composite sono costruite dall'edificio principale
 					else if(building.underConstruction() && !building.getFrozen())
 					{
-						// senza materiali o manodopera il cantiere resta fermo questo turno; avanza dei punti
-						// lavoro ricevuti, al massimo Work.UNITS_PER_TURN
-						let points = Math.min(Work.UNITS_PER_TURN, -building.getProgressState(), _laborAvailable(state));
-						let cost = Object.assign({ labor: Math.max(1, points) }, prototype.getBuildingCost());
-						if(points > 0 && _canPay(state, cost))
-						{
-							_pay(state, cost);
-							state.addToBuildList(building, points);
-						}
-						else
-						{
-							state.setBuildingIssue(building, { reason: "stalled", missing: _missing(state, cost) });
-						}
+						// i cantieri pagano dopo la produzione di tutti gli edifici (es. le barre delle Fonderie)
+						sites.push({ building: building, prototype: prototype });
 					}
 					else if(building.getIntegrity() == 0)
 					{
@@ -440,6 +430,24 @@ let BuildingProductionPhase = {
 		{
 			state.addMaterials({ workerLabor: released });
 		}
+
+		// cantieri: senza materiali o manodopera restano fermi questo turno; avanzano dei punti
+		// lavoro ricevuti, al massimo Work.UNITS_PER_TURN
+		sites.forEach(function(site)
+		{
+			let building = site.building;
+			let points = Math.min(Work.UNITS_PER_TURN, -building.getProgressState(), _laborAvailable(state));
+			let cost = Object.assign({ labor: Math.max(1, points) }, site.prototype.getBuildingCost());
+			if(points > 0 && _canPay(state, cost))
+			{
+				_pay(state, cost);
+				state.addToBuildList(building, points);
+			}
+			else
+			{
+				state.setBuildingIssue(building, { reason: "stalled", missing: _missing(state, cost) });
+			}
+		});
 	}
 };
 
