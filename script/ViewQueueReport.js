@@ -44,78 +44,71 @@ function ReportProductionMaterial(colonyState, material, image, perColonist)
 
 	this.getItemInfo = function()
 	{
+		// edifici a riposo (nessuno li usa) o disattivati dal giocatore, per tipo: non sono né attivi né fermi
+		let resting = {};
+		colonyState.getBuildingIssues().forEach(function(entry)
+		{
+			if(entry.issue.reason == "idle" || entry.issue.reason == "suspended")
+			{
+				let type = entry.building.getBuildingType();
+				resting[type] = (resting[type] || 0) + 1;
+			}
+		});
+		let separator = '<tr><td colspan="5" class="tableSeparator"></td></tr>';
+		let cell = function(value, css) { return '<td class="tableDataRight' + (css ? ' ' + css : '') + '">' + value + '</td>'; };
+		// riga di un tipo di edificio: attivi, fermi (in rosso), a riposo (in grigio) e quantità
+		let row = function(label, active, stopped, rest, amount, negative)
+		{
+			return '<tr><td>' + label + '</td>' + cell(active) + cell(stopped, stopped > 0 ? 'colorError' : '') +
+				cell(rest, rest > 0 ? 'colorResting' : '') + cell((negative ? '-' : '') + amount, negative ? 'colorError' : '') + '</tr>';
+		};
+
 		let text = "";
 		text += '<table>';
-		text += '<tr><td class="tableMainColumn">' + TextRepository.get("Buildings") + '</td><td class="tableDataColumn">' + TextRepository.get("Active") + '</td><td class="tableDataColumn">' + TextRepository.get("Idle") + '</td><td class="tableDataColumn">' + TextRepository.get("Production") + '</td></tr>';
+		text += '<tr><td class="tableMainColumn">' + TextRepository.get("Buildings") + '</td><td class="tableDataColumn">' + TextRepository.get("Active") +
+			'</td><td class="tableDataColumn">' + TextRepository.get("Idle") + '</td><td class="tableDataColumn">' + TextRepository.get("Resting") +
+			'</td><td class="tableDataColumn">' + TextRepository.get("Production") + '</td></tr>';
 
-		let list;
-		list = productionBuildingList;
 		let totalProduction = 0;
-		let i, active, idle;
-		for(i = 0; i < list.length; i++)
+		productionBuildingList.forEach(function(type)
 		{
-			active = (colonyState.getActiveList()[list[i]] || []).length;
-			idle = (colonyState.getInactiveList()[list[i]] || []).length;
-			let production = PrototypeLib.get(list[i]).getProduction()[material] * active;
+			let active = (colonyState.getActiveList()[type] || []).length;
+			let stopped = (colonyState.getInactiveList()[type] || []).length;
+			let rest = resting[type] || 0;
+			let production = PrototypeLib.get(type).getProduction()[material] * active;
 			totalProduction += production;
-			if(active + idle > 0)
+			if(active + stopped + rest > 0)
 			{
-				text += '<tr><td>' + TextRepository.get(list[i]) + '</td><td class="tableDataRight">' + active + '</td>';
-				if(idle > 0)
-				{
-					text += '<td class="tableDataRight colorError">' + idle + '</td>';
-				}
-				else
-				{
-					text += '<td class="tableDataRight">' + idle + '</td>';
-				}
-				text += '<td class="tableDataRight">' + production + '</td></tr>';
+				text += row(TextRepository.get(type), active, stopped, rest, production, false);
 			}
-		}
+		});
 
-		list = consumptionBuildingList;
 		let totalConsumption = 0;
-		let activePipe = 0;
-		let idlePipe = 0;
-		let consumptionPipe = 0;
+		let pipes = { active: 0, stopped: 0, consumption: 0 };
 		let haveConsumption = false;
-		for(i = 0; i < list.length; i++)
+		consumptionBuildingList.forEach(function(type)
 		{
-			active = (colonyState.getActiveList()[list[i]] || []).length;
-			idle = (colonyState.getInactiveList()[list[i]] || []).length;
-			let consumption = PrototypeLib.get(list[i]).getConsumption()[material] * active;
+			let active = (colonyState.getActiveList()[type] || []).length;
+			let stopped = (colonyState.getInactiveList()[type] || []).length;
+			let rest = resting[type] || 0;
+			let consumption = PrototypeLib.get(type).getConsumption()[material] * active;
 			totalConsumption += consumption;
-
-			if(PrototypeLib.get(list[i]).createItem({ x: 0, y: 0 }).isPipe())
+			if(PrototypeLib.get(type).createItem({ x: 0, y: 0 }).isPipe())
 			{
-				activePipe += active;
-				idlePipe += idle;
-				consumptionPipe	+= consumption;
+				pipes.active += active;
+				pipes.stopped += stopped;
+				pipes.consumption += consumption;
 			}
-			else
+			else if(active + stopped + rest > 0)
 			{
-				if(active + idle > 0)
+				if(!haveConsumption)
 				{
-					if(!haveConsumption)
-					{
-						text += '<tr><td colspan="4" class="tableSeparator"></td></tr>';
-					}
-
-					text += '<tr><td>' + TextRepository.get(list[i]) + '</td><td class="tableDataRight">' + active + '</td>';
-					if(idle > 0)
-					{
-						text += '<td class="tableDataRight colorError">' + idle + '</td>';
-					}
-					else
-					{
-						text += '<td class="tableDataRight">' + idle + '</td>';
-					}
-					text += '<td class="tableDataRight colorError">-' + consumption + '</td></tr>';
-
-					haveConsumption = true;
+					text += separator;
 				}
+				text += row(TextRepository.get(type), active, stopped, rest, consumption, true);
+				haveConsumption = true;
 			}
-		}
+		});
 		// consumo dei coloni (avviene a fine turno, insieme alla sussistenza)
 		if(perColonist > 0)
 		{
@@ -125,58 +118,38 @@ function ReportProductionMaterial(colonyState, material, image, perColonist)
 				if(generation.isClone()) { clones += generation.getPopulation(); }
 				else { born += generation.getPopulation(); }
 			});
-			[["Population_clones", clones], ["Population_born", born]].forEach(function(row)
+			[["Population_clones", clones], ["Population_born", born]].forEach(function(entry)
 			{
-				if(row[1] <= 0)
+				if(entry[1] <= 0)
 				{
 					return;
 				}
 				if(!haveConsumption)
 				{
-					text += '<tr><td colspan="4" class="tableSeparator"></td></tr>';
+					text += separator;
 				}
-				let consumption = row[1] * perColonist;
+				let consumption = entry[1] * perColonist;
 				totalConsumption += consumption;
-				text += '<tr><td>' + TextRepository.get(row[0]) + '</td><td class="tableDataRight">' + row[1] + '</td><td></td><td class="tableDataRight colorError">-' + consumption + '</td></tr>';
+				text += '<tr><td>' + TextRepository.get(entry[0]) + '</td>' + cell(entry[1]) + '<td></td><td></td>' + cell('-' + consumption, 'colorError') + '</tr>';
 				haveConsumption = true;
 			});
 		}
 
-		if(activePipe + idlePipe > 0)
+		if(pipes.active + pipes.stopped > 0)
 		{
 			if(!haveConsumption)
 			{
-				text += '<tr><td></td><td>' + TextRepository.get("Active") + '</td><td>' + TextRepository.get("Idle") + '</td><td>' + TextRepository.get("Consumption") + '</td></tr>';
+				text += separator;
 			}
-
-			text += '<tr><td>' + TextRepository.get("Pipes") + '</td><td class="tableDataRight">' + activePipe + '</td>';
-			if(idlePipe > 0)
-			{
-				text += '<td class="tableDataRight colorError">' + idlePipe + '</td>';
-			}
-			else
-			{
-				text += '<td class="tableDataRight">' + idlePipe + '</td>';
-			}
-			text += '<td class="tableDataRight colorError">-' + consumptionPipe + '</td></tr>';
-
-			//haveConsumption = true;
+			text += row(TextRepository.get("Pipes"), pipes.active, pipes.stopped, 0, pipes.consumption, true);
 		}
 
-		text += '<tr><td colspan="4" class="tableSeparator"></td></tr>';
+		text += separator;
 
-		text += '<tr><td>' + TextRepository.get("Surplus") + '</td><td></td><td></td>';
-		if(totalProduction < totalConsumption)
-		{
-			text += '<td class="tableDataRight colorError">' + (totalProduction - totalConsumption) + '</td>';
-		}
-		else
-		{
-			text += '<td class="tableDataRight">' + (totalProduction - totalConsumption) + '</td>';	// total
-		}
-		text += '</tr>';
+		let surplus = totalProduction - totalConsumption;
+		text += '<tr><td>' + TextRepository.get("Surplus") + '</td><td></td><td></td><td></td>' + cell(surplus, surplus < 0 ? 'colorError' : '') + '</tr>';
 
-		text += '<tr><td>' + TextRepository.get("Stored") + '</td><td></td><td></td>';
+		text += '<tr><td>' + TextRepository.get("Stored") + '</td><td></td><td></td><td></td>';
 		let capacity = colonyState.getCapacity(material);
 		let stored = (colonyState.getStored(material) || colonyState.getFullCapacity(material));
 		if(stored >= capacity)

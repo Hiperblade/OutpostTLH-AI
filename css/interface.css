@@ -331,6 +331,11 @@ body
 	background-color: #2f6A08;
 }
 
+.colorResting
+{
+	color: rgb(150,160,170);
+}
+
 /* building form */
 
 .buildingArea
