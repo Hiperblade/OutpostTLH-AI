@@ -10,7 +10,7 @@ Stato: ✅ risolto · ⏳ aperto
 |---|---|---|---|
 | 1 | Il Benessere non ha effetti | Regole | ✅ |
 | 2 | Barre di Ferro e minerali senza magazzino | Regole | ✅ |
-| 3 | I cloni di un risveglio muoiono tutti nello stesso turno | Regole | ⏳ |
+| 3 | I cloni di un risveglio muoiono tutti nello stesso turno | Regole | ✅ |
 | 4 | Energia a microonde illimitata e quasi gratuita | Regole | ⏳ |
 | 5 | I cloni costano molto rispetto a quanto rendono | Equilibrio | ⏳ |
 | 6 | I coloni nati diventano utili molto tardi | Equilibrio | ⏳ |
@@ -49,6 +49,8 @@ Le Barre di Ferro non stanno in nessun magazzino: quelle non usate nel turno in 
 I cloni risvegliati insieme muoiono tutti nello stesso turno, dopo 55 turni. Se reggono un laboratorio, quello si ferma di colpo, senza preavviso.
 
 **Proposta:** un avviso qualche turno prima, oppure una durata con una variazione casuale, come per i robot.
+
+**Risolto ✅** con un avviso il turno prima: "Lotto di cloni in scadenza". Tutte le notifiche ora compaiono in un pannello in basso al centro (chiusura dopo 5 secondi o col pulsante) e restano nel report "Notifiche"; si aggiungono le notifiche di nuovi edifici, studi, produzioni e scoperte.
 
 ### 4. Energia a microonde illimitata e quasi gratuita
 
@@ -109,6 +111,8 @@ Il personale di un edificio che non può funzionare (per esempio per mancanza di
 ### 13. Mancano avvisi di fine turno
 
 **Proposta:** messaggi per cibo in esaurimento, robot vicini a fine vita, cloni in scadenza, magazzini pieni e materiali prodotti e andati persi.
+
+**In parte:** c'è il pannello delle notifiche con lo storico, e l'avviso dei cloni in scadenza; restano da aggiungere cibo in esaurimento, robot a fine vita e magazzini pieni.
 
 ### 14. Il report Energia non distingue gli edifici a riposo ✅
 

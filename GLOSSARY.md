@@ -58,6 +58,10 @@ _Evitare_: coloni iniziali, ibernato
 Un colono adulto e già istruito uscito da una capsula criogenica: lavora con un quarto del rendimento di un Lavoratore (1 punto lavoro contro 4), non risente della felicità, a fine vita lavorativa muore invece di diventare Pensionato e non conta per la vittoria.
 _Evitare_: replicante, colono artificiale
 
+**Lotto di cloni**:
+I cloni risvegliati nello stesso turno: invecchiano insieme e muoiono tutti nello stesso turno, alla fine della vita lavorativa; il turno prima la colonia riceve l'avviso di scadenza.
+_Evitare_: generazione di cloni, gruppo
+
 **Risveglio**:
 La trasformazione di capsule criogeniche in cloni, a gruppi di 5, compiuta da un Centro Criogenico quando cibo, alloggi e habitat bastano per tutti.
 

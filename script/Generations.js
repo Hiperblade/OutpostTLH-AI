@@ -146,6 +146,11 @@ function Generation(date, nurseryUnit, educationLevel, clone)
 			if(lots[i].getPopulation() <= 0) { lots.splice(i, 1); }
 		}
 	};
+	/** true se in quel turno il lotto di cloni arriva a fine vita lavorativa (e non c'era già arrivato) */
+	this.expiresAt = function(date)
+	{
+		return clone && date - birthDate == GenerationConst.AGE_RETIREES + 1;
+	};
 	/** i cloni a fine vita lavorativa muoiono tutti insieme */
 	this.expire = function(date)
 	{

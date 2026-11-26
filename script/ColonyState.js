@@ -4,6 +4,8 @@ import { generationFromData } from "./Generations.js";
 import { MaterialLedger } from "./MaterialLedger.js";
 import { RecipeLib } from "./RecipeLib.js";
 
+const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
+
  
 	function ColonyState()
 	{
@@ -44,6 +46,8 @@ import { RecipeLib } from "./RecipeLib.js";
 		state.pendingCures = 0;
 		state.autoCure = false;
 		state.birthsSuspended = false;
+		// storico delle notifiche di fine turno: [{ date, text, level }], le più recenti in fondo
+		state.notifications = [];
 		// usura di ogni robot, per tipo: [{ wear, life }] (vedi RobotWearPhase)
 		state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 
@@ -266,6 +270,7 @@ import { RecipeLib } from "./RecipeLib.js";
 				pendingCures: state.pendingCures,
 				autoCure: state.autoCure,
 				birthsSuspended: state.birthsSuspended,
+				notifications: state.notifications.slice(),
 				robotWear: JSON.parse(JSON.stringify(state.robotWear)),
 				robotsAvailable: Object.assign({}, state.robotsAvailable),
 				knowledge: {
@@ -297,6 +302,7 @@ import { RecipeLib } from "./RecipeLib.js";
 			state.pendingCures = data.pendingCures || 0;
 			state.autoCure = !!data.autoCure;
 			state.birthsSuspended = !!data.birthsSuspended;
+			state.notifications = Array.isArray(data.notifications) ? data.notifications.slice() : [];
 			// i salvataggi precedenti avevano un contatore per tipo: si ripartono da robot nuovi
 			state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 			Object.keys(data.robotWear || {}).forEach(function(type)
@@ -339,6 +345,16 @@ import { RecipeLib } from "./RecipeLib.js";
 		this.setAutoCure = function(value) { state.autoCure = !!value; };
 		this.areBirthsSuspended = function() { return state.birthsSuspended; };
 		this.setBirthsSuspended = function(value) { state.birthsSuspended = !!value; };
+		/** aggiunge notifiche allo storico, che tiene le ultime NOTIFICATION_HISTORY */
+		this.addNotifications = function(items)
+		{
+			items.forEach(function(item) { state.notifications.push({ date: item.date, text: item.text, level: item.level }); });
+			if(state.notifications.length > NOTIFICATION_HISTORY)
+			{
+				state.notifications.splice(0, state.notifications.length - NOTIFICATION_HISTORY);
+			}
+		};
+		this.getNotifications = function() { return state.notifications; };
 		this.setPendingRevival = function(value) { state.pendingRevival = value; };
 		this.getRobotWear = function() { return state.robotWear; };
 

@@ -66,6 +66,36 @@ function TurnConstructor()
 	};
 
 	/** @return {{date:number, events:Array<{type:string, name:string}>, outcome:string|null}} */
+	/** ciò che il giocatore può costruire, studiare e produrre, e le scoperte fatte */
+	let _unlocks = function(state)
+	{
+		return {
+			kit: state.isKitDelivered(),
+			buildings: state.getTechnology().slice(),
+			studies: RecipeLib.getAvailableResearch(state).map(function(recipe) { return recipe.getName(); }),
+			productions: RecipeLib.getAvailableProduction(state).map(function(recipe) { return recipe.getName(); }),
+			discoveries: state.getDiscovery().filter(function(name) { return name.indexOf("Resource_") == 0; })
+		};
+	};
+
+	/** novità rispetto al turno precedente; alla consegna del kit gli edifici diventano una notifica sola */
+	let _unlockEvents = function(before, after, events)
+	{
+		let added = function(key) { return after[key].filter(function(name) { return before[key].indexOf(name) < 0; }); };
+		let buildings = added("buildings");
+		if(!before.kit && after.kit)
+		{
+			events.push({ type: TurnEventType.KitDelivered, count: buildings.length });
+		}
+		else
+		{
+			buildings.forEach(function(name) { events.push({ type: TurnEventType.NewBuilding, name: name }); });
+		}
+		added("studies").forEach(function(name) { events.push({ type: TurnEventType.NewStudy, name: name }); });
+		added("productions").forEach(function(name) { events.push({ type: TurnEventType.NewProduction, name: name }); });
+		added("discoveries").forEach(function(name) { events.push({ type: TurnEventType.Discovery, name: name }); });
+	};
+
 	let _advance = function(map)
 	{
 		if(map.getState().getOutcome() != null)
@@ -73,6 +103,7 @@ function TurnConstructor()
 			// partita conclusa: il tempo non avanza più
 			return _report(_project(map).ctx);
 		}
+		let unlocksBefore = _unlocks(map.getState());
 		let turn = _project(map);
 		turn.phases.forEach(function(phase, i)
 		{
@@ -83,6 +114,7 @@ function TurnConstructor()
 		});
 		turn.ctx.state.updateAll();
 		turn.ctx.state.setDate(turn.ctx.state.getDate() + 1);
+		_unlockEvents(unlocksBefore, _unlocks(turn.ctx.state), turn.ctx.events);
 
 		let report = _report(turn.ctx);
 		_project(map); // proiezione del nuovo turno, mostrata dalla UI
@@ -106,7 +138,12 @@ let TurnEventType = {
 	NewCreation: "NEW_CREATION",
 	NewDiscovery: "NEW_DISCOVERY",
 	RobotBroken: "ROBOT_BROKEN",
-	ColonistsRevived: "COLONISTS_REVIVED"
+	ColonistsRevived: "COLONISTS_REVIVED",
+	KitDelivered: "KIT_DELIVERED",
+	NewBuilding: "NEW_BUILDING",
+	NewStudy: "NEW_STUDY",
+	NewProduction: "NEW_PRODUCTION",
+	Discovery: "DISCOVERY"
 };
 
 // singleton

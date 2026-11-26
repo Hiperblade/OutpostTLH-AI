@@ -433,6 +433,25 @@ function checks()
 	Turn.project(stock);
 	expect("scorta interna anche con la fonderia ferma", [(ss.getInactiveList()["Smelter"] || []).length, ss.getCapacity("ironBar")], [1, 15]);
 
+	// notifiche di sblocco: consegna del kit in una sola notifica, scoperte e nuovi studi
+	let news = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let nw = news.getState();
+	nw.addKnowledge({ technology: ["LandingModule"] });
+	news.addBuilding("LandingModule", { x: 10, y: 10 });
+	let newsEvents = [];
+	for(let t = 0; t < 4; t++) newsEvents = newsEvents.concat(Turn.advance(news).events);
+	let kit = newsEvents.filter(e => e.type == "KIT_DELIVERED");
+	expect("kit consegnato: una sola notifica", [kit.length, kit.length ? kit[0].count > 10 : false, newsEvents.filter(e => e.type == "NEW_BUILDING").length], [1, true, 0]);
+	nw.addKnowledge({ discovery: ["Resource_Mineral"] });
+	let discovered = Turn.advance(news).events;
+	expect("nessuna notifica per conoscenze aggiunte fuori dal turno", discovered.filter(e => e.type == "DISCOVERY").length, 0);
+	nw.getResearchQueue().push(RecipeLib.create("Medicine"));
+	news.addBuilding("AutoLab", { x: 12, y: 9 }, true);
+	let studies = [];
+	for(let t = 0; t < 10 && !studies.some(e => e.type == "NEW_STUDY"); t++) studies = studies.concat(Turn.advance(news).events);
+	expect("nuovo studio dopo una ricerca completata", studies.filter(e => e.type == "NEW_STUDY").map(e => e.name).indexOf("Pharmacology") >= 0, true);
+	expect("nuovo edificio dopo una ricerca completata", studies.filter(e => e.type == "NEW_BUILDING").map(e => e.name).indexOf("CryoCenter") >= 0, true);
+
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
 	idle.addBuilding("LandingModule", { x: 10, y: 10 });
@@ -514,12 +533,14 @@ function checks()
 	ag.createMaterials({ foodUnit: 100 });
 	let oldClones = createClones(ag.getDate() - 56, 1);
 	let oldWorkers = createWorkers(ag.getDate() - 56, 1);
-	ag.getPopulation().registry.push(oldClones, oldWorkers);
+	let soonClones = createClones(ag.getDate() - 55, 1);
+	ag.getPopulation().registry.push(oldClones, oldWorkers, soonClones);
 	let expiry = Turn.advance(aging);
+	expect("avviso: lotto di cloni in scadenza il turno prima", [expiry.events.filter(e => e.type == "CLONES_EXPIRING").map(e => e.count), soonClones.getPopulation() > 0], [[soonClones.getPopulation()], true]);
 	expect("cloni a fine vita", [oldClones.getPopulation(), oldWorkers.getState(ag.getDate()), expiry.events.some(e => e.type == "CLONES_EXPIRED")], [0, "retirees", true]);
 	expect("turno dopo una generazione estinta", (() => { try { Turn.advance(aging); return "ok"; } catch(e) { return String(e); } })(), "ok");
 	let reloaded = TerrainMap.fromData(JSON.parse(JSON.stringify(aging.toData())));
-	expect("salvataggio dei cloni", reloaded.getState().getPopulation().registry.map(g => g.isClone()), [true, false]);
+	expect("salvataggio dei cloni", reloaded.getState().getPopulation().registry.map(g => g.isClone()), [true, false, true]);
 
 	return failures;
 }

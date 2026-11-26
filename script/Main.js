@@ -5,6 +5,7 @@ import { Placement, PlacementReason } from "./Placement.js";
 import { Cure } from "./Cure.js";
 import { Revival } from "./Revival.js";
 import { SaveGame } from "./SaveGame.js";
+import { Notifications } from "./Notifications.js";
 import { Log } from "./SystemLib.js";
 import { TextRepository } from "./TextRepository.js";
 import { GameOutcome, Turn } from "./Turn.js";
@@ -479,14 +480,14 @@ Log.dialog(_placementMessage(result));
 	let _wakeUp = function()
 	{
 		let result = Revival.request(terrainMap, 5);
-Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(result));
+Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(result), result.ok ? "info" : "warning");
 	};
 
 	/** prenota le cure dei coloni malati (avvengono a fine turno) */
 	let _cure = function()
 	{
 		let result = Cure.request(terrainMap);
-		Log.dialog(result.ok ? TextRepository.get("CureScheduled").replace("%s", state.getPendingCures()) : TextRepository.get("Cure_" + result.reason));
+		Log.dialog(result.ok ? TextRepository.get("CureScheduled").replace("%s", state.getPendingCures()) : TextRepository.get("Cure_" + result.reason), result.ok ? "info" : "warning");
 		summaryView.redraw();
 	};
 
@@ -518,17 +519,24 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 		_redraw();
 		buildingInfo.refresh();
 
+		// notifiche del turno, con l'importanza; finiscono anche nello storico della colonia
 		let messages = report.events.map(function(event)
 		{
-			return TextRepository.get("Event_" + event.type) + ": " + (event.count !== undefined ? event.count : TextRepository.get(event.name));
+			return { date: report.date - 1, text: _eventText(event), level: EVENT_LEVEL[event.type] || "info" };
 		});
+		if(report.outcome != null)
+		{
+			messages.push({ date: report.date - 1, text: TextRepository.get(report.outcome == GameOutcome.Victory ? "GameVictory" : "GameDefeat"),
+				level: (report.outcome == GameOutcome.Victory) ? "info" : "danger" });
+		}
+		state.addNotifications(messages);
 		if(report.outcome == null)
 		{
 			// un salvataggio non riuscito non deve fermare la partita
 			if(!_save() && !saveWarningShown)
 			{
 				saveWarningShown = true;
-				messages.push(TextRepository.get("SaveFailed"));
+				messages.push({ text: TextRepository.get("SaveFailed"), level: "warning" });
 			}
 		}
 		else
@@ -536,16 +544,29 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 			// partita conclusa: alla prossima apertura se ne crea una nuova
 			SaveGame.clear();
 			_setAbilitationButton(MainCommand.DoNext, false);
-			messages.push(TextRepository.get(report.outcome == GameOutcome.Victory ? "GameVictory" : "GameDefeat"));
 		}
-		if(messages.length > 0)
-		{
-			// i messaggi bloccano la pagina: si mostrano dopo che la mappa è stata ridisegnata
-			window.setTimeout(function() { messages.forEach(function(text) { Log.dialog(text); }); }, 50);
-		}
+		// vittoria e sconfitta restano aperte finché il giocatore non le chiude
+		Notifications.show(messages, { sticky: report.outcome != null });
 	};
 
 	let saveWarningShown = false;
+
+	/** importanza delle notifiche di fine turno: rosso per le perdite, giallo per gli avvisi, verde il resto */
+	const EVENT_LEVEL = {
+		ROBOT_BROKEN: "warning",
+		CLONES_EXPIRING: "warning",
+		CLONES_EXPIRED: "danger",
+		FELL_ILL: "warning",
+		ILLNESS_DEATHS: "danger"
+	};
+
+	/** testo di un evento: "%s" nel testo prende il numero o il nome, altrimenti si aggiunge dopo i due punti */
+	let _eventText = function(event)
+	{
+		let text = TextRepository.get("Event_" + event.type);
+		let value = (event.count !== undefined) ? event.count : TextRepository.get(event.name);
+		return (text.indexOf("%s") >= 0) ? text.replace("%s", value) : text + ": " + value;
+	};
 
 	let _save = function()
 	{

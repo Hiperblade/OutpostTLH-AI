@@ -1,5 +1,7 @@
 "use strict";
 
+import { Notifications } from "./Notifications.js";
+
 /** ereditarietà tra costruttori: child.prototype deriva da superclass.prototype */
 function inherits(child, superclass)
 {
@@ -29,12 +31,13 @@ function LogConstructor()
 {
 	let _error = function(msg)
 	{
-		alert(msg);
+		Notifications.show([{ text: msg, level: "danger" }]);
 	};
 
-	let _dialog = function(msg)
+	/** @param {string} [level] "info", "warning" (predefinito) o "danger" */
+	let _dialog = function(msg, level)
 	{
-		alert(msg);
+		Notifications.show([{ text: msg, level: level || "warning" }]);
 	};
 
 	this.error = _error;

@@ -272,12 +272,19 @@ let PopulationPhase = {
 			}
 		}
 
-		// i cloni non vanno in pensione: a fine vita lavorativa muoiono
+		// i cloni non vanno in pensione: a fine vita lavorativa muoiono; il turno prima arriva l'avviso
 		let expired = generations.reduce(function(n, generation) { return n + generation.expire(date); }, 0);
 		if(expired > 0)
 		{
 			ctx.events.push({ type: "CLONES_EXPIRED", count: expired });
 		}
+		generations.forEach(function(generation)
+		{
+			if(generation.isClone() && generation.getPopulation() > 0 && generation.expiresAt(date + 1))
+			{
+				ctx.events.push({ type: "CLONES_EXPIRING", count: generation.getPopulation() });
+			}
+		});
 
 		// mortalità naturale dei Pensionati, rallentata dalle cure mediche
 		let healthCover = 1 - missingHealthCover;

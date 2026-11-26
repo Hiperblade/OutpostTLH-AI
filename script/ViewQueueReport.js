@@ -476,6 +476,31 @@ function ReportHumans(colonyState, image)
 	this.getImageId = function(){ return image || "Humans"; }
 }
 
+/** storico delle notifiche di fine turno, dalla più recente */
+function ReportNotifications(colonyState, image)
+{
+	this.getItemInfo = function()
+	{
+		let list = colonyState.getNotifications();
+		if(list.length == 0)
+		{
+			return '<p>' + TextRepository.get("NoNotifications") + '</p>';
+		}
+		let escape = function(text) { return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;"); };
+		let text = '<table>';
+		for(let i = list.length - 1; i >= 0; i--)
+		{
+			text += '<tr><td class="tableDataColumn">' + TextRepository.get("Summary_turn").replace("%s", list[i].date) + '</td>' +
+				'<td class="notification_' + (list[i].level || "info") + '">' + escape(list[i].text) + '</td></tr>';
+		}
+		text += '</table>';
+		return text;
+	};
+
+	this.getName = function(){ return "Notifications"; };
+	this.getImageId = function(){ return image || "Pipes"; }
+}
+
 /** edifici che non funzionano in questo turno, raggruppati per tipo e motivo */
 function ReportStoppedBuildings(colonyState, image)
 {
@@ -515,6 +540,7 @@ function ReportQueueData(colonyState)
 	let queue = [];
 	let available = [];
 
+	queue.push(new ReportNotifications(colonyState, "Pipes"));
 	queue.push(new ReportStoppedBuildings(colonyState, "Pipes"));
 	queue.push(new ReportMaintenance(colonyState, "Pipes"));
 	queue.push(new ReportProductionMaterial(colonyState, "power", "Power" ));
@@ -557,4 +583,4 @@ function ReportQueueData(colonyState)
 }
 inherits(ReportQueueData, QueueData);
 
-export { ReportProductionMaterial, ReportMetaMaterial, ReportMaintenance, ReportHumans, ReportStoppedBuildings, ReportQueueData };
+export { ReportNotifications, ReportProductionMaterial, ReportMetaMaterial, ReportMaintenance, ReportHumans, ReportStoppedBuildings, ReportQueueData };

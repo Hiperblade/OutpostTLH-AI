@@ -340,6 +340,53 @@ body
 	color: rgb(150,160,170);
 }
 
+/* notifiche */
+
+.notificationPanel
+{
+	position: absolute;
+	z-index: 1000;
+	transform: translate(-50%, -100%);
+	min-width: 320px;
+	max-width: 560px;
+	padding: 8px 30px 8px 12px;
+	background: rgba(0,0,0,0.88);
+	border: 1px solid rgb(71,143,22);
+	font-family: sans-serif;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.notificationClose
+{
+	position: absolute;
+	top: 2px;
+	right: 6px;
+	cursor: pointer;
+	font-size: 18px;
+	color: rgb(119,207,60);
+}
+
+.notificationClose:hover
+{
+	color: #fff;
+}
+
+.notification_info
+{
+	color: rgb(119,207,60);
+}
+
+.notification_warning
+{
+	color: rgb(230,190,60);
+}
+
+.notification_danger
+{
+	color: rgb(235,95,85);
+}
+
 /* building form */
 
 .buildingArea
