@@ -374,7 +374,6 @@ let _runBuilding = function(state, building, prototype, ratio)
 	}
 	state.addMaterials(_scaled(prototype.getProduction(), ratio));
 	state.addMaterials(prototype.getProductionWaste());
-	state.addCapacity(prototype.getCapacity());
 	_dispose(state, prototype.getDisposal());
 	state.addToActiveList(building);
 };
@@ -433,6 +432,8 @@ let BuildingProductionPhase = {
 					}
 					if(building.isOperative())
 					{
+						// scorte interne e magazzini contano finché l'edificio esiste, anche se fermo o a riposo
+						state.addCapacity(prototype.getCapacity());
 						// senza materiali, energia o personale l'edificio resta inattivo; con personale
 						// insufficiente funziona e produce in proporzione ai punti lavoro ricevuti
 						// laboratori e industrie senza studi o produzioni da servire restano a riposo,

@@ -316,11 +316,15 @@ PrototypeLib.add("WasteTreatment", TerrainLayer.Surface, 4, {}, { consumption: {
 
 PrototypeLib.add("Warehouse", TerrainLayer.Surface, 2, {}, { consumption: { power: 5 }, capacity: { genericStorage: 100 } });
 
-PrototypeLib.add("Smelter", TerrainLayer.Surface, 6, {}, { consumption: { power: 40, metalOre: 5 }, production: { ironBar: 3 }});
-PrototypeLib.add("SmelterAdv", TerrainLayer.Surface, 7, { ironBar: 1 }, { consumption: { power: 40, metalOre: 10 }, production: { ironBar: 8 }});
+// semilavorati: ogni edificio che li produce ne conserva una scorta interna di 10 (il Deposito la aumenta)
+PrototypeLib.add("Smelter", TerrainLayer.Surface, 6, {}, { consumption: { power: 40, metalOre: 5 }, production: { ironBar: 3 }, capacity: { ironBar: 10 } });
+PrototypeLib.add("SmelterAdv", TerrainLayer.Surface, 7, { ironBar: 1 }, { consumption: { power: 40, metalOre: 10 }, production: { ironBar: 8 }, capacity: { ironBar: 10 } });
 
-PrototypeLib.add("GoodsFactory", TerrainLayer.Surface, 10, {}, { staff: 5, consumption: { power: 40, mineralOre: 4, metalOre: 2 }, production: { goodsUnit: 30 }});
-PrototypeLib.add("PharmaceuticalIndustry", TerrainLayer.Surface, 20, {}, { staff: 5, consumption: { power: 40, mineralOre: 10, cristalOre: 4 }, production: { pharmaceuticalUnit: 60 }});
+PrototypeLib.add("GoodsFactory", TerrainLayer.Surface, 10, {}, { staff: 5, consumption: { power: 40, mineralOre: 4, metalOre: 2 }, production: { goodsUnit: 30 }, capacity: { goodsUnit: 10 } });
+PrototypeLib.add("PharmaceuticalIndustry", TerrainLayer.Surface, 20, {}, { staff: 5, consumption: { power: 40, mineralOre: 10, cristalOre: 4 }, production: { pharmaceuticalUnit: 60 }, capacity: { pharmaceuticalUnit: 10 } });
+
+// Deposito: +5 alla capienza di ogni semilavorato, finché esiste (anche senza energia)
+PrototypeLib.add("Depot", TerrainLayer.Deep, 6, { ironBar: 1 }, { consumption: { power: 20 }, capacity: { ironBar: 5, pharmaceuticalUnit: 5, goodsUnit: 5 } });
 
 PrototypeLib.add("IndustrialFactory", TerrainLayer.Surface, 12, {}, { consumption: { power: 40 }, production: { productionUnit: 40, productionStandardStructure: 1 } });
 PrototypeLib.add("ChemicalFactory", TerrainLayer.Surface, 15, {}, { staff: 5, consumption: { power: 80 }, production: { productionUnit: 80, productionChemicalStructure: 1  } });

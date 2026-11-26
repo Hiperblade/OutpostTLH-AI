@@ -123,6 +123,7 @@ Edificio che funziona con la sola energia, senza personale; è ciò che si costr
 
 **Edificio con personale**:
 Edificio che a ogni turno richiede manodopera di Lavoratori o cloni per funzionare (laboratori, istruzione, cure mediche, svago, industrie specializzate): 4 punti per ogni addetto; con meno punti funziona e produce in proporzione, senza nessun punto è fermo. I robot non possono farne il personale.
+_Evitare_: edificio presidiato
 
 **Edificio a riposo**:
 Laboratorio o industria che in questo turno non lavora perché nessuno studio o produzione in coda (né altro edificio) usa ciò che produce: non consuma energia né personale.
@@ -131,7 +132,6 @@ _Evitare_: edificio spento, in pausa
 **Precedenza del personale**:
 L'ordine in cui la manodopera di Lavoratori, Pensionati e cloni va agli edifici con personale, scelto dal giocatore per ogni edificio: Alta, Normale (predefinita) o Bassa; a pari precedenza decide il tipo di edificio.
 _Evitare_: priorità (riservato all'ordine fisso dei tipi di edificio)
-_Evitare_: edificio presidiato
 
 **Costo per turno di cantiere**:
 I materiali che un cantiere consuma a ogni turno di lavoro; se mancano, il cantiere resta fermo quel turno.
@@ -149,8 +149,24 @@ _Evitare_: miner, minatore
 
 ### Materiali
 
+**Magazzino**:
+Lo spazio comune per ciò che il giocatore crea esplicitamente in produzione (Kit Medici, Beni) e per gli scarti di quelle produzioni; robot e satelliti stanno nelle Rimesse, i materiali radioattivi nelle Aree di Stoccaggio.
+_Evitare_: deposito, scorta
+
+**Scorta interna**:
+La piccola riserva che un edificio conserva di ciò che produce da solo (minerali, cibo, semilavorati); conta per tutta la colonia finché l'edificio esiste, anche se è fermo o a riposo. Ciò che non trova posto va perso.
+_Evitare_: deposito interno, magazzino
+
+**Semilavorati**:
+I materiali prodotti dagli edifici per altre lavorazioni: Barre di Ferro, unità farmaceutiche e unità per beni.
+_Evitare_: intermedi, componenti
+
+**Deposito**:
+Edificio di profondità che aumenta la scorta interna di ogni semilavorato.
+_Evitare_: magazzino profondo
+
 **Scarti**:
-Materiali di risulta di produzioni e ricette (scarti di fusione, tossici, radioattivi) che occupano il magazzino; quelli di fusione e tossici si smaltiscono, quelli radioattivi si possono solo stoccare.
+Materiali di risulta delle produzioni (scarti di fusione, tossici, radioattivi) che occupano il magazzino o le Aree di Stoccaggio; quelli di fusione e tossici si smaltiscono, quelli radioattivi si possono solo stoccare.
 _Evitare_: waste, rifiuti
 
 ### Eventi

@@ -416,6 +416,23 @@ function checks()
 	Turn.project(pharma);
 	expect("filiera medica nello stesso turno", [(ps.getActiveList()["PharmaceuticalIndustry"] || []).length, (ps.getActiveList()["MedicalStructure"] || []).length], [1, 1]);
 
+	// scorta interna dei semilavorati: 10 barre per Fonderia, +5 per Deposito, anche con gli edifici fermi
+	let stock = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let ss = stock.getState();
+	ss.addKnowledge({ technology: ["LandingModule"] });
+	stock.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(stock);
+	stock.addBuilding("Smelter", { x: 8, y: 10 }, true);
+	ss.createMaterials({ metalOre: 100 });
+	for(let t = 0; t < 5; t++) Turn.advance(stock);
+	expect("scorta interna: la fonderia conserva 10 barre", ss.getStored("ironBar"), 10);
+	stock.addBuilding("Depot", { x: 9, y: 13 }, true);
+	for(let t = 0; t < 2; t++) Turn.advance(stock);
+	expect("deposito: +5 barre", ss.getStored("ironBar"), 15);
+	ss.destroyMaterials({ metalOre: ss.getStored("metalOre") });
+	Turn.project(stock);
+	expect("scorta interna anche con la fonderia ferma", [(ss.getInactiveList()["Smelter"] || []).length, ss.getCapacity("ironBar")], [1, 15]);
+
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
 	idle.addBuilding("LandingModule", { x: 10, y: 10 });

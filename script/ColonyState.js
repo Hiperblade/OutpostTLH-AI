@@ -400,6 +400,7 @@ import { RecipeLib } from "./RecipeLib.js";
 
 
 		this.isCompletedKnowledge = _isCompletedKnowledge;
+		this.getCompletedResearch = function() { return state.knowledge.completed; };
 		this.addCompletedResearch = _addCompletedResearch;
 		this.checkKnowledge = _checkKnowledge;
 		this.addKnowledge = _addKnowledge;

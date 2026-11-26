@@ -150,6 +150,17 @@ function ReportProductionMaterial(colonyState, material, image, perColonist)
 		let surplus = totalProduction - totalConsumption;
 		text += '<tr><td>' + TextRepository.get("Surplus") + '</td><td></td><td></td><td></td>' + cell(surplus, surplus < 0 ? 'colorError' : '') + '</tr>';
 
+		// materiale perso: quello che nel turno avanza (anche dopo cantieri e produzioni) e non trova posto
+		if(!colonyState.isMetaMaterial(material))
+		{
+			let net = colonyState.getProduced(material) - colonyState.getConsumed(material) - colonyState.getPopulation().registry.reduce(function(n, g) { return n + g.getPopulation(); }, 0) * (perColonist || 0);
+			let lost = net - Math.max(0, colonyState.getCapacity(material) - colonyState.getStored(material));
+			if(lost > 0)
+			{
+				text += '<tr><td>' + TextRepository.get("Lost") + '</td><td></td><td></td><td></td>' + cell(lost, 'colorError') + '</tr>';
+			}
+		}
+
 		text += '<tr><td>' + TextRepository.get("Stored") + '</td><td></td><td></td><td></td>';
 		let capacity = colonyState.getCapacity(material);
 		let stored = (colonyState.getStored(material) || colonyState.getFullCapacity(material));
@@ -509,6 +520,9 @@ function ReportQueueData(colonyState)
 	queue.push(new ReportProductionMaterial(colonyState, "power", "Power" ));
 	queue.push(new ReportHumans(colonyState, "Humans"));
 	queue.push(new ReportProductionMaterial(colonyState, "foodUnit", "Hydroponics", 1));
+	queue.push(new ReportProductionMaterial(colonyState, "ironBar", "Smelter"));
+	queue.push(new ReportProductionMaterial(colonyState, "pharmaceuticalUnit", "PharmaceuticalIndustry"));
+	queue.push(new ReportProductionMaterial(colonyState, "goodsUnit", "GoodsFactory"));
 	queue.push(new ReportMetaMaterial(colonyState, "roboticStorage", "Pipes"));
 	queue.push(new ReportMetaMaterial(colonyState, "genericStorage", "Pipes"));
 	queue.push(new ReportMetaMaterial(colonyState, "radioactiveStorage", "PipesWaste"));

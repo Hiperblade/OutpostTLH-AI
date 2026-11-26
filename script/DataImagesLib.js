@@ -235,6 +235,7 @@ imagesList.push({ id: "Ruins_underground", fileName: "buildings/Ruins_undergroun
 imagesList.push({ id: "School", fileName: "buildings/School.gif" });
 imagesList.push({ id: "Smelter", fileName: "buildings/Smelter.gif" });
 imagesList.push({ id: "SmelterAdv", fileName: "buildings/SmelterAdv.gif" });
+imagesList.push({ id: "Depot", fileName: "buildings/Depot.gif" });
 imagesList.push({ id: "SpacePort", fileName: "buildings/SpacePort.gif" });
 imagesList.push({ id: "SpacePort_e", fileName: "buildings/SpacePort_e.gif" });
 imagesList.push({ id: "SpacePort_mini", fileName: "buildings/SpacePort_mini.gif" });

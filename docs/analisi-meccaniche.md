@@ -9,7 +9,7 @@ Stato: ✅ risolto · ⏳ aperto
 | # | Problema | Area | Stato |
 |---|---|---|---|
 | 1 | Il Benessere non ha effetti | Regole | ✅ |
-| 2 | Barre di Ferro e minerali senza magazzino | Regole | ⏳ |
+| 2 | Barre di Ferro e minerali senza magazzino | Regole | ✅ |
 | 3 | I cloni di un risveglio muoiono tutti nello stesso turno | Regole | ⏳ |
 | 4 | Energia a microonde illimitata e quasi gratuita | Regole | ⏳ |
 | 5 | I cloni costano molto rispetto a quanto rendono | Equilibrio | ⏳ |
@@ -24,7 +24,7 @@ Stato: ✅ risolto · ⏳ aperto
 | 14 | Il report Energia non distingue gli edifici a riposo | Informazioni | ✅ |
 | 15 | Refusi e descrizioni segnaposto nei testi | Informazioni | ✅ |
 
-**Da dove partire:** 2, 4 e 13. Sono interventi piccoli che cambiano molto la sensazione di gioco.
+**Da dove partire:** 4 e 13. Sono interventi piccoli che cambiano molto la sensazione di gioco.
 
 ## A. Regole che non funzionano o si contraddicono
 
@@ -41,6 +41,8 @@ Il Benessere si calcola da alloggi e cure mediche e compare nei report, ma il tu
 Le Barre di Ferro non stanno in nessun magazzino: quelle non usate nel turno in cui vengono prodotte si perdono. Nella partita di prova le Fonderie producevano 11 barre e i cantieri ne usavano 7. Se i cantieri avanzati sono più delle barre prodotte in un turno, gli ultimi restano fermi.
 
 **Proposta:** mettere Barre di Ferro, minerali metallici e cristalli nel Magazzino generico. Le unità per-turno (ricerca, produzione, istruzione) possono restare non accumulabili.
+
+**Risolto ✅** in modo diverso: il Magazzino tiene solo ciò che il giocatore crea in produzione e i suoi scarti. Gli edifici che producono da soli hanno una **scorta interna**, che conta anche se l'edificio è fermo: 10 Barre di Ferro per Fonderia, 10 unità farmaceutiche per Industria Farmaceutica, 10 unità per beni per Fabbrica di Beni; miniere e cupole tengono le loro. Il nuovo **Deposito** (profondità, Metallurgia Avanzata) aggiunge 5 a ogni semilavorato. I report mostrano i semilavorati e quanto materiale va perso.
 
 ### 3. I cloni di un risveglio muoiono tutti nello stesso turno
 

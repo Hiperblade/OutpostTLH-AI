@@ -32,6 +32,10 @@ TextRepository.add("Total", "Totale");
 TextRepository.add("Progress", "Avanzamento");
 TextRepository.add("Stored", "Riserve");
 TextRepository.add("Surplus", "Surplus");
+TextRepository.add("Lost", "Perso");
+TextRepository.add("ironBarDescription", "Barre di ferro prodotte dalle Fonderie: servono ai cantieri degli edifici avanzati. Ogni Fonderia ne conserva 10, ogni Deposito 5 in pi\u00F9.");
+TextRepository.add("pharmaceuticalUnitDescription", "Unit\u00E0 farmaceutiche prodotte dall'Industria Farmaceutica per le Strutture Mediche e i Kit Medici. Ogni industria ne conserva 10, ogni Deposito 5 in pi\u00F9.");
+TextRepository.add("goodsUnitDescription", "Unit\u00E0 per beni prodotte dalla Fabbrica di Beni per produrre i Beni. Ogni fabbrica ne conserva 10, ogni Deposito 5 in pi\u00F9.");
 TextRepository.add("Population_clones", "Popolazione: cloni");
 TextRepository.add("Population_born", "Popolazione: coloni");
 TextRepository.add("foodUnitDescription", "Cibo prodotto dagli edifici e consumato dai coloni (1 a testa per turno); quello che avanza va nelle riserve.");
@@ -204,7 +208,7 @@ TextRepository.add("pharmaceuticalUnit", "Unità Farmaceutiche");
 TextRepository.add("medicalUnit", "Unità Mediche");
 TextRepository.add("MedicalCover", "copertura");
 TextRepository.add("nurseryUnit", "Unità Pediatriche");
-TextRepository.add("goodsUnit", "Beni di Consumo");
+TextRepository.add("goodsUnit", "Unità per Beni");
 
 TextRepository.add("power", "Energia");
 TextRepository.add("mineralOre", "Minerali Amorfi");
@@ -389,3 +393,4 @@ TextRepository.add("roboticStorageDescription", "Posti per i robot nelle rimesse
 TextRepository.add("genericStorageDescription", "Spazio nei magazzini per beni, kit medici e scarti.");
 TextRepository.add("radioactiveStorageDescription", "Spazio nelle aree di stoccaggio per i materiali radioattivi.");
 TextRepository.addDescription("MineMineral", "Miniera di Minerali", "Estrae 20 minerali e 6 cristalli a turno da un giacimento minerale.");
+TextRepository.addDescription("Depot", "Deposito", "Deposito profondo: aumenta di 5 la scorta di Barre di Ferro, unità farmaceutiche e unità per beni della colonia, anche senza energia.");

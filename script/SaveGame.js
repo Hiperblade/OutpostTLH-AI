@@ -1,5 +1,6 @@
 "use strict";
 
+import { RecipeLib } from "./RecipeLib.js";
 import { TerrainMap } from "./TerrainMap.js";
 
 /**
@@ -51,7 +52,22 @@ function SaveGameConstructor()
 	let _load = function()
 	{
 		let data = _read();
-		return (data == null) ? null : { map: TerrainMap.fromData(data.map), siteData: data.site };
+		if(data == null)
+		{
+			return null;
+		}
+		let map = TerrainMap.fromData(data.map);
+		// le ricerche completate riconsegnano ciò che sbloccano oggi (es. edifici aggiunti dopo il salvataggio)
+		let state = map.getState();
+		state.getCompletedResearch().slice().forEach(function(name)
+		{
+			let recipe = RecipeLib.get(name);
+			if(recipe != undefined)
+			{
+				state.addKnowledge(recipe.getResult());
+			}
+		});
+		return { map: map, siteData: data.site };
 	};
 
 	this.save = _save;
