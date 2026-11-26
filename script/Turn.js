@@ -115,12 +115,13 @@ let Turn = new TurnConstructor();
 /**
  * Manodopera del turno, in due materiali distinti che non si accumulano:
  *   roboLabor    1 unità per RoboWorker
- *   workerLabor  1 unità per Lavoratore, ridotta dalla felicità fino a MIN_HAPPINESS_FACTOR
+ *   workerLabor  1 unità per Lavoratore e RETIREE_LABOR per Pensionato, ridotta dalla felicità fino a MIN_HAPPINESS_FACTOR
  * Nei costi la voce "labor" si paga prima con i robot e poi con i Lavoratori; il personale
  * degli edifici (staff) solo con i Lavoratori.
  */
 let WorkforcePhase = {
 	MIN_HAPPINESS_FACTOR: 0.5,
+	RETIREE_LABOR: 0.5,
 
 	project: function(ctx)
 	{
@@ -130,9 +131,14 @@ let WorkforcePhase = {
 		let workers = 0;
 		population.registry.forEach(function(generation)
 		{
-			if(generation.getState(date) == GenerationState.Scientists)
+			let phase = generation.getState(date);
+			if(phase == GenerationState.Scientists)
 			{
 				workers += generation.getPopulation();
+			}
+			else if(phase == GenerationState.Retirees)
+			{
+				workers += generation.getPopulation() * WorkforcePhase.RETIREE_LABOR;
 			}
 		});
 		let factor = WorkforcePhase.MIN_HAPPINESS_FACTOR + (1 - WorkforcePhase.MIN_HAPPINESS_FACTOR) * population.happiness;
@@ -357,12 +363,44 @@ let ResearchPhase = {
 };
 
 /**
- * Deterioramento dei robot: ogni turno di lavoro accumula usura; ogni ROBOT_LIFE turni di usura un robot
- * di quel tipo va fuori uso. La manutenzione (1 repairUnit per robot al lavoro) dimezza l'usura.
+ * Deterioramento dei robot. Ogni robot ha una propria durata (ROBOT_LIFE turni di lavoro, con una
+ * variazione casuale di LIFE_VARIANCE) e accumula usura; a fine durata va fuori uso.
+ * Il lavoro di un tipo di robot è ripartito tra tutti i robot di quel tipo. La manutenzione
+ * (1 repairUnit per robot al lavoro) riduce l'usura di MAINTENANCE_REDUCTION.
  */
 let RobotWearPhase = {
 	ROBOT_LIFE: 40,
+	LIFE_VARIANCE: 0.2,
 	MAINTENANCE_REDUCTION: 0.5,
+	TYPES: ["roboWorker", "dozer", "digger"],
+
+	/** allinea l'elenco dei robot di un tipo alla quantità in magazzino (robot nuovi a usura zero) */
+	sync: function(state, type)
+	{
+		let wear = state.getRobotWear();
+		let list = wear[type] = wear[type] || [];
+		let stock = Math.max(0, state.getStored(type));
+		while(list.length < stock)
+		{
+			list.push({ wear: 0, life: RobotWearPhase.ROBOT_LIFE * (1 + (Math.random() * 2 - 1) * RobotWearPhase.LIFE_VARIANCE) });
+		}
+		if(list.length > stock)
+		{
+			list.length = stock;
+		}
+		return list;
+	},
+
+	/** usura media dei robot di un tipo, da 0 (nuovi) a 1 (a fine vita) */
+	averageWear: function(state, type)
+	{
+		let list = state.getRobotWear()[type] || [];
+		if(list.length == 0)
+		{
+			return 0;
+		}
+		return list.reduce(function(sum, robot) { return sum + Math.min(1, robot.wear / robot.life); }, 0) / list.length;
+	},
 
 	project: function(ctx)
 	{
@@ -388,16 +426,24 @@ let RobotWearPhase = {
 	apply: function(ctx, plan)
 	{
 		let state = ctx.state;
-		let wear = state.getRobotWear();
 		let rate = 1 - RobotWearPhase.MAINTENANCE_REDUCTION * plan.maintained;
-		Object.keys(plan.work).forEach(function(type)
+		RobotWearPhase.TYPES.forEach(function(type)
 		{
-			wear[type] = (wear[type] || 0) + plan.work[type] * rate;
-			while(wear[type] >= RobotWearPhase.ROBOT_LIFE && state.getStored(type) > 0)
+			let list = RobotWearPhase.sync(state, type);
+			if(list.length == 0 || !plan.work[type])
 			{
-				state.destroyMaterials({ [type]: 1 });
-				wear[type] -= RobotWearPhase.ROBOT_LIFE;
-				ctx.events.push({ type: TurnEventType.RobotBroken, name: type });
+				return;
+			}
+			let share = plan.work[type] * rate / list.length;
+			list.forEach(function(robot) { robot.wear += share; });
+			for(let i = list.length - 1; i >= 0; i--)
+			{
+				if(list[i].wear >= list[i].life)
+				{
+					list.splice(i, 1);
+					state.destroyMaterials({ [type]: 1 });
+					ctx.events.push({ type: TurnEventType.RobotBroken, name: type });
+				}
 			}
 		});
 	}
@@ -449,7 +495,7 @@ let RobotPhase = {
  * per VICTORY_TURNS turni consecutivi.
  * Sconfitta, dopo la consegna del kit di atterraggio:
  *   - nessun Headquarter in piedi;
- *   - nessuna manodopera e nessun modo di riaverla: niente RoboWorker, Lavoratori o coloni giovani,
+ *   - nessuna manodopera e nessun modo di riaverla: niente RoboWorker, Lavoratori, Pensionati o coloni giovani,
  *     e nessun risveglio possibile (capsule finite o Centro Criogenico non attivo);
  *   - nessun colono, nessuna nascita possibile (Asilo non attivo) e nessuna capsula.
  */
@@ -463,13 +509,13 @@ let OutcomePhase = {
 		let state = ctx.state;
 		let date = state.getDate();
 		let population = state.getPopulation();
-		let people = 0, workers = 0, young = 0;
+		let people = 0, workers = 0, young = 0;	// workers: chi fornisce manodopera (Lavoratori e Pensionati)
 		population.registry.forEach(function(generation)
 		{
 			let n = generation.getPopulation();
 			let phase = generation.getState(date);
 			people += n;
-			if(phase == GenerationState.Scientists) { workers += n; }
+			if(phase == GenerationState.Scientists || phase == GenerationState.Retirees) { workers += n; }
 			else if(phase == GenerationState.Infants || phase == GenerationState.Students || phase == GenerationState.Researchers) { young += n; }
 		});
 

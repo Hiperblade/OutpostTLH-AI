@@ -66,7 +66,7 @@ _Evitare_: scongelamento
 I coloni nati nello stesso turno, che attraversano insieme le fasi di vita.
 
 **Bambini**, **Studenti**, **Universitari**, **Lavoratori**, **Pensionati**:
-Le fasi di vita di una generazione; solo i Lavoratori forniscono manodopera, Studenti e Universitari consumano istruzione.
+Le fasi di vita di una generazione; i Lavoratori forniscono manodopera e i Pensionati ne forniscono metà, Studenti e Universitari consumano istruzione.
 _Evitare_: Infants, Students, Researchers, Scientists, Retirees; Scienziati, Ricercatori
 
 **Felicità**:
@@ -82,7 +82,7 @@ La morte per vecchiaia dei Pensionati, rallentata dalle cure mediche.
 ### Lavoro
 
 **Manodopera**:
-Il lavoro disponibile in un turno, fornito dai Lavoratori e dai RoboWorker; cantieri e produzione usano prima quella dei robot, gli edifici con personale solo quella dei Lavoratori. Non si accumula tra un turno e l'altro.
+Il lavoro disponibile in un turno, fornito dai Lavoratori, dai Pensionati (che valgono metà) e dai RoboWorker; cantieri e produzione usano prima quella dei robot, gli edifici con personale solo quella dei Lavoratori. Non si accumula tra un turno e l'altro.
 _Evitare_: workforce, work unit, forza lavoro
 
 **RoboWorker**:
@@ -90,7 +90,7 @@ Robot lavoratore che fornisce manodopera robotica e occupa spazio nel magazzino 
 _Evitare_: roboticsWorker, worker, Robo-Worker
 
 **Deterioramento dei robot**:
-L'usura con cui i robot perdono efficienza e prima o poi vanno sostituiti; è una delle sfide della fase di preparazione.
+L'usura che ogni robot accumula lavorando, fino alla fine della sua durata, quando va fuori uso e va sostituito; è una delle sfide della fase di preparazione.
 _Evitare_: degrado, rottura
 
 ### Costruzione e ricerca

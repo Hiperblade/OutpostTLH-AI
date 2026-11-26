@@ -22,7 +22,7 @@ import { TerrainMap } from "../script/TerrainMap.js";
 import { Typology, TerrainLayer, PipeType, RobotTypes } from "../script/Enums.js";
 import { Turn, OutcomePhase, GameOutcome, RobotWearPhase } from "../script/Turn.js";
 import { Revival } from "../script/Revival.js";
-import { createWorkers } from "../script/Generations.js";
+import { createWorkers, Generation } from "../script/Generations.js";
 import { RecipeLib } from "../script/RecipeLib.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
@@ -211,14 +211,26 @@ function checks()
 	for(let t = 0; t < 3; t++) Turn.advance(game);
 	expect("robot prodotto consegnato", [gs.getStored("dozer"), gs.getProductionQueue().length], [dozers + 1, 0]);
 
-	// usura dei robot (vita ridotta per il test)
-	let life = RobotWearPhase.ROBOT_LIFE;
-	RobotWearPhase.ROBOT_LIFE = 1;
+	// usura per singolo robot: ogni RoboWorker ha la sua durata; quelli a fine vita vanno fuori uso
+	let fleet = RobotWearPhase.sync(gs, "roboWorker");
+	expect("usura: un elenco per robot", fleet.length, gs.getStored("roboWorker"));
+	expect("usura: durate diverse tra robot", new Set(fleet.map(r => r.life)).size > 1, true);
+	expect("usura media tra 0 e 1", RobotWearPhase.averageWear(gs, "roboWorker") >= 0 && RobotWearPhase.averageWear(gs, "roboWorker") < 1, true);
+	fleet[0].wear = fleet[0].life;
+	fleet[1].wear = fleet[1].life;
 	game.addBuilding("Pipe_nesw_surface", { x: 9, y: 14 });
 	let robots = gs.getStored("roboWorker");
 	Turn.advance(game);
-	RobotWearPhase.ROBOT_LIFE = life;
-	expect("usura: robot fuori uso", gs.getStored("roboWorker") < robots, true);
+	expect("usura: due robot fuori uso", gs.getStored("roboWorker"), robots - 2);
+
+	// i Pensionati forniscono mezza manodopera
+	let before = gs.getStored("workerLabor");
+	let retirees = new Generation(gs.getDate() - 90, 2, 18);
+	gs.getPopulation().registry.push(retirees);
+	Turn.project(game);
+	let factor = 0.5 + 0.5 * gs.getPopulation().happiness;
+	expect("pensionati: mezza manodopera", gs.getStored("workerLabor"), Math.floor((gs.getPopulation().registry.filter(g => g !== retirees).reduce((n, g) => n + (g.getState(gs.getDate()) == "scientists" ? g.getPopulation() : 0), 0) + 10 * 0.5) * factor));
+	gs.getPopulation().registry.splice(gs.getPopulation().registry.indexOf(retirees), 1);
 
 	// vittoria (soglie ridotte per il test): coloni contenti per 3 turni
 	let limits = [OutcomePhase.VICTORY_POPULATION, OutcomePhase.VICTORY_TURNS, OutcomePhase.VICTORY_HAPPINESS];

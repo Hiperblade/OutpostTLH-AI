@@ -10,6 +10,7 @@ import { GameOutcome, Turn } from "./Turn.js";
 import { InitializeBuildingInfoView } from "./ViewBuildingInfo.js";
 import { BuildingSelectorView } from "./ViewBuildingSelector.js";
 import { IsometricView } from "./ViewIsometric.js";
+import { ColonySummaryView } from "./ViewColonySummary.js";
 import { MapView } from "./ViewMap.js";
 import { InitializeQueueView, ProductionQueueData, ResearchQueueData } from "./ViewQueueBase.js";
 import { HelpQueueData } from "./ViewQueueHelp.js";
@@ -63,6 +64,7 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 	let mapView;
 	let selectorView;
 	let queueView;
+	let summaryView;
 	let buildingInfo;
 	let position = { x: 0, y: 0 };
 	let state = null;
@@ -186,6 +188,7 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 		mainArea.css("width", canvasSize.x);
 		mainArea.css("height", canvasSize.y);
 
+		summaryView = new ColonySummaryView("colonySummary", terrainMap);
 		mapView = new MapView(terrainMap, miniMapCanvas, site.getBackground(), areaSize, _onChangePosition);
 		selectorView = new BuildingSelectorView(selectorCanvas, canvasSize.x, state, _onSelected);
 
@@ -311,6 +314,7 @@ Log.dialog(_placementMessage(result));
 	let _redraw = function()
 	{
 		_updateRoboAvailable();
+		summaryView.redraw();
 		view.redraw();
 		mapView.redraw();
 	};

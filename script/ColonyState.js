@@ -38,8 +38,8 @@ import { RecipeLib } from "./RecipeLib.js";
 		state.kitDelivered = false;
 		// capsule criogeniche di cui il giocatore ha chiesto il risveglio
 		state.pendingRevival = 0;
-		// usura accumulata per tipo di robot (turni di lavoro non coperti da manutenzione)
-		state.robotWear = { roboWorker: 0, dozer: 0, digger: 0 };
+		// usura di ogni robot, per tipo: [{ wear, life }] (vedi RobotWearPhase)
+		state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 
 		// i materiali sono gestiti dal Material ledger
 		let ledger = new MaterialLedger();
@@ -252,7 +252,7 @@ import { RecipeLib } from "./RecipeLib.js";
 				victoryStreak: state.victoryStreak,
 				kitDelivered: state.kitDelivered,
 				pendingRevival: state.pendingRevival,
-				robotWear: Object.assign({}, state.robotWear),
+				robotWear: JSON.parse(JSON.stringify(state.robotWear)),
 				robotsAvailable: Object.assign({}, state.robotsAvailable),
 				knowledge: {
 					discovery: knowledge.discovery.slice(),
@@ -279,7 +279,12 @@ import { RecipeLib } from "./RecipeLib.js";
 			state.victoryStreak = data.victoryStreak;
 			state.kitDelivered = data.kitDelivered;
 			state.pendingRevival = data.pendingRevival || 0;
-			state.robotWear = Object.assign({ roboWorker: 0, dozer: 0, digger: 0 }, data.robotWear);
+			// i salvataggi precedenti avevano un contatore per tipo: si ripartono da robot nuovi
+			state.robotWear = { roboWorker: [], dozer: [], digger: [] };
+			Object.keys(data.robotWear || {}).forEach(function(type)
+			{
+				if(Array.isArray(data.robotWear[type])) { state.robotWear[type] = data.robotWear[type].map(function(r) { return { wear: r.wear, life: r.life }; }); }
+			});
 			state.robotsAvailable = Object.assign({}, data.robotsAvailable);
 			["discovery", "theory", "technology", "completed"].forEach(function(type)
 			{
