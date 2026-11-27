@@ -47,6 +47,12 @@ function ColonySummaryView(elementId, map)
 			let done = objectives.filter(function(entry) { return entry.done; }).length;
 			text += _row(TextRepository.get("Summary_objectives"), done + "/" + objectives.length, false);
 		}
+		let mission = state.getMission();
+		if(mission && mission.turnLimit > 0)
+		{
+			let left = Math.max(0, mission.turnLimit - date);
+			text += _row(TextRepository.get("TurnsLeft"), left, left <= 20);
+		}
 		text += _row(TextRepository.get("Summary_colonists"), awake + (capsules > 0 ? " + " + capsules + " " + TextRepository.get("Summary_inCapsule") : ""), false);
 		let sick = Cure.sick(state);
 		if(sick > 0)

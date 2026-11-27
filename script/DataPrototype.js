@@ -1,6 +1,7 @@
 "use strict";
 
 import { PipeType, TerrainLayer } from "./Enums.js";
+import { Mission } from "./Mission.js";
 import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
 
  
@@ -37,7 +38,8 @@ PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { c
 		{
 			map.getState().delKnowledge({ technology: [ "LandingModule" ] });
 			// il kit di atterraggio: satellite e RoboWorker per avviare i cantieri
-			map.getState().createMaterials({ MicrowaveSatellite: 1, roboWorker: 10 });
+			let kit = map.getState().getKit(Mission.KIT);
+			map.getState().createMaterials({ MicrowaveSatellite: kit.MicrowaveSatellite, roboWorker: kit.roboWorker });
 		},
 	onCompleted: function(item, map)
 		{
@@ -101,7 +103,8 @@ PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { c
 				] });
 
 			// robot di cantiere (niente scorte di cibo né capsule: le prepara il Centro Criogenico)
-			map.getState().createMaterials({ dozer: 3, digger: 1, miner: 2 });
+			let kit = map.getState().getKit(Mission.KIT);
+			map.getState().createMaterials({ dozer: kit.dozer, digger: kit.digger, miner: kit.miner });
 			map.getState().setKitDelivered();
 		}
 	});

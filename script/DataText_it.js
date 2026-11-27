@@ -460,3 +460,16 @@ TextRepository.addDescription("Mainframe", "Mainframe", "Calcolatore profondo: p
 TextRepository.addDescription("Terraformer", "Terraformatore", "Trasforma l'atmosfera: 1 punto di terraformazione a ogni turno di funzionamento. Automatico, consuma molta energia.");
 TextRepository.addDescription("TerraformerAdv", "Terraformatore Avanzato", "Terraformatore su due caselle: 3 punti di terraformazione a ogni turno di funzionamento.");
 TextRepository.add("TerraformerAdv_e", "Terraformatore Avanzato");
+
+// missioni
+TextRepository.add("FreeGame", "Partita libera");
+TextRepository.add("Missions", "Missioni");
+TextRepository.add("MissionsLoading", "Caricamento delle missioni...");
+TextRepository.add("NoMissions", "Nessuna missione disponibile (servono i file in data/missions).");
+TextRepository.add("MissionPlace", "Pianeta %p, sito %s.");
+TextRepository.add("MissionTurnLimit", "Limite: %s turni.");
+TextRepository.add("MissionParam_colonists", "coloni");
+TextRepository.add("MissionParam_points", "punti");
+TextRepository.add("TimeUnitTurns", "turni");
+TextRepository.add("NoObjectivesShort", "Nessun obiettivo");
+TextRepository.add("TurnsLeft", "Turni rimasti");

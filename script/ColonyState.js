@@ -40,6 +40,8 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		// obiettivi della partita: [{ type, params }]; senza obiettivi non si vince (partita libera)
 		state.objectives = [{ type: "happyPopulation", params: {} }];
 		state.terraformPoints = 0;
+		// missione in corso (copia dei dati), null nella partita libera
+		state.mission = null;
 		state.shipsLaunched = 0;
 		state.kitDelivered = false;
 		// capsule criogeniche di cui il giocatore ha chiesto il risveglio
@@ -150,6 +152,11 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 				{
 					for(let ii = 0; ii < knowledge[type].length; ii++)
 					{
+						// gli edifici esclusi dalla missione non diventano costruibili
+						if(type == "technology" && _isExcludedBuilding(knowledge[type][ii]))
+						{
+							continue;
+						}
 						if(!_contains(state.knowledge[type], knowledge[type][ii]))
 						{
 							state.knowledge[type].push(knowledge[type][ii]);
@@ -159,6 +166,9 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 			}
 			return ret;
 		};
+
+		let _isExcludedBuilding = function(name) { return state.mission != null && state.mission.excludedBuildings.indexOf(name) >= 0; };
+		let _isExcludedResearch = function(name) { return state.mission != null && state.mission.excludedResearch.indexOf(name) >= 0; };
 
 		let _delKnowledge = function(knowledge)
 		{
@@ -274,6 +284,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 				victoryStreak: state.victoryStreak,
 				objectives: JSON.parse(JSON.stringify(state.objectives)),
 				terraformPoints: state.terraformPoints,
+				mission: state.mission ? JSON.parse(JSON.stringify(state.mission)) : null,
 				shipsLaunched: state.shipsLaunched,
 				kitDelivered: state.kitDelivered,
 				pendingRevival: state.pendingRevival,
@@ -311,6 +322,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 			// i salvataggi precedenti avevano solo la popolazione felice
 			state.objectives = Array.isArray(data.objectives) ? data.objectives : [{ type: "happyPopulation", params: {} }];
 			state.terraformPoints = data.terraformPoints || 0;
+			state.mission = data.mission || null;
 			state.shipsLaunched = data.shipsLaunched || 0;
 			state.kitDelivered = data.kitDelivered;
 			state.pendingRevival = data.pendingRevival || 0;
@@ -352,6 +364,12 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		this.getVictoryStreak = function() { return state.victoryStreak; };
 		this.setVictoryStreak = function(value) { state.victoryStreak = value; };
 		this.getObjectives = function() { return state.objectives; };
+		this.getMission = function() { return state.mission; };
+		this.setMission = function(mission) { state.mission = mission ? JSON.parse(JSON.stringify(mission)) : null; };
+		this.isExcludedBuilding = _isExcludedBuilding;
+		this.isExcludedResearch = _isExcludedResearch;
+		/** contenuto del kit di atterraggio: quello della missione o il predefinito */
+		this.getKit = function(defaults) { return Object.assign({}, defaults, state.mission ? state.mission.kit : {}); };
 		this.setObjectives = function(list) { state.objectives = list.map(function(o) { return { type: o.type, params: Object.assign({}, o.params || {}) }; }); };
 		this.getTerraformPoints = function() { return state.terraformPoints; };
 		this.addTerraformPoints = function(value) { state.terraformPoints += value; };

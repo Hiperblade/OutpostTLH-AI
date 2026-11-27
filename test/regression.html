@@ -26,6 +26,7 @@ import { createWorkers, createClones, Generation } from "../script/Generations.j
 import { RecipeLib } from "../script/RecipeLib.js";
 import { Cure } from "../script/Cure.js";
 import { Launch } from "../script/Launch.js";
+import { Mission } from "../script/Mission.js";
 import { IllnessPhase, foodNeed } from "../script/TurnPopulation.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
@@ -592,6 +593,25 @@ function checks()
 	expect("partita libera senza obiettivi: nessuna vittoria", [free.getState().getOutcome(), free.getState().getObjectiveStatus().length], [null, 0]);
 	expect("salvataggio degli obiettivi", TerrainMap.fromData(JSON.parse(JSON.stringify(terra.toData()))).getState().getObjectives(), [{ type: "terraforming", params: { points: 4 } }]);
 	expect("componenti della navicella dopo lo Spazioporto", RecipeLib.get("ShipHull").getRequirement(), { technology: ["SpacePort"] });
+
+	// missioni: condizioni iniziali, esclusioni, limite di turni
+	let mission = Mission.normalize({ id: "prova", name: "Prova", planetId: "ceres", siteId: "2",
+		objectives: [{ type: "shipLaunch" }], kit: { roboWorker: 4 }, stock: { ironBar: 7 },
+		completedResearch: ["Medicine"], excludedResearch: ["Pharmacology"], excludedBuildings: ["CryoCenter", "School"], turnLimit: 6 });
+	let missionMap = createGame(new Site("ceres", "2"), null, mission);
+	let mstate = missionMap.getState();
+	expect("missione: obiettivi, scorte e studi iniziali", [mstate.getObjectives().map(o => o.type), mstate.getStored("ironBar"), mstate.isCompletedKnowledge("Medicine")], [["shipLaunch"], 7, true]);
+	expect("missione: edificio escluso non sbloccato dallo studio", [mstate.getTechnology().indexOf("CryoCenter"), mstate.getTechnology().indexOf("MedicalStructure") >= 0], [-1, true]);
+	expect("missione: studio escluso non disponibile", RecipeLib.getAvailableResearch(mstate).map(r => r.getName()).indexOf("Pharmacology"), -1);
+	let landing = null;
+	for(let x = 60; x < 90 && !landing; x++) for(let y = 140; y < 160 && !landing; y++) { if(missionMap.addBuilding("LandingModule", { x: x, y: y }) != null) { landing = { x: x, y: y }; } }
+	Turn.advance(missionMap);
+	expect("missione: kit ridotto e edifici esclusi dal kit", [mstate.getStored("roboWorker"), mstate.getTechnology().indexOf("School"), mstate.getTechnology().indexOf("Agridome") >= 0], [4, -1, true]);
+	let missionCopy = TerrainMap.fromData(JSON.parse(JSON.stringify(missionMap.toData()))).getState().getMission();
+	expect("missione salvata con la partita", [missionCopy.id, missionCopy.turnLimit, missionCopy.excludedBuildings], ["prova", 6, ["CryoCenter", "School"]]);
+	let limitTurns = 1;
+	while(mstate.getOutcome() == null && limitTurns < 20) { Turn.advance(missionMap); limitTurns++; }
+	expect("missione: sconfitta al limite di turni", [mstate.getOutcome(), limitTurns], [GameOutcome.Defeat, 6]);
 
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });

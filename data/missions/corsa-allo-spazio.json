@@ -1,0 +1,13 @@
+{
+	"id": "corsa-allo-spazio",
+	"name": "Corsa allo spazio",
+	"briefing": "Su Ceres il tempo stringe: la compagnia vuole una navicella in orbita entro 400 turni. Gli studi di base sono già pronti dalle spedizioni precedenti; concentrati sulla filiera di Barre di Ferro e Barre Radioattive.",
+	"planetId": "ceres",
+	"siteId": "2",
+	"objectives": [
+		{ "type": "shipLaunch", "params": {} }
+	],
+	"completedResearch": ["Metallurgy", "Mineralogy", "Medicine", "Chemistry"],
+	"stock": { "ironBar": 10 },
+	"turnLimit": 400
+}

@@ -340,6 +340,49 @@ body
 	color: rgb(150,160,170);
 }
 
+.creationModes
+{
+	margin: 6px 0 10px 0;
+}
+
+.creationMode
+{
+	display: inline-block;
+	margin-right: 8px;
+}
+
+.creationModeSelected
+{
+	background-color: #2f6A08;
+}
+
+.creationMissionList
+{
+	float: left;
+	width: 200px;
+	margin-right: 16px;
+}
+
+.creationMissionItem
+{
+	border: 1px solid rgb(47,106,8);
+	padding: 6px 8px;
+	margin-bottom: 4px;
+	cursor: pointer;
+}
+
+.creationMissionDetail
+{
+	overflow: hidden;
+	max-width: 520px;
+}
+
+.creationMissionBriefing
+{
+	color: #ccc;
+	line-height: 1.4;
+}
+
 .creationObjectives
 {
 	margin: 4px 0 12px 0;

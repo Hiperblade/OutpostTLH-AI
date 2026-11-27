@@ -35,6 +35,11 @@ function showGameCreation()
 	GameCreationView.show({
 		canResume: SaveGame.exists(),
 		onStart: function(site, objectives) { startGame(site, createGame(site, objectives)); },
+		onStartMission: function(mission)
+		{
+			let site = new Site(mission.planetId, mission.siteId);
+			startGame(site, createGame(site, null, mission));
+		},
 		onResume: function()
 		{
 			let saved = SaveGame.load();

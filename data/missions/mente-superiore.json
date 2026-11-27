@@ -1,0 +1,13 @@
+{
+	"id": "mente-superiore",
+	"name": "Mente superiore",
+	"briefing": "Il kit di Glacies è stato ridotto per far posto ai calcolatori: hai meno robot e niente Terraformatori. L'obiettivo è uno solo: completare gli studi fino alla Superintelligenza.",
+	"planetId": "glacies",
+	"siteId": "3",
+	"objectives": [
+		{ "type": "superintelligence", "params": {} }
+	],
+	"kit": { "roboWorker": 6, "dozer": 2 },
+	"excludedResearch": ["Terraforming", "AdvancedTerraforming"],
+	"excludedBuildings": ["Terraformer", "TerraformerAdv"]
+}

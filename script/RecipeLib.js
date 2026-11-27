@@ -74,7 +74,7 @@ function RecipeLibConstructor()
 			if(list.hasOwnProperty(name))
 			{
 				let tmp = list[name];
-				if(tmp.getRecipeType() == RecipeType.Research)
+				if(tmp.getRecipeType() == RecipeType.Research && !(colonyState.isExcludedResearch && colonyState.isExcludedResearch(name)))
 				{
 					if(!colonyState.isCompletedKnowledge(name))
 					{

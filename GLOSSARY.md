@@ -15,8 +15,16 @@ Una partita in cui il giocatore sceglie pianeta, sito e obiettivi; può anche no
 _Evitare_: sandbox, partita rapida
 
 **Missione**:
-Una partita preparata: pianeta e sito, condizioni iniziali, studi ed edifici disponibili, obiettivi ed eventuali limiti.
+Una partita preparata, con nome e presentazione: pianeta e sito fissati, condizioni iniziali, studi ed edifici esclusi, obiettivi ed eventuale limite di turni.
 _Evitare_: scenario, livello
+
+**Condizioni iniziali**:
+Con cosa parte la colonia di una missione: contenuto del kit di atterraggio, scorte aggiuntive e studi già completati.
+_Evitare_: setup, dotazione
+
+**Limite di turni**:
+Il numero massimo di turni di una missione: superarlo senza aver completato gli obiettivi è una sconfitta.
+_Evitare_: timer, scadenza
 
 **Campagna**:
 Una sequenza ordinata di missioni.
@@ -59,7 +67,7 @@ _Evitare_: detriti, difficoltà del terreno
 La colonia completa tutti gli obiettivi della partita.
 
 **Sconfitta**:
-Non resta in piedi nessun Headquarter; oppure non resta manodopera e non c'è modo di riaverla (nessun RoboWorker, nessun Lavoratore o clone, nessun Centro Criogenico attivo); oppure, dopo l'arrivo dei primi coloni, non ci sono più coloni, né nascite possibili, né capsule criogeniche, né un Centro Criogenico.
+Non resta in piedi nessun Headquarter; oppure non resta manodopera e non c'è modo di riaverla (nessun RoboWorker, nessun Lavoratore o clone, nessun Centro Criogenico attivo); oppure, dopo l'arrivo dei primi coloni, non ci sono più coloni, né nascite possibili, né capsule criogeniche, né un Centro Criogenico; oppure, in una missione, si supera il limite di turni.
 
 ### Coloni
 

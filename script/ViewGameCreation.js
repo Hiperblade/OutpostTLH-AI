@@ -3,13 +3,14 @@
 import { PlanetCatalog, PlanetTypes, catalogImageId } from "./DataPlanets.js";
 import { Site } from "./GameSetup.js";
 import { ImagesLib } from "./ImagesLib.js";
+import { Missions } from "./Mission.js";
 import { TextRepository } from "./TextRepository.js";
 
 /**
  * Schermata di Creazione della partita: scelta del pianeta, poi del sito; in alternativa
  * ripresa della partita salvata.
  *
- * GameCreationView.show({ canResume, onStart(site, objectives), onResume() })
+ * GameCreationView.show({ canResume, onStart(site, objectives), onStartMission(mission), onResume() })
  */
 function GameCreationViewConstructor()
 {
@@ -103,6 +104,17 @@ function GameCreationViewConstructor()
 				.appendTo(panel);
 		}
 
+		// due strade: partita libera o missione
+		let modes = $('<div class="creationModes"></div>').appendTo(panel);
+		let freeMode = $('<div class="creationButton creationMode"></div>').text(TextRepository.get("FreeGame")).appendTo(modes);
+		let missionMode = $('<div class="creationButton creationMode"></div>').text(TextRepository.get("Missions")).appendTo(modes);
+		let free = $('<div id="creationFree"></div>').appendTo(panel);
+		let missions = $('<div id="creationMissions" class="hide"></div>').appendTo(panel);
+		freeMode.on("click", function() { free.show(); missions.hide(); freeMode.addClass("creationModeSelected"); missionMode.removeClass("creationModeSelected"); });
+		missionMode.on("click", function() { missions.show(); free.hide(); missionMode.addClass("creationModeSelected"); freeMode.removeClass("creationModeSelected"); _showMissions(missions); });
+		freeMode.addClass("creationModeSelected");
+		panel = free;
+
 		panel.append($('<h3></h3>').text(TextRepository.get("ChoosePlanet")));
 		let planets = $('<div id="creationPlanets" class="creationList"></div>').appendTo(panel);
 		PlanetCatalog.forEach(function(planet)
@@ -138,6 +150,75 @@ function GameCreationViewConstructor()
 				}
 			})
 			.appendTo(panel);
+	};
+
+	/** elenco delle missioni (caricate da data/missions) e scheda di quella scelta */
+	let _showMissions = function(container)
+	{
+		if(container.data("loaded"))
+		{
+			return;
+		}
+		container.data("loaded", true);
+		container.empty().append($('<p></p>').text(TextRepository.get("MissionsLoading")));
+		Missions.list().then(function(list)
+		{
+			container.empty();
+			if(list.length == 0)
+			{
+				container.append($('<p></p>').text(TextRepository.get("NoMissions")));
+				return;
+			}
+			let listBox = $('<div class="creationMissionList"></div>').appendTo(container);
+			let detail = $('<div class="creationMissionDetail"></div>').appendTo(container);
+			list.forEach(function(mission)
+			{
+				$('<div class="creationMissionItem"></div>').text(mission.name).appendTo(listBox).on("click", function()
+				{
+					listBox.children().removeClass("creationItemSelected");
+					$(this).addClass("creationItemSelected");
+					_showMissionDetail(detail, mission);
+				});
+			});
+		});
+	};
+
+	let _showMissionDetail = function(detail, mission)
+	{
+		let planet = PlanetCatalog.find(function(p) { return p.id == mission.planetId; });
+		let site = planet ? planet.sites.find(function(s) { return s.id == mission.siteId; }) : null;
+		detail.empty();
+		detail.append($('<h3></h3>').text(mission.name));
+		detail.append($('<p class="creationMissionBriefing"></p>').text(mission.briefing));
+		detail.append($('<p></p>').text(TextRepository.get("MissionPlace").replace("%p", planet ? planet.name : mission.planetId).replace("%s", site ? site.name : mission.siteId)));
+		let objectives = $('<ul class="creationMissionObjectives"></ul>').appendTo(detail);
+		if(mission.objectives.length == 0)
+		{
+			objectives.append($('<li></li>').text(TextRepository.get("NoObjectivesShort")));
+		}
+		mission.objectives.forEach(function(objective)
+		{
+			objectives.append($('<li></li>').text(TextRepository.get("Objective_" + objective.type) + _paramsText(objective)));
+		});
+		if(mission.turnLimit > 0)
+		{
+			detail.append($('<p></p>').text(TextRepository.get("MissionTurnLimit").replace("%s", mission.turnLimit)));
+		}
+		$('<div class="creationButton"></div>').text(TextRepository.get("StartGame")).appendTo(detail).on("click", function()
+		{
+			options.onStartMission(mission);
+		});
+	};
+
+	/** parametri di un obiettivo, se diversi dai valori predefiniti */
+	let _paramsText = function(objective)
+	{
+		let p = objective.params || {};
+		let parts = [];
+		if(p.population) { parts.push(p.population + " " + TextRepository.get("MissionParam_colonists")); }
+		if(p.turns) { parts.push(p.turns + " " + TextRepository.get("TimeUnitTurns")); }
+		if(p.points) { parts.push(p.points + " " + TextRepository.get("MissionParam_points")); }
+		return parts.length ? " (" + parts.join(", ") + ")" : "";
 	};
 
 	let _show = function(showOptions)

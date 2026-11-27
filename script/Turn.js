@@ -981,7 +981,13 @@ let OutcomePhase = {
 			return;
 		}
 
-		// sconfitta
+		// sconfitta: limite di turni della missione superato
+		let mission = state.getMission();
+		if(mission && mission.turnLimit > 0 && date + 1 >= mission.turnLimit)
+		{
+			state.setOutcome(GameOutcome.Defeat);
+			return;
+		}
 		if(!state.isKitDelivered())
 		{
 			return;

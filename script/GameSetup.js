@@ -2,6 +2,7 @@
 
 import { PlanetCatalog, PlanetTypes, catalogImageId } from "./DataPlanets.js";
 import { ImagesLib } from "./ImagesLib.js";
+import { RecipeLib } from "./RecipeLib.js";
 import { SiteTerrain } from "./SiteTerrain.js";
 import { TerrainMap } from "./TerrainMap.js";
 
@@ -85,8 +86,9 @@ let _randomPosition = function()
 /**
  * @param {Site} site
  * @param {Array<{type, params}>} [objectives] obiettivi della partita (predefinito: popolazione felice)
+ * @param {object} [mission] missione normalizzata (Mission.normalize): sostituisce gli obiettivi
  */
-function createGame(site, objectives)
+function createGame(site, objectives, mission)
 {
 	let map = new TerrainMap(site.getTypology(), MAP_SIZE, site.getMorphology());
 
@@ -109,7 +111,31 @@ function createGame(site, objectives)
 
 	configureStorage(state);
 	state.setObjectives(objectives || [{ type: "happyPopulation", params: {} }]);
+	if(mission)
+	{
+		_applyMission(state, mission);
+	}
 	return map;
+}
+
+/** condizioni iniziali della missione: esclusioni, studi già completati, scorte aggiuntive */
+function _applyMission(state, mission)
+{
+	state.setMission(mission);
+	state.setObjectives(mission.objectives);
+	mission.completedResearch.forEach(function(name)
+	{
+		let recipe = RecipeLib.get(name);
+		if(recipe != undefined && !state.isCompletedKnowledge(name))
+		{
+			state.addKnowledge(recipe.getResult());
+			state.addCompletedResearch(name);
+		}
+	});
+	if(Object.keys(mission.stock).length > 0)
+	{
+		state.createMaterials(mission.stock);
+	}
 }
 
 /** magazzini condivisi: cosa va in ciascuno (anche per le partite salvate prima di nuovi materiali) */

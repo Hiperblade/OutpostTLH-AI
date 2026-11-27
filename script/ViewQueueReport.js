@@ -483,12 +483,22 @@ function ReportObjectives(colonyState, image)
 	this.getItemInfo = function()
 	{
 		let status = colonyState.getObjectiveStatus();
+		let mission = colonyState.getMission();
+		let head = "";
+		if(mission)
+		{
+			head += '<p><b>' + mission.name + '</b></p>';
+			if(mission.turnLimit > 0)
+			{
+				head += '<p>' + TextRepository.get("TurnsLeft") + ': ' + Math.max(0, mission.turnLimit - colonyState.getDate()) + '</p>';
+			}
+		}
 		if(status.length == 0)
 		{
-			return '<p>' + TextRepository.get("NoObjectives") + '</p>';
+			return head + '<p>' + TextRepository.get("NoObjectives") + '</p>';
 		}
 		let percent = function(value, target) { return Math.floor(100 * value / Math.max(1, target)) + "%"; };
-		let text = '<table>';
+		let text = head + '<table>';
 		status.forEach(function(entry)
 		{
 			let detail;

@@ -1,0 +1,10 @@
+{
+	"id": "primo-atterraggio",
+	"name": "Primo atterraggio",
+	"briefing": "La prima colonia su Ignis. Prepara il sito con i robot, risveglia i cloni e fai crescere una comunità: 50 coloni nati e contenti per 10 turni bastano a dimostrare che la vita qui è possibile.",
+	"planetId": "ignis",
+	"siteId": "1",
+	"objectives": [
+		{ "type": "happyPopulation", "params": { "population": 50, "turns": 10 } }
+	]
+}
