@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>OutpostTLH - Editor delle missioni</title>
+	<link rel="stylesheet" type="text/css" href="css/interface.css">
+	<style>
+		body { background: #000; color: rgb(119,207,60); font-family: sans-serif; font-size: 14px; margin: 0; }
+		#editor { display: flex; gap: 16px; padding: 10px; }
+		#side { width: 260px; flex: none; }
+		#form { flex: 1; max-width: 900px; }
+		h1 { font-size: 20px; margin: 4px 0 10px 0; }
+		h3 { margin: 16px 0 6px 0; border-bottom: 1px solid rgb(47,106,8); padding-bottom: 3px; }
+		.tools { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+		.tool { border: 1px solid rgb(71,143,22); padding: 4px 8px; cursor: pointer; user-select: none; }
+		.tool:hover { background: #2f6A08; }
+		.tool.primary { background: #2f6A08; }
+		#missionList .item { border: 1px solid rgb(47,106,8); padding: 6px 8px; margin-bottom: 4px; cursor: pointer; }
+		#missionList .item.selected { background: #2f6A08; color: #fff; }
+		#missionList .item .dirty { color: rgb(230,190,60); }
+		label { display: inline-block; margin: 3px 10px 3px 0; }
+		input, select, textarea { background: #101810; color: #dfe; border: 1px solid rgb(71,143,22); padding: 3px 5px; font-family: sans-serif; }
+		input[type=number] { width: 70px; }
+		textarea { width: 100%; height: 80px; }
+		.row { margin: 4px 0; }
+		.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2px 12px; }
+		.grid .entry { display: flex; justify-content: space-between; gap: 6px; }
+		.status { font-size: 12px; color: #aaa; margin: 6px 0; }
+		#warnings div { color: rgb(230,190,60); margin: 2px 0; }
+		#warnings .ok { color: rgb(119,207,60); }
+		.objective { border: 1px solid rgb(47,106,8); padding: 4px 8px; margin: 4px 0; }
+		canvas#sitePreview { border: 1px solid rgb(47,106,8); display: block; margin-top: 6px; }
+	</style>
+</head>
+<body>
+	<canvas id="imageLoader" width="1" height="1" style="display:none"></canvas>
+	<div id="editor">
+		<div id="side">
+			<h1>Editor delle missioni</h1>
+			<div class="tools">
+				<div class="tool primary" id="openFolder" title="Sceglie la cartella data/missions: l'editor legge e salva i file direttamente (Chrome, Edge)">Apri cartella missioni</div>
+			</div>
+			<div class="status" id="folderStatus"></div>
+			<div class="tools">
+				<div class="tool" id="newMission">Nuova</div>
+				<div class="tool" id="duplicateMission">Duplica</div>
+				<div class="tool" id="deleteMission">Elimina</div>
+				<div class="tool" id="moveUp">Su</div>
+				<div class="tool" id="moveDown">Giù</div>
+			</div>
+			<div id="missionList"></div>
+			<div class="tools">
+				<div class="tool primary" id="saveMission" title="Salva la missione e l'indice nella cartella">Salva</div>
+				<div class="tool primary" id="testMission" title="Apre il gioco con questa missione, senza salvarla">Prova missione</div>
+			</div>
+			<div class="tools">
+				<div class="tool" id="exportMission">Esporta</div>
+				<div class="tool" id="importMission">Importa</div>
+				<input type="file" id="importFile" accept=".json,application/json" style="display:none">
+			</div>
+			<div class="status">Esporta/Importa: per i browser senza accesso alle cartelle; i file esportati vanno copiati in data/missions e aggiunti a index.json.</div>
+		</div>
+		<div id="form"></div>
+	</div>
+	<script src="lib/jquery-1.10.0.min.js"></script>
+	<script src="script/Editor.js" type="module"></script>
+</body>
+</html>

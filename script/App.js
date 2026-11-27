@@ -6,6 +6,7 @@ import { imagesList } from "./DataImagesLib.js";
 import { Site, createGame } from "./GameSetup.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { InitializeMainSystem, Main, MainCommand } from "./Main.js";
+import { Mission } from "./Mission.js";
 import { SaveGame } from "./SaveGame.js";
 import { Log } from "./SystemLib.js";
 import { TextRepository } from "./TextRepository.js";
@@ -110,6 +111,9 @@ function showState()
 	stateDiv.innerHTML = text + "</div>";
 }
 
+/** chiave dell'archivio del browser con cui l'editor passa la missione da provare */
+const TEST_MISSION_KEY = "outposttlh-test-mission";
+
 //---------------------------------------------------
 // avvio
 
@@ -120,6 +124,17 @@ let onUpdateLoading = function()
 	if(loadingPercentage == 1)
 	{
 		document.getElementById("loadingScreen").style.display = "none";
+		// prova dall'editor: la missione arriva dall'archivio del browser e la partita non si salva
+		let test = (location.search.indexOf("test=1") >= 0) ? localStorage.getItem(TEST_MISSION_KEY) : null;
+		if(test)
+		{
+			SaveGame.setDisabled(true);
+			let mission = Mission.normalize(JSON.parse(test));
+			let site = new Site(mission.planetId, mission.siteId);
+			startGame(site, createGame(site, null, mission));
+			Log.dialog(TextRepository.get("TestMission").replace("%s", mission.name), "info");
+			return;
+		}
 		showGameCreation();
 	}
 };

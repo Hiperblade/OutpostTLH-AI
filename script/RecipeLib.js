@@ -90,6 +90,8 @@ function RecipeLibConstructor()
 	};
 
 	this.add = _add;
+	/** tutte le ricette, nell'ordine in cui sono state definite */
+	this.getAll = function() { return Object.keys(list).map(function(name) { return list[name]; }); };
 	this.get = _get;
 	this.create = _create;
 	this.getAvailableProduction = _getAvailableProduction;

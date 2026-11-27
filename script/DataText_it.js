@@ -473,3 +473,4 @@ TextRepository.add("MissionParam_points", "punti");
 TextRepository.add("TimeUnitTurns", "turni");
 TextRepository.add("NoObjectivesShort", "Nessun obiettivo");
 TextRepository.add("TurnsLeft", "Turni rimasti");
+TextRepository.add("TestMission", "Prova della missione \u201C%s\u201D: la partita non viene salvata.");

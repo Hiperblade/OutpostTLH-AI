@@ -10,6 +10,29 @@ import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
 //-------------------------------------------------------------
 // landing
 
+/** edifici che il kit di atterraggio rende costruibili */
+const LANDING_TECHNOLOGIES = [
+	"MicrowavePlant",
+	"Capacitor",
+	"MaintenanceCenter",
+	"RoboRemittance",
+	"RoboCommander",
+	"EnvironmentalControl",
+	"Agridome",
+	"Residential",
+	"School",
+	"Univesity",
+	"Warehouse",
+	"WasteTreatment",
+	"Smelter",
+	"StorageArea",
+	"IndustrialFactory",
+	"AutoLab",
+	"HotLab",
+	"Lab",
+	"DeepLab"
+];
+
 PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { controlUnit: 4 },
 	builder: "LandingPoint",
 	ports: "nesw",
@@ -54,53 +77,7 @@ PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { c
 			map.addBuilding("CargoModule", { x: position.x, y: position.y + 1 } );
 			map.addBuilding("LaunchModule", { x: position.x + 1, y: position.y + 1 } );
 
-			map.getState().addKnowledge({ technology: [
-				"MicrowavePlant",
-					//"ElectrostaticCoil",
-					//"Geothermal",
-					//"Tokamak",
-					//"TokamakAdv",
-				"Capacitor",			
-					//"CommandCenter",
-				"MaintenanceCenter",
-				"RoboRemittance",
-					//"RoboRemittanceAdv",
-				"RoboCommander",
-					//"RoboCommanderAdv",
-				"EnvironmentalControl",
-					//"EnvironmentalControlAdv",
-				"Agridome",
-					//"AgridomeAdv",
-					//"AgridomeIntensive",
-					//"VerticalFarm",
-					//"VerticalFarmAdv",
-				"Residential",
-					//"ResidentialAdv",
-					//"Nursery",
-					//"MedicalStructure",
-					//"MedicalStructureAdv",
-				"School",
-				"Univesity",
-					//"UnivesityAdv",
-					//"RecreationalFacility",
-					//"Park",
-				"Warehouse",
-				"WasteTreatment",
-				"Smelter",
-					//"SmelterAdv",
-				"StorageArea",
-					//"GoodsFactory",
-				"IndustrialFactory",
-					//"ChemicalFactory",
-					//"PharmaceuticalIndustry",
-					//"SpacePort",
-				"AutoLab",
-				"HotLab",
-					//"HotLabAdv",
-				"Lab",
-					//"LabAdv",
-				"DeepLab"
-				] });
+			map.getState().addKnowledge({ technology: LANDING_TECHNOLOGIES.slice() });
 
 			// robot di cantiere (niente scorte di cibo né capsule: le prepara il Centro Criogenico)
 			let kit = map.getState().getKit(Mission.KIT);
@@ -383,3 +360,5 @@ PrototypeLib.add("SpacePort_u", TerrainLayer.Underground, 1, {});
 PrototypeLib.add("SpacePort_u_w", TerrainLayer.Underground, 1, {});
 PrototypeLib.add("SpacePort_u_n", TerrainLayer.Underground, 1, {});
 PrototypeLib.add("SpacePort_u_e", TerrainLayer.Underground, 1, {});
+
+export { LANDING_TECHNOLOGIES };

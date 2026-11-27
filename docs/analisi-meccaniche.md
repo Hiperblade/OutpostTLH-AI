@@ -17,7 +17,7 @@ Stato: ✅ risolto · ⏳ aperto
 | 7 | La felicità parte da 0 e dimezza la manodopera | Equilibrio | ✅ (voluto) |
 | 8 | La fame uccide in fretta e senza preavviso | Equilibrio | ✅ |
 | 9 | Con poca manodopera il lavoro costa più materiali | Equilibrio | ✅ |
-| 10 | Manca la terza fase (Spazioporto, terraformazione) | Meccaniche mancanti | ⏳ (obiettivi e missioni fatti) |
+| 10 | Manca la terza fase (Spazioporto, terraformazione) | Meccaniche mancanti | ⏳ (obiettivi, missioni ed editor fatti) |
 | 11 | Manca il sistema di eventi | Meccaniche mancanti | ⏳ |
 | 12 | Limite della precedenza del personale | Meccaniche mancanti | ✅ |
 | 13 | Mancano avvisi di fine turno | Informazioni | ✅ |
@@ -108,7 +108,7 @@ Lo Spazioporto non produce niente e la terraformazione non esiste. La vittoria d
 
 **Proposta:** legare la vittoria, o un obiettivo alternativo, allo Spazioporto in funzione: per esempio un certo numero di carichi lanciati.
 
-**In corso (tappe 1 e 2 di 4 fatte):** la vittoria richiede di completare tutti gli obiettivi della partita: popolazione felice, lancio della navicella (componenti allo Spazioporto e lancio), superintelligenza (tre studi e il Mainframe) e terraformazione (punti dai Terraformatori). Nella partita libera si scelgono gli obiettivi, anche nessuno. Le missioni sono file JSON in `data/missions/` (con indice), scelte dalla schermata iniziale: pianeta e sito fissati, condizioni iniziali, studi ed edifici esclusi, limite di turni. Restano l'editor e la campagna.
+**In corso (tappe 1-3 di 4 fatte):** la vittoria richiede di completare tutti gli obiettivi della partita: popolazione felice, lancio della navicella (componenti allo Spazioporto e lancio), superintelligenza (tre studi e il Mainframe) e terraformazione (punti dai Terraformatori). Nella partita libera si scelgono gli obiettivi, anche nessuno. Le missioni sono file JSON in `data/missions/` (con indice), scelte dalla schermata iniziale: pianeta e sito fissati, condizioni iniziali, studi ed edifici esclusi, limite di turni. L'editor (`editor.html`) modifica le missioni, le salva nella cartella (Chrome, Edge) o le esporta, segnala le missioni impossibili e le fa provare nel gioco. Resta la campagna.
 
 ### 11. Manca il sistema di eventi
 

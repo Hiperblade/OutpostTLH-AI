@@ -18,3 +18,5 @@ The game is written as ES modules, so it has to be served over HTTP (opening `Ou
     python -m http.server 8765
 
 then open http://localhost:8765/Outpost3.html. The regression and placement checks are at http://localhost:8765/test/regression.html.
+
+Missions live in `data/missions/` (one JSON file per mission, listed in `index.json`). The mission editor is at http://localhost:8765/editor.html: in Chrome or Edge use "Apri cartella missioni" on `data/missions` to save directly; elsewhere use Esporta/Importa.

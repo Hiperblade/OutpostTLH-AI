@@ -20,8 +20,14 @@ function SaveGameConstructor()
 		try { return window.localStorage; } catch(e) { return null; }
 	};
 
+	let disabled = false;
+
 	let _save = function(map, site)
 	{
+		if(disabled)
+		{
+			return true;	// partita di prova: non si salva, e il salvataggio vero resta intatto
+		}
 		let storage = _storage();
 		if(storage == null)
 		{
@@ -74,9 +80,10 @@ function SaveGameConstructor()
 	};
 
 	this.save = _save;
+	this.setDisabled = function(value) { disabled = !!value; };
 	this.load = _load;
 	this.exists = function() { return _read() != null; };
-	this.clear = function() { let storage = _storage(); if(storage != null) { storage.removeItem(KEY); } };
+	this.clear = function() { if(disabled) { return; } let storage = _storage(); if(storage != null) { storage.removeItem(KEY); } };
 }
 
 // singleton
