@@ -12,10 +12,10 @@ Stato: ✅ risolto · ⏳ aperto
 | 2 | Barre di Ferro e minerali senza magazzino | Regole | ✅ |
 | 3 | I cloni di un risveglio muoiono tutti nello stesso turno | Regole | ✅ |
 | 4 | Energia a microonde illimitata e quasi gratuita | Regole | ✅ |
-| 5 | I cloni costano molto rispetto a quanto rendono | Equilibrio | ⏳ |
-| 6 | I coloni nati diventano utili molto tardi | Equilibrio | ⏳ |
-| 7 | La felicità parte da 0 e dimezza la manodopera | Equilibrio | ⏳ |
-| 8 | La fame uccide in fretta e senza preavviso | Equilibrio | ⏳ |
+| 5 | I cloni costano molto rispetto a quanto rendono | Equilibrio | ✅ |
+| 6 | I coloni nati diventano utili molto tardi | Equilibrio | ✅ (voluto) |
+| 7 | La felicità parte da 0 e dimezza la manodopera | Equilibrio | ✅ (voluto) |
+| 8 | La fame uccide in fretta e senza preavviso | Equilibrio | ✅ |
 | 9 | Con poca manodopera il lavoro costa più materiali | Equilibrio | ⏳ |
 | 10 | Manca la terza fase (Spazioporto, terraformazione) | Meccaniche mancanti | ⏳ |
 | 11 | Manca il sistema di eventi | Meccaniche mancanti | ⏳ |
@@ -24,7 +24,7 @@ Stato: ✅ risolto · ⏳ aperto
 | 14 | Il report Energia non distingue gli edifici a riposo | Informazioni | ✅ |
 | 15 | Refusi e descrizioni segnaposto nei testi | Informazioni | ✅ |
 
-**Da dove partire:** 13 (avvisi mancanti) e poi l'equilibrio (5–9). Sono interventi piccoli che cambiano molto la sensazione di gioco.
+**Da dove partire:** 9 (costo dei materiali con poca manodopera) e 13 (avvisi mancanti). Sono interventi piccoli che cambiano molto la sensazione di gioco.
 
 ## A. Regole che non funzionano o si contraddicono
 
@@ -68,21 +68,29 @@ Un clone dà 1 punto lavoro ma consuma cibo e alloggio come un colono. Per il pe
 
 **Proposta:** 2 punti per clone, oppure un consumo di cibo dimezzato.
 
+**Risolto ✅**: i cloni mangiano la metà (mezzo cibo a turno, arrotondato per eccesso sul totale).
+
 ### 6. I coloni nati diventano utili molto tardi
 
 Da bambino a Lavoratore servono circa 24 turni: 6 da bambino, 13 di scuola e 5 di università, con Scuola e Università con personale. La vittoria chiede 200 coloni nati e contenti per 20 turni. Con un Asilo, che fa nascere 5 bambini ogni 2 turni, solo le nascite richiedono 80 turni.
 
 **Proposta:** una stima dei turni alla vittoria nel report Umani, oppure un ritmo delle nascite legato al numero di Asili e al Benessere.
 
+**Deciso: va bene così.** La partita è pensata per essere lunga.
+
 ### 7. La felicità parte da 0 e dimezza la manodopera
 
-Senza svago la felicità vale 0, e i coloni rendono 2 punti invece di 4. È già stato proposto di partire dal 50%, con +2% per bambino nato e −1% per colono morto. Per ora il calcolo resta invariato.
+Senza svago la felicità vale 0, e i coloni rendono 2 punti invece di 4.
+
+**Deciso: va bene così.** Più avanti la felicità potrà essere modificata dagli eventi.
 
 ### 8. La fame uccide in fretta e senza preavviso
 
 Se la sussistenza media scende sotto il 100%, a ogni turno muore la quota corrispondente di coloni, bambini e studenti compresi. Non c'è nessun avviso prima che il cibo finisca.
 
 **Proposta:** un avviso quando le riserve di cibo coprono meno di 3 turni, e morti che colpiscono per primi i più fragili (Pensionati).
+
+**Risolto ✅**: avviso "Cibo in esaurimento" quando le riserve coprono il deficit per meno di 3 turni e "Cibo esaurito" quando manca; le morti colpiscono prima Pensionati, poi cloni, Lavoratori, Universitari, Studenti e per ultimi i Bambini (in ogni fase prima i malati), con le notifiche "Coloni morti di fame" o "per habitat insufficiente".
 
 ### 9. Con poca manodopera il lavoro costa più materiali
 

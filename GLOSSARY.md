@@ -55,7 +55,7 @@ Un clone in attesa di risveglio, preparato dal Centro Criogenico con i minerali;
 _Evitare_: coloni iniziali, ibernato
 
 **Clone**:
-Un colono adulto e già istruito uscito da una capsula criogenica: lavora con un quarto del rendimento di un Lavoratore (1 punto lavoro contro 4), non risente della felicità, a fine vita lavorativa muore invece di diventare Pensionato e non conta per la vittoria.
+Un colono adulto e già istruito uscito da una capsula criogenica: lavora con un quarto del rendimento di un Lavoratore (1 punto lavoro contro 4), non risente della felicità, mangia la metà di un colono, a fine vita lavorativa muore invece di diventare Pensionato e non conta per la vittoria.
 _Evitare_: replicante, colono artificiale
 
 **Lotto di cloni**:
@@ -80,6 +80,10 @@ _Evitare_: Infants, Students, Researchers, Scientists, Retirees; Scienziati, Ric
 **Felicità**:
 Il grado di soddisfazione dei coloni (istruzione, svago, beni); quando è bassa i coloni forniscono meno manodopera.
 _Evitare_: happiness, morale
+
+**Sussistenza**:
+Quanto supporto vitale (habitat) e cibo bastano alla colonia; sotto il pieno i coloni muoiono di fame o di inospitalità, prima i Pensionati e per ultimi i Bambini, e non nascono bambini.
+_Evitare_: sopravvivenza, subsistence
 
 **Benessere**:
 Quanto alloggi e cure mediche bastano ai coloni; è basso se manca anche solo uno dei due. Per gli alloggi contano anche i cloni, per le cure mediche no. Più è basso, più coloni si ammalano.

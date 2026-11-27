@@ -43,7 +43,7 @@ TextRepository.add("pharmaceuticalUnitDescription", "Unit\u00E0 farmaceutiche pr
 TextRepository.add("goodsUnitDescription", "Unit\u00E0 per beni prodotte dalla Fabbrica di Beni per produrre i Beni. Ogni fabbrica ne conserva 10, ogni Deposito 5 in pi\u00F9.");
 TextRepository.add("Population_clones", "Popolazione: cloni");
 TextRepository.add("Population_born", "Popolazione: coloni");
-TextRepository.add("foodUnitDescription", "Cibo prodotto dagli edifici e consumato dai coloni (1 a testa per turno); quello che avanza va nelle riserve.");
+TextRepository.add("foodUnitDescription", "Cibo prodotto dagli edifici e consumato dai coloni (1 a testa per turno, mezzo per i cloni); quello che avanza va nelle riserve.");
 TextRepository.add("Materials", "Materiali");
 
 TextRepository.add("Consumption", "Consumo");
@@ -151,6 +151,10 @@ TextRepository.add("Births_active", "Nascite: attive");
 TextRepository.add("Births_suspended", "Nascite: sospese");
 TextRepository.add("BirthsHint", "Clic per sospendere o riprendere le nascite in tutti gli Asili. Nasce un gruppo di 5 bambini ogni 2 turni per Asilo, se cibo e alloggi bastano anche per loro.");
 TextRepository.add("Event_BIRTHS", "Nuovi nati");
+TextRepository.add("Event_FOOD_SHORTAGE", "Cibo in esaurimento: le riserve finiranno tra %s turni");
+TextRepository.add("Event_FOOD_EXHAUSTED", "Cibo esaurito: manca cibo per %s coloni");
+TextRepository.add("Event_STARVATION_DEATHS", "Coloni morti di fame");
+TextRepository.add("Event_HABITAT_DEATHS", "Coloni morti per habitat insufficiente");
 TextRepository.add("Event_CLONES_EXPIRING", "Lotto di cloni in scadenza: %s cloni moriranno il prossimo turno");
 TextRepository.add("Event_KIT_DELIVERED", "Kit di atterraggio consegnato: %s edifici disponibili");
 TextRepository.add("Event_NEW_BUILDING", "Nuovo edificio");

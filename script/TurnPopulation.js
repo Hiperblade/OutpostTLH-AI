@@ -5,7 +5,54 @@ import { Cure } from "./Cure.js";
 import { BuildingGraph } from "./PipeNetwork.js";
 
 /** popolazione: consumi di sussistenza, istruzione, nascite, morti e stato della popolazione */
+/**
+ * Cibo necessario in un turno: 1 per colono nato, mezzo per clone (arrotondato per eccesso).
+ * @param {Array<Generation>} registry
+ * @param {number} [extraClones] cloni in più (risvegli prenotati o richiesti)
+ */
+let foodNeed = function(registry, extraClones)
+{
+	let born = 0, clones = extraClones || 0;
+	registry.forEach(function(generation)
+	{
+		if(generation.isClone()) { clones += generation.getPopulation(); }
+		else { born += generation.getPopulation(); }
+	});
+	return born + Math.ceil(clones * PopulationPhase.CLONE_FOOD);
+};
+
+/** ordine in cui muoiono di fame: prima i più fragili, per ultimi i bambini; in ogni fase prima i malati */
+const STARVATION_ORDER = [GenerationState.Retirees, GenerationState.Clones, GenerationState.Scientists,
+	GenerationState.Researchers, GenerationState.Students, GenerationState.Infants];
+
+let _killInOrder = function(generations, date, count)
+{
+	let dead = 0;
+	STARVATION_ORDER.forEach(function(stage)
+	{
+		generations.forEach(function(generation)
+		{
+			if(generation.getState(date) != stage)
+			{
+				return;
+			}
+			while(dead < count && generation.getPopulation() > 0)
+			{
+				let sick = generation.getLots().find(function(lot) { return lot.getSick() > 0; });
+				if(sick !== undefined) { sick.killSick(); }
+				else { generation.kill(); }
+				dead++;
+			}
+			generation.prune();
+		});
+	});
+	return dead;
+};
+
 let PopulationPhase = {
+	CLONE_FOOD: 0.5,	// cibo per clone a turno
+	FOOD_WARNING_TURNS: 3,	// avviso quando le riserve coprono il deficit per meno di questi turni
+
 	/** abitabilità del turno, per il report: supporto vitale, alloggi e cibo rispetto ai coloni */
 	project: function(ctx)
 	{
@@ -28,7 +75,7 @@ let PopulationPhase = {
 			revivalCapacity: Math.max(0, state.getRemainder("cryoRevival")),
 			habitat: { available: Math.max(0, state.getRemainder("habitatUnit")), needed: elements },
 			housing: { available: Math.max(0, state.getRemainder("residentialUnit")), needed: colonists },
-			food: { available: Math.max(0, state.getRemainder("foodUnit")), needed: colonists },
+			food: { available: Math.max(0, state.getRemainder("foodUnit")), needed: foodNeed(state.getPopulation().registry, state.getPendingRevival()) },
 			// copertura medica: servono solo ai coloni nati (i cloni non si ammalano)
 			medical: { available: Math.max(0, state.getRemainder("medicalUnit")), needed: citizens }
 		});
@@ -93,13 +140,22 @@ let PopulationPhase = {
 		// se ci sono persone
 		if(people > 0)
 		{
-			// cibo (malnutrizione)
+			// cibo (malnutrizione): i cloni mangiano la metà
+			let need = foodNeed(generations);
 			let foodUnit = colonyState.getRemainder("foodUnit");
-			colonyState.delMaterials( { foodUnit: Math.min(foodUnit, people) } );
-			malnutrition = 1 - (foodUnit / people);
-			if(malnutrition < 0)
+			colonyState.delMaterials( { foodUnit: Math.min(foodUnit, need) } );
+			malnutrition = Math.max(0, 1 - (foodUnit / need));
+
+			// avviso: il consumo supera la produzione e le riserve coprono il deficit per pochi turni
+			let deficit = need - colonyState.getProduced("foodUnit");
+			if(need > foodUnit)
 			{
-				malnutrition = 0;
+				ctx.events.push({ type: "FOOD_EXHAUSTED", count: need - Math.max(0, foodUnit) });
+			}
+			else if(deficit > 0 && foodUnit - need < deficit * PopulationPhase.FOOD_WARNING_TURNS)
+			{
+				// turni prima che le riserve rimaste dopo questo turno finiscano
+				ctx.events.push({ type: "FOOD_SHORTAGE", count: Math.floor((foodUnit - need) / deficit) + 1 });
 			}
 
 			// alloggi (sovraffollamento)
@@ -262,13 +318,13 @@ let PopulationPhase = {
 			ctx.events.push({ type: "BIRTHS", count: PopulationPhase.BIRTH_GROUP });
 		}
 		colonyState.setBirthProgress(progress);
-		if(subsistenceAverage < 1)
+		if(subsistenceAverage < 1 && people > 0)
 		{
-			// morti
-			let dead = Math.floor(people * (1 - subsistenceAverage));
-			for(let d = 0; d < dead; d++)
+			// morti, prima i più fragili; la causa è la carenza più grave del turno
+			let dead = _killInOrder(generations, date, Math.floor(people * (1 - subsistenceAverage)));
+			if(dead > 0)
 			{
-				generations[d % generations.length].kill();
+				ctx.events.push({ type: (malnutrition >= inhospitality) ? "STARVATION_DEATHS" : "HABITAT_DEATHS", count: dead });
 			}
 		}
 
@@ -454,4 +510,4 @@ let RevivalPhase = {
 	}
 };
 
-export { CapsulePhase, IllnessPhase, PopulationPhase, RevivalPhase };
+export { CapsulePhase, IllnessPhase, PopulationPhase, RevivalPhase, foodNeed };

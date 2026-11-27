@@ -3,6 +3,7 @@
 import { StructureTypes } from "./Enums.js";
 import { BuildingGraph } from "./PipeNetwork.js";
 import { PrototypeLib } from "./PrototypeLib.js";
+import { foodNeed } from "./TurnPopulation.js";
 
 /**
  * Risveglio delle capsule criogeniche, su richiesta del giocatore.
@@ -84,7 +85,8 @@ function RevivalConstructor()
 		}
 		let awake = state.getPopulation().registry.reduce(function(n, generation) { return n + generation.getPopulation(); }, 0);
 		let people = awake + pending + count;
-		if(state.getRemainder("foodUnit") < people)
+		// i cloni mangiano la metà
+		if(state.getRemainder("foodUnit") < foodNeed(state.getPopulation().registry, pending + count))
 		{
 			return _fail(RevivalReason.NotEnoughFood, _diagnose(map, FOOD));
 		}

@@ -3,7 +3,7 @@
 import { describeBuildingIssue } from "./BuildingIssueText.js";
 import { Cure } from "./Cure.js";
 import { GenerationState } from "./Generations.js";
-import { PopulationPhase } from "./TurnPopulation.js";
+import { PopulationPhase, foodNeed } from "./TurnPopulation.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 import { inherits } from "./SystemLib.js";
@@ -129,7 +129,8 @@ function ReportProductionMaterial(colonyState, material, image, perColonist)
 				{
 					text += separator;
 				}
-				let consumption = entry[1] * perColonist;
+				// i cloni mangiano la metà (arrotondato per eccesso)
+				let consumption = (entry[0] == "Population_clones") ? Math.ceil(entry[1] * perColonist * PopulationPhase.CLONE_FOOD) : entry[1] * perColonist;
 				totalConsumption += consumption;
 				text += '<tr><td>' + TextRepository.get(entry[0]) + '</td>' + cell(entry[1]) + '<td></td><td></td>' + cell('-' + consumption, 'colorError') + '</tr>';
 				haveConsumption = true;
@@ -153,7 +154,7 @@ function ReportProductionMaterial(colonyState, material, image, perColonist)
 		// materiale perso: quello che nel turno avanza (anche dopo cantieri e produzioni) e non trova posto
 		if(!colonyState.isMetaMaterial(material))
 		{
-			let net = colonyState.getProduced(material) - colonyState.getConsumed(material) - colonyState.getPopulation().registry.reduce(function(n, g) { return n + g.getPopulation(); }, 0) * (perColonist || 0);
+			let net = colonyState.getProduced(material) - colonyState.getConsumed(material) - (perColonist ? foodNeed(colonyState.getPopulation().registry) * perColonist : 0);
 			let lost = net - Math.max(0, colonyState.getCapacity(material) - colonyState.getStored(material));
 			if(lost > 0)
 			{

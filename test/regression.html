@@ -25,7 +25,7 @@ import { Revival } from "../script/Revival.js";
 import { createWorkers, createClones, Generation } from "../script/Generations.js";
 import { RecipeLib } from "../script/RecipeLib.js";
 import { Cure } from "../script/Cure.js";
-import { IllnessPhase } from "../script/TurnPopulation.js";
+import { IllnessPhase, foodNeed } from "../script/TurnPopulation.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
 import { PrototypeLib } from "../script/PrototypeLib.js";
@@ -469,6 +469,32 @@ function checks()
 	expect("microonde: nessun satellite consumato dal cantiere", ms.getStored("MicrowaveSatellite"), 3);
 	expect("satellite: costa barre di ferro", RecipeLib.get("MicrowaveSatellite").getCost().ironBar, 2);
 
+	// fame: i cloni mangiano la metà, avviso prima che il cibo finisca, muoiono prima i Pensionati
+	expect("cibo: i cloni mangiano la metà", foodNeed([createClones(0, 4)]), 10);
+	let hunger = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let hs2 = hunger.getState();
+	hs2.addKnowledge({ technology: ["LandingModule"] });
+	hs2.createMaterials({ residentialUnit: 500, habitatUnit: 500 });
+	hunger.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(hunger);
+	let elders = new Generation(hs2.getDate() - 90, 2, 18);
+	let adults = createWorkers(hs2.getDate(), 1);
+	let babies = new Generation(hs2.getDate(), 1);
+	hs2.getPopulation().registry.push(elders, adults, babies);
+	hs2.destroyMaterials({ foodUnit: hs2.getStored("foodUnit") });
+	hs2.createMaterials({ foodUnit: 40 });
+	hs2.getPopulation().subsistence = 1;
+	let illnessRateHunger = IllnessPhase.ILLNESS_RATE;
+	IllnessPhase.ILLNESS_RATE = 0;
+	let fed = Turn.advance(hunger).events;
+	expect("cibo: avviso di esaurimento", fed.filter(e => e.type == "FOOD_SHORTAGE").map(e => e.count), [2]);
+	hs2.destroyMaterials({ foodUnit: hs2.getStored("foodUnit") });
+	let starving = Turn.advance(hunger).events;
+	let starved = starving.filter(e => e.type == "STARVATION_DEATHS").map(e => e.count);
+	expect("fame: cibo esaurito e morti segnalate", [starving.filter(e => e.type == "FOOD_EXHAUSTED").length, starved.length == 1 && starved[0] > 0], [1, true]);
+	expect("fame: muoiono prima i Pensionati", [elders.getPopulation(), adults.getPopulation(), babies.getPopulation()], [0, 5, 5]);
+	IllnessPhase.ILLNESS_RATE = illnessRateHunger;
+
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
 	idle.addBuilding("LandingModule", { x: 10, y: 10 });
@@ -547,7 +573,8 @@ function checks()
 	ag.addKnowledge({ technology: ["LandingModule"] });
 	aging.addBuilding("LandingModule", { x: 10, y: 10 });
 	for(let t = 0; t < 4; t++) Turn.advance(aging);
-	ag.createMaterials({ foodUnit: 100 });
+	ag.createMaterials({ foodUnit: 100, habitatUnit: 500, residentialUnit: 500 });
+	ag.getPopulation().subsistence = 1;
 	let oldClones = createClones(ag.getDate() - 56, 1);
 	let oldWorkers = createWorkers(ag.getDate() - 56, 1);
 	let soonClones = createClones(ag.getDate() - 55, 1);

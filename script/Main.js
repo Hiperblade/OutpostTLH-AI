@@ -561,6 +561,10 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 		CLONES_EXPIRING: "warning",
 		CLONES_EXPIRED: "danger",
 		FELL_ILL: "warning",
+		FOOD_SHORTAGE: "warning",
+		FOOD_EXHAUSTED: "danger",
+		STARVATION_DEATHS: "danger",
+		HABITAT_DEATHS: "danger",
 		ILLNESS_DEATHS: "danger"
 	};
 
