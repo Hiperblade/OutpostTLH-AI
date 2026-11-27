@@ -157,6 +157,8 @@ TextRepository.add("Event_STORAGE_FULL", "Magazzino pieno: %t non ha pi\u00F9 po
 TextRepository.add("Event_STORAGE_OK", "Di nuovo spazio: %t");
 TextRepository.add("Event_POWER_SHORTAGE", "Energia insufficiente: %s edifici fermi, mancano %a di energia");
 TextRepository.add("Event_POWER_OK", "Energia di nuovo sufficiente");
+TextRepository.add("Event_MAINTENANCE_SHORTAGE", "Manutenzione insufficiente: coperta al %s%, gli edifici si danneggiano (servono Centri di Manutenzione)");
+TextRepository.add("Event_MAINTENANCE_OK", "Manutenzione di nuovo sufficiente");
 TextRepository.add("Event_FOOD_SHORTAGE", "Cibo in esaurimento: le riserve finiranno tra %s turni");
 TextRepository.add("Event_FOOD_EXHAUSTED", "Cibo esaurito: manca cibo per %s coloni");
 TextRepository.add("Event_STARVATION_DEATHS", "Coloni morti di fame");

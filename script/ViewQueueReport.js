@@ -425,10 +425,6 @@ function ReportHumans(colonyState, image)
 		text += _row(TextRepository.get("clones"), clones, false);
 		text += _row(TextRepository.get("BornColonists"), born, false);
 		let sick = Cure.sick(colonyState);
-		if(born > 0)
-		{
-			text += _row(TextRepository.get("SickColonists"), sick, sick > 0);
-		}
 		// le fasi di vita dei coloni nati, come dettaglio del totale
 		stages.forEach(function(stage)
 		{
@@ -437,6 +433,11 @@ function ReportHumans(colonyState, image)
 				text += _row('<span class="tableIndentation">' + TextRepository.get(stage) + '</span>', byStage[stage], false);
 			}
 		});
+		// i malati fanno parte dei coloni nati: dettaglio rientrato come le fasi di vita
+		if(born > 0)
+		{
+			text += _row('<span class="tableIndentation">' + TextRepository.get("SickColonists") + '</span>', sick, sick > 0);
+		}
 		if((colonyState.getActiveList()["Nursery"] || []).length > 0 || colonyState.getBirthProgress() > 0)
 		{
 			text += _row(TextRepository.get("BirthProgress"), Math.round(100 * colonyState.getBirthProgress() / PopulationPhase.BIRTH_COST) + "%", false);

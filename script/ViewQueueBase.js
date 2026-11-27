@@ -119,11 +119,13 @@ function QueueViewConstructor(divId, size)
 			_internalSetCurrent(null);
 		}
 		divViewBase.show();
+		$("#mapTools").hide();	// i pulsanti della minimappa non devono coprire la finestra
 	};
 
 	let _hide = function()
 	{
 		divViewBase.hide();
+		$("#mapTools").show();
 	};
 
 	let _inizializeQueue = function()

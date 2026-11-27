@@ -149,7 +149,9 @@ let TurnEventType = {
 	StorageFull: "STORAGE_FULL",
 	StorageOk: "STORAGE_OK",
 	PowerShortage: "POWER_SHORTAGE",
-	PowerOk: "POWER_OK"
+	PowerOk: "POWER_OK",
+	MaintenanceShortage: "MAINTENANCE_SHORTAGE",
+	MaintenanceOk: "MAINTENANCE_OK"
 };
 
 // singleton
@@ -825,7 +827,7 @@ let RobotPhase = {
 
 
 /**
- * Avvisi di stato: magazzini pieni che bloccano qualcosa e energia insufficiente. La notifica arriva nel
+ * Avvisi di stato: magazzini pieni che bloccano qualcosa, energia insufficiente, manutenzione insufficiente. La notifica arriva nel
  * turno in cui il problema comincia e, in verde, in quello in cui si risolve.
  */
 let AlertPhase = {
@@ -876,6 +878,20 @@ let AlertPhase = {
 			ctx.events.push({ type: TurnEventType.PowerOk });
 		}
 		alerts.power = stopped.length > 0;
+
+		// manutenzione: le unità di riparazione non bastano e gli edifici si danneggiano (non nei primi
+		// turni dopo l'atterraggio, quando il Centro di Comando è ancora in costruzione)
+		let repairing = ["CommandCenter", "MaintenanceCenter"].some(function(type) { return (state.getActiveList()[type] || []).length > 0; });
+		let neglected = repairing && !!(ctx.maintenance && ctx.maintenance.damage > 0);
+		if(neglected && !alerts.maintenance)
+		{
+			ctx.events.push({ type: TurnEventType.MaintenanceShortage, count: ctx.maintenance.coverage });
+		}
+		if(!neglected && alerts.maintenance)
+		{
+			ctx.events.push({ type: TurnEventType.MaintenanceOk });
+		}
+		alerts.maintenance = neglected;
 	}
 };
 

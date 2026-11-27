@@ -606,6 +606,7 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 		ROBOTS_WORN: "warning",
 		STORAGE_FULL: "warning",
 		POWER_SHORTAGE: "danger",
+		MAINTENANCE_SHORTAGE: "danger",
 		FOOD_EXHAUSTED: "danger",
 		STARVATION_DEATHS: "danger",
 		HABITAT_DEATHS: "danger",

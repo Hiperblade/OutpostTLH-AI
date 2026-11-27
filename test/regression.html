@@ -627,6 +627,22 @@ function checks()
 	expect("campagna salvata con la partita", [savedCampaign.id, savedCampaign.missionId, savedCampaign.missions], ["c", "prova", ["a", "b", "c"]]);
 	expect("missione fuori campagna: nessuna campagna", missionMap.getState().getCampaign(), null);
 
+	// avviso: senza unità di riparazione la manutenzione non basta e gli edifici si danneggiano
+	let neglect = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	neglect.getState().addKnowledge({ technology: ["LandingModule"] });
+	neglect.addBuilding("LandingModule", { x: 10, y: 10 });
+	let startEvents = [];
+	for(let t = 0; t < 8; t++) startEvents = startEvents.concat(Turn.advance(neglect).events);
+	expect("nessun avviso di manutenzione mentre si costruisce il Centro di Comando", startEvents.filter(e => e.type == "MAINTENANCE_SHORTAGE").length, 0);
+	let commandProduction = PrototypeLib.get("CommandCenter").getProduction();
+	let repairUnits = commandProduction.repairUnit;
+	commandProduction.repairUnit = 0;	// per la prova: nessuna unità di riparazione
+	let neglectEvents = Turn.advance(neglect).events.filter(e => e.type == "MAINTENANCE_SHORTAGE");
+	expect("avviso: manutenzione insufficiente", [neglectEvents.length, neglectEvents.length ? neglectEvents[0].count : null], [1, 0]);
+	expect("avviso di manutenzione solo all'inizio", Turn.advance(neglect).events.filter(e => e.type == "MAINTENANCE_SHORTAGE").length, 0);
+	commandProduction.repairUnit = repairUnits;
+	expect("avviso: manutenzione di nuovo sufficiente", Turn.advance(neglect).events.filter(e => e.type == "MAINTENANCE_OK").length, 1);
+
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
 	idle.addBuilding("LandingModule", { x: 10, y: 10 });

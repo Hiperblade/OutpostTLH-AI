@@ -76,6 +76,8 @@ let MaintenancePhase = (function()
 		{
 			let reduction = Math.max(0, 1 - EMERGENCY_TEAM_REDUCTION * plan.emergencyTeams);
 			let damageAmount = Math.round(_damageFor(plan.neglect) * reduction);
+			// per gli avvisi di fine turno: copertura della manutenzione e danni
+			ctx.maintenance = { coverage: Math.max(0, Math.round(100 - plan.neglect)), damage: damageAmount };
 			let buildList = ctx.state.getBuildList();
 
 			ctx.networks.forEach(function(graph)
