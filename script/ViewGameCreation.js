@@ -9,12 +9,13 @@ import { TextRepository } from "./TextRepository.js";
  * Schermata di Creazione della partita: scelta del pianeta, poi del sito; in alternativa
  * ripresa della partita salvata.
  *
- * GameCreationView.show({ canResume, onStart(site), onResume() })
+ * GameCreationView.show({ canResume, onStart(site, objectives), onResume() })
  */
 function GameCreationViewConstructor()
 {
 	const PLANET_SIZE = 96;
 	const SITE_WIDTH = 150, SITE_HEIGHT = 75;
+	const OBJECTIVES = ["happyPopulation", "shipLaunch", "superintelligence", "terraforming"];
 
 	let root = null;
 	let options = null;
@@ -115,12 +116,25 @@ function GameCreationViewConstructor()
 		sites.append($('<h3></h3>').text(TextRepository.get("ChooseSite")));
 		sites.append('<div id="creationSites" class="creationList"></div>');
 
+		// 3. obiettivi della partita libera (anche nessuno: si gioca senza vittoria)
+		panel.append($('<h3></h3>').text(TextRepository.get("ChooseObjectives")));
+		let objectives = $('<div id="creationObjectives" class="creationObjectives"></div>').appendTo(panel);
+		OBJECTIVES.forEach(function(type)
+		{
+			let label = $('<label class="creationObjective"></label>');
+			$('<input type="checkbox">').attr("data-objective", type).prop("checked", type == "happyPopulation").appendTo(label);
+			label.append($('<span></span>').text(" " + TextRepository.get("Objective_" + type)));
+			label.attr("title", TextRepository.get("Objective_" + type + "Description"));
+			objectives.append(label);
+		});
+
 		$('<div id="creationStart" class="creationButton buttonDisable"></div>').text(TextRepository.get("StartGame"))
 			.on("click", function()
 			{
 				if(selectedSite !== null)
 				{
-					options.onStart(selectedSite);
+					let chosen = $("#creationObjectives input:checked").map(function() { return { type: $(this).attr("data-objective"), params: {} }; }).get();
+					options.onStart(selectedSite, chosen);
 				}
 			})
 			.appendTo(panel);

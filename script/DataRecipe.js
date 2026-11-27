@@ -14,6 +14,10 @@ RecipeLib.add(RecipeType.Production, "MicrowaveSatellite",  { }, 3, { labor: 1, 
 RecipeLib.add(RecipeType.Production, "RadioactiveBar", { technology: ["Tokamak"] }, 1, { labor: 1, productionUnit: 3, productionChemicalStructure: 1, radioactiveOre: 2 }, { radioactiveBar: 10, radioactiveWaste: 3 });
 
 RecipeLib.add(RecipeType.Production, "Goods",   { technology: ["GoodsFactory"] }, 1, { labor: 1, goodsUnit: 10, productionStandardStructure: 1 },                   { goods: 10,  fusionWaste: 3 });
+// componenti della navicella, preparati al cantiere dello spazioporto
+RecipeLib.add(RecipeType.Production, "ShipHull",   { technology: ["SpacePort"] }, 10, { labor: 1, dockUnit: 1, productionUnit: 10, productionStandardStructure: 1, ironBar: 5 }, { shipHull: 1 });
+RecipeLib.add(RecipeType.Production, "ShipEngine", { technology: ["SpacePort"] }, 8,  { labor: 1, dockUnit: 1, productionUnit: 10, productionChemicalStructure: 1, ironBar: 3 }, { shipEngine: 1 });
+RecipeLib.add(RecipeType.Production, "ShipFuel",   { technology: ["SpacePort"] }, 5,  { labor: 1, dockUnit: 1, radioactiveBar: 4 }, { shipFuel: 1 });
 RecipeLib.add(RecipeType.Production, "MediKit", { technology: ["PharmaceuticalIndustry"] }, 1, { labor: 1, pharmaceuticalUnit: 15, productionChemicalStructure: 1 }, { mediKit: 10, toxicWaste: 3 });
 
 //-----
@@ -44,6 +48,13 @@ RecipeLib.add(RecipeType.Research, "Pharmacology",			{ theory: ["Medicine"] },		
 RecipeLib.add(RecipeType.Research, "Embryology",			{ theory: ["Medicine"] },					3, { researchUnit: 5, researchStructureUnderground: 1 },	{ technology: ["Nursery"] });
 
 RecipeLib.add(RecipeType.Research, "ComputerScience",		{ },										8, { researchUnit: 10, researchStructureSurface: 2 },		{ theory: ["ComputerScience"] });
+// superintelligenza
+RecipeLib.add(RecipeType.Research, "AdvancedNeuralNetworks",	{ theory: ["AI"] },							10, { researchUnit: 40, researchStructureSurfaceAdv: 1 },	{ theory: ["NeuralNetworks"], technology: ["Mainframe"] });
+RecipeLib.add(RecipeType.Research, "ArtificialConsciousness",	{ theory: ["NeuralNetworks"] },				15, { researchUnit: 60, researchStructureUndergroundAdv: 1, computeUnit: 1 },	{ theory: ["ArtificialConsciousness"] });
+RecipeLib.add(RecipeType.Research, "Superintelligence",		{ theory: ["ArtificialConsciousness"] },	20, { researchUnit: 100, researchStructureDeepAdv: 1, computeUnit: 2 },	{ theory: ["Superintelligence"] });
+// terraformazione
+RecipeLib.add(RecipeType.Research, "Terraforming",				{ technology: ["SpacePort"], theory: ["Chemistry"] },	10, { researchUnit: 30, researchStructureSurface: 2 },	{ theory: ["Terraforming"], technology: ["Terraformer"] });
+RecipeLib.add(RecipeType.Research, "AdvancedTerraforming",		{ theory: ["Terraforming", "AdvancedMetallurgy"] },	15, { researchUnit: 50, researchStructureSurfaceAdv: 1 },	{ technology: ["TerraformerAdv"] });
 RecipeLib.add(RecipeType.Research, "AI",					{ theory: ["ComputerScience"] },			8, { researchUnit: 10, researchStructureSurface: 2 },		{ theory: ["AI"], technology: ["HotLabAdv", "LabAdv", "DeepLabAdv", "RoboCommanderAdv", "UnivesityAdv"] });
 
 RecipeLib.add(RecipeType.Research, "HumanScience",		{ },										4, { researchUnit: 12, researchStructureSurface: 1 },		{ theory: ["HumanScience"] });

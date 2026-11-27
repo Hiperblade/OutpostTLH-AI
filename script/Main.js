@@ -3,6 +3,7 @@
 import { PipeType, RobotTypes, TerrainLayer } from "./Enums.js";
 import { Placement, PlacementReason } from "./Placement.js";
 import { Cure } from "./Cure.js";
+import { Launch } from "./Launch.js";
 import { Revival } from "./Revival.js";
 import { SaveGame } from "./SaveGame.js";
 import { Notifications } from "./Notifications.js";
@@ -207,7 +208,14 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 				_redraw();
 				_save();
 			},
-			function() { return state; });
+			function() { return state; },
+			function(action)
+			{
+				if(action == "launch")
+				{
+					_launch();
+				}
+			});
 		queueView = InitializeQueueView("queueDiv", canvasSize);
 
 		// pulsanti spostamento
@@ -485,6 +493,22 @@ Log.dialog(_placementMessage(result));
 	{
 		let result = Revival.request(terrainMap, 5);
 Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(result), result.ok ? "info" : "warning");
+	};
+
+	/** lancio della navicella dallo Spazioporto */
+	let _launch = function()
+	{
+		let result = Launch.perform(terrainMap);
+		if(result.ok)
+		{
+			Notifications.show([{ text: TextRepository.get("Launch_done"), level: "info" }]);
+			state.addNotifications([{ date: state.getDate(), text: TextRepository.get("Launch_done"), level: "info" }]);
+			Turn.project(terrainMap);
+			_redraw();
+			_save();
+			return;
+		}
+		Log.dialog(TextRepository.get("Launch_" + result.reason).replace("%s", result.missing.map(function(name) { return TextRepository.get(name); }).join(", ")));
 	};
 
 	/** prenota le cure dei coloni malati (avvengono a fine turno) */

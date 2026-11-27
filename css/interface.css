@@ -340,6 +340,18 @@ body
 	color: rgb(150,160,170);
 }
 
+.creationObjectives
+{
+	margin: 4px 0 12px 0;
+}
+
+.creationObjective
+{
+	display: block;
+	margin: 3px 0;
+	cursor: pointer;
+}
+
 /* notifiche */
 
 .notificationPanel

@@ -37,6 +37,10 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		// esito della partita: null finché si gioca, poi GameOutcome.Victory o GameOutcome.Defeat
 		state.outcome = null;
 		state.victoryStreak = 0;
+		// obiettivi della partita: [{ type, params }]; senza obiettivi non si vince (partita libera)
+		state.objectives = [{ type: "happyPopulation", params: {} }];
+		state.terraformPoints = 0;
+		state.shipsLaunched = 0;
 		state.kitDelivered = false;
 		// capsule criogeniche di cui il giocatore ha chiesto il risveglio
 		state.pendingRevival = 0;
@@ -60,6 +64,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		let buildingIssues = new Map();
 		let buildPoints = new Map();
 		let effectivePrecedence = new Map();
+		let objectiveStatus = [];
 		/** abitabilità del turno: per supporto vitale, alloggi e cibo { available, needed } */
 		let habitability = null;
 
@@ -267,6 +272,9 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 				date: state.date,
 				outcome: state.outcome,
 				victoryStreak: state.victoryStreak,
+				objectives: JSON.parse(JSON.stringify(state.objectives)),
+				terraformPoints: state.terraformPoints,
+				shipsLaunched: state.shipsLaunched,
 				kitDelivered: state.kitDelivered,
 				pendingRevival: state.pendingRevival,
 				birthProgress: state.birthProgress,
@@ -300,6 +308,10 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 			state.date = data.date;
 			state.outcome = data.outcome;
 			state.victoryStreak = data.victoryStreak;
+			// i salvataggi precedenti avevano solo la popolazione felice
+			state.objectives = Array.isArray(data.objectives) ? data.objectives : [{ type: "happyPopulation", params: {} }];
+			state.terraformPoints = data.terraformPoints || 0;
+			state.shipsLaunched = data.shipsLaunched || 0;
 			state.kitDelivered = data.kitDelivered;
 			state.pendingRevival = data.pendingRevival || 0;
 			state.birthProgress = data.birthProgress || 0;
@@ -339,6 +351,15 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		this.setOutcome = function(outcome) { state.outcome = outcome; };
 		this.getVictoryStreak = function() { return state.victoryStreak; };
 		this.setVictoryStreak = function(value) { state.victoryStreak = value; };
+		this.getObjectives = function() { return state.objectives; };
+		this.setObjectives = function(list) { state.objectives = list.map(function(o) { return { type: o.type, params: Object.assign({}, o.params || {}) }; }); };
+		this.getTerraformPoints = function() { return state.terraformPoints; };
+		this.addTerraformPoints = function(value) { state.terraformPoints += value; };
+		this.getShipsLaunched = function() { return state.shipsLaunched; };
+		this.addShipLaunched = function() { state.shipsLaunched++; };
+		/** stato degli obiettivi calcolato nel turno, per i report */
+		this.setObjectiveStatus = function(list) { objectiveStatus = list; };
+		this.getObjectiveStatus = function() { return objectiveStatus; };
 		this.isKitDelivered = function() { return state.kitDelivered; };
 		this.setKitDelivered = function() { state.kitDelivered = true; };
 		this.getPendingRevival = function() { return state.pendingRevival; };

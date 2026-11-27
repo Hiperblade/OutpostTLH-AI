@@ -8,7 +8,23 @@ Gestionale a turni di una colonia spaziale: si sceglie un pianeta e un sito, si 
 
 **Partita giocabile**:
 Una partita completa, dalla creazione della partita a una condizione di vittoria o di sconfitta, che si può salvare e riprendere.
-_Evitare_: demo, sandbox
+_Evitare_: demo
+
+**Partita libera**:
+Una partita in cui il giocatore sceglie pianeta, sito e obiettivi; può anche non averne nessuno, e allora non si vince ma si gioca finché si vuole.
+_Evitare_: sandbox, partita rapida
+
+**Missione**:
+Una partita preparata: pianeta e sito, condizioni iniziali, studi ed edifici disponibili, obiettivi ed eventuali limiti.
+_Evitare_: scenario, livello
+
+**Campagna**:
+Una sequenza ordinata di missioni.
+_Evitare_: storia, carriera
+
+**Obiettivo**:
+Una condizione da raggiungere per vincere: popolazione felice, lancio della navicella, superintelligenza, terraformazione.
+_Evitare_: traguardo, condizione di vittoria
 
 **Creazione della partita**:
 La procedura iniziale in cui il giocatore sceglie il tipo di pianeta e il sito di atterraggio.
@@ -21,7 +37,7 @@ La prima fase della partita (le fasi descrivono l'andamento del gioco, non sono 
 La seconda fase, dal risveglio dei coloni: si gestiscono coloni, produzione, cure mediche, istruzione e svago.
 
 **Fase degli obiettivi**:
-La terza fase, in cui la colonia lavora ai traguardi finali come lo spazioporto, la terraformazione e la vittoria.
+La terza fase, in cui la colonia lavora ai suoi obiettivi.
 _Evitare_: endgame
 
 **Tipo di pianeta**:
@@ -40,7 +56,7 @@ Quanto è praticabile una casella: spianata, sgombra, accidentata, impervia, ina
 _Evitare_: detriti, difficoltà del terreno
 
 **Vittoria**:
-La colonia mantiene una popolazione minima di coloni contenti per un numero stabilito di turni consecutivi; i cloni non contano.
+La colonia completa tutti gli obiettivi della partita.
 
 **Sconfitta**:
 Non resta in piedi nessun Headquarter; oppure non resta manodopera e non c'è modo di riaverla (nessun RoboWorker, nessun Lavoratore o clone, nessun Centro Criogenico attivo); oppure, dopo l'arrivo dei primi coloni, non ci sono più coloni, né nascite possibili, né capsule criogeniche, né un Centro Criogenico.
@@ -96,6 +112,19 @@ _Evitare_: infortunato, invalido
 **Cura**:
 Il comando con cui il giocatore guarisce i coloni malati, consumando un Kit Medico per malato; a ogni turno se ne possono fare tante quante ne permettono le Strutture Mediche attive. Con le cure automatiche, scelta di tutta la colonia, avviene da sola a ogni turno.
 _Evitare_: guarigione (che può anche avvenire da sola)
+
+**Popolazione felice**:
+L'obiettivo di mantenere una popolazione minima di coloni contenti per un numero stabilito di turni consecutivi; i cloni non contano.
+
+**Lancio della navicella**:
+L'obiettivo di produrre allo Spazioporto scafo, motori e carburante della navicella e lanciarla.
+
+**Superintelligenza**:
+L'obiettivo di completare gli studi avanzati sull'intelligenza artificiale fino allo studio Superintelligenza, che richiede le unità di calcolo del Mainframe.
+
+**Terraformazione**:
+L'obiettivo di accumulare punti di terraformazione con i Terraformatori attivi; i punti non si perdono.
+_Evitare_: processore atmosferico
 
 **Coloni contenti**:
 I coloni vivi di ogni età, quando la colonia è in piena sussistenza e la felicità è alta; cloni e capsule non contano.

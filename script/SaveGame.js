@@ -1,5 +1,6 @@
 "use strict";
 
+import { configureStorage } from "./GameSetup.js";
 import { RecipeLib } from "./RecipeLib.js";
 import { TerrainMap } from "./TerrainMap.js";
 
@@ -59,6 +60,8 @@ function SaveGameConstructor()
 		let map = TerrainMap.fromData(data.map);
 		// le ricerche completate riconsegnano ciò che sbloccano oggi (es. edifici aggiunti dopo il salvataggio)
 		let state = map.getState();
+		// materiali aggiunti dopo il salvataggio vanno nei loro magazzini
+		configureStorage(state);
 		state.getCompletedResearch().slice().forEach(function(name)
 		{
 			let recipe = RecipeLib.get(name);

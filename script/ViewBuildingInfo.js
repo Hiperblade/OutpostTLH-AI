@@ -12,15 +12,20 @@ let BuildingInfoView;
  * @param {function(Building)} getIssue motivo per cui un edificio non funziona (o null)
  * @param {function(Building)} onChangePriority la precedenza del personale dell'edificio è cambiata
  */
-function InitializeBuildingInfoView(onChangePosition, onClearCurrentItem, getIssue, onChangePriority, getColony)
+function InitializeBuildingInfoView(onChangePosition, onClearCurrentItem, getIssue, onChangePriority, getColony, onAction)
 {
-	BuildingInfoView = new BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority, getColony);
+	BuildingInfoView = new BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority, getColony, onAction);
 	return BuildingInfoView;
 }
 
 /** @param {function(): ColonyState} getColony stato della colonia, per gli interruttori validi per tutta la colonia */
-function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority, getColony)
+/** @param {function(string, Building)} onAction comando di un edificio (es. "launch" allo Spazioporto) */
+function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIssue, onChangePriority, getColony, onAction)
 {
+	// comandi degli edifici: tipo di edificio -> { action, text, hint }
+	const BUILDING_ACTIONS = {
+		SpacePort: { action: "launch", text: "Launch_command", hint: "Launch_hint" }
+	};
 	// interruttori di tutta la colonia, mostrati nel pannello degli edifici interessati
 	const COLONY_SWITCHES = {
 		Nursery: { get: function(c) { return !c.areBirthsSuspended(); }, set: function(c, on) { c.setBirthsSuspended(!on); }, on: "Births_active", off: "Births_suspended", hint: "BirthsHint" },
@@ -51,6 +56,16 @@ function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIs
 				onChangePriority(currentItem);
 			}
 			_refresh();
+		});
+		// comando dell'edificio (lancio della navicella)
+		$("#buildingInfoDataAction").on("click", function()
+		{
+			let command = (currentItem != null && currentItem.getBuildingType) ? BUILDING_ACTIONS[currentItem.getBuildingType()] : undefined;
+			if(command !== undefined && onAction)
+			{
+				onAction(command.action, currentItem);
+				_refresh();
+			}
 		});
 		// interruttore di tutta la colonia (nascite, cure automatiche)
 		$("#buildingInfoDataSuspend").on("click", function()
@@ -117,6 +132,8 @@ function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIs
 		$("#buildingInfoDataStatus").text(describeBuildingIssue(issue)).toggle(issue != null);
 		_refreshPriority();
 		_refreshSuspend();
+		let command = (currentItem != null && currentItem.getBuildingType && !currentItem.underConstruction()) ? BUILDING_ACTIONS[currentItem.getBuildingType()] : undefined;
+		$("#buildingInfoDataAction").text(command ? TextRepository.get(command.text) : "").attr("title", command ? TextRepository.get(command.hint) : "").toggle(command !== undefined);
 		if(currentItem == null)
 		{
 			$("#buildingInfoDataTitle").html("");

@@ -82,7 +82,11 @@ let _randomPosition = function()
 };
 
 /** nuova partita sul sito: terreno del sito, giacimenti secondo il tipo di pianeta, conoscenze e magazzini iniziali */
-function createGame(site)
+/**
+ * @param {Site} site
+ * @param {Array<{type, params}>} [objectives] obiettivi della partita (predefinito: popolazione felice)
+ */
+function createGame(site, objectives)
 {
 	let map = new TerrainMap(site.getTypology(), MAP_SIZE, site.getMorphology());
 
@@ -103,12 +107,17 @@ function createGame(site)
 	state.addKnowledge({ discovery: ["ElectrostaticDischarge", "Robotics", "Resource_Metal"] });
 	state.addKnowledge({ theory: ["Find_Metal", "Find_Mineral", "Find_Radioactive", "Find_Fumarole"] });
 
-	// magazzini condivisi
-	["mediKit", "goods", "toxicWaste", "fusionWaste"].forEach(function(name) { state.configureMaterial(name, "genericStorage"); });
-	["dozer", "digger", "miner", "roboWorker", "MicrowaveSatellite"].forEach(function(name) { state.configureMaterial(name, "roboticStorage"); });
-	["radioactiveBar", "radioactiveWaste"].forEach(function(name) { state.configureMaterial(name, "radioactiveStorage"); });
-
+	configureStorage(state);
+	state.setObjectives(objectives || [{ type: "happyPopulation", params: {} }]);
 	return map;
 }
 
-export { MAP_SIZE, Site, createGame };
+/** magazzini condivisi: cosa va in ciascuno (anche per le partite salvate prima di nuovi materiali) */
+function configureStorage(state)
+{
+	["mediKit", "goods", "toxicWaste", "fusionWaste", "shipHull", "shipEngine", "shipFuel"].forEach(function(name) { state.configureMaterial(name, "genericStorage"); });
+	["dozer", "digger", "miner", "roboWorker", "MicrowaveSatellite"].forEach(function(name) { state.configureMaterial(name, "roboticStorage"); });
+	["radioactiveBar", "radioactiveWaste"].forEach(function(name) { state.configureMaterial(name, "radioactiveStorage"); });
+}
+
+export { MAP_SIZE, Site, configureStorage, createGame };

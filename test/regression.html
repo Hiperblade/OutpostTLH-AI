@@ -25,6 +25,7 @@ import { Revival } from "../script/Revival.js";
 import { createWorkers, createClones, Generation } from "../script/Generations.js";
 import { RecipeLib } from "../script/RecipeLib.js";
 import { Cure } from "../script/Cure.js";
+import { Launch } from "../script/Launch.js";
 import { IllnessPhase, foodNeed } from "../script/TurnPopulation.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
@@ -552,6 +553,45 @@ function checks()
 	let wornEvents = Turn.advance(grid).events.filter(e => e.type == "ROBOTS_WORN");
 	expect("avviso: robot vicini a fine vita", [wornEvents.length, wornEvents.length ? wornEvents[0].count > 0 : false], [1, true]);
 	expect("avviso robot una volta sola", Turn.advance(grid).events.filter(e => e.type == "ROBOTS_WORN").length, 0);
+
+	// obiettivi: si vince completandoli tutti; senza obiettivi non si vince
+	let goalMap = function(objectives)
+	{
+		let m = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+		m.getState().addKnowledge({ technology: ["LandingModule"] });
+		m.getState().setObjectives(objectives);
+		m.addBuilding("LandingModule", { x: 10, y: 10 });
+		for(let t = 0; t < 4; t++) Turn.advance(m);
+		return m;
+	};
+	let ship = goalMap([{ type: "shipLaunch", params: {} }]);
+	expect("navicella: senza spazioporto", Launch.check(ship).reason, "noSpacePort");
+	ship.addBuilding("SpacePort", { x: 14, y: 14 }, true);
+	expect("navicella: mancano i componenti", Launch.check(ship).missing, ["shipHull", "shipEngine", "shipFuel"]);
+	ship.getState().createMaterials({ shipHull: 1, shipEngine: 1, shipFuel: 1 });
+	expect("navicella: lancio", [Launch.perform(ship).ok, ship.getState().getStored("shipHull"), ship.getState().getShipsLaunched()], [true, 0, 1]);
+	Turn.advance(ship);
+	expect("navicella: vittoria con il lancio", ship.getState().getOutcome(), GameOutcome.Victory);
+
+	let mind = goalMap([{ type: "superintelligence", params: {} }, { type: "shipLaunch", params: {} }]);
+	mind.getState().addCompletedResearch("Superintelligence");
+	Turn.advance(mind);
+	expect("due obiettivi: uno solo non basta", [mind.getState().getOutcome(), mind.getState().getObjectiveStatus().map(e => e.done)], [null, [true, false]]);
+
+	let terra = goalMap([{ type: "terraforming", params: { points: 4 } }]);
+	terra.addBuilding("MicrowavePlant", { x: 11, y: 8 }, true);
+	terra.addBuilding("Terraformer", { x: 12, y: 9 }, true);
+	let terraTurns = 0;
+	while(terra.getState().getOutcome() == null && terraTurns < 10) { Turn.advance(terra); terraTurns++; }
+	expect("terraformazione: punti e vittoria", [terra.getState().getOutcome(), terra.getState().getTerraformPoints() >= 4, terraTurns], [GameOutcome.Victory, true, 4]);
+	let terraAdv = terra.addBuilding("TerraformerAdv", { x: 14, y: 9 }, true);
+	expect("terraformatore avanzato su due caselle", [terraAdv.getParts().length, terra.findBuilding({ x: 15, y: 9 }) != null], [1, true]);
+
+	let free = goalMap([]);
+	for(let t = 0; t < 5; t++) Turn.advance(free);
+	expect("partita libera senza obiettivi: nessuna vittoria", [free.getState().getOutcome(), free.getState().getObjectiveStatus().length], [null, 0]);
+	expect("salvataggio degli obiettivi", TerrainMap.fromData(JSON.parse(JSON.stringify(terra.toData()))).getState().getObjectives(), [{ type: "terraforming", params: { points: 4 } }]);
+	expect("componenti della navicella dopo lo Spazioporto", RecipeLib.get("ShipHull").getRequirement(), { technology: ["SpacePort"] });
 
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });

@@ -477,6 +477,52 @@ function ReportHumans(colonyState, image)
 	this.getImageId = function(){ return image || "Humans"; }
 }
 
+/** stato degli obiettivi della partita */
+function ReportObjectives(colonyState, image)
+{
+	this.getItemInfo = function()
+	{
+		let status = colonyState.getObjectiveStatus();
+		if(status.length == 0)
+		{
+			return '<p>' + TextRepository.get("NoObjectives") + '</p>';
+		}
+		let percent = function(value, target) { return Math.floor(100 * value / Math.max(1, target)) + "%"; };
+		let text = '<table>';
+		status.forEach(function(entry)
+		{
+			let detail;
+			switch(entry.type)
+			{
+				case "happyPopulation":
+					detail = TextRepository.get("ObjectiveStatus_happyPopulation").replace("%v", entry.value).replace("%t", entry.target)
+						.replace("%s", entry.streak).replace("%n", entry.turns).replace("%h", Math.round(entry.happiness * 100));
+					break;
+				case "shipLaunch":
+					detail = TextRepository.get("ObjectiveStatus_shipLaunch").replace("%v", entry.value).replace("%t", entry.target) + " " +
+						["shipHull", "shipEngine", "shipFuel"].map(function(name) { return TextRepository.get(name) + " " + colonyState.getStored(name); }).join(", ");
+					break;
+				case "superintelligence":
+					detail = TextRepository.get("ObjectiveStatus_superintelligence").replace("%v",
+						["AdvancedNeuralNetworks", "ArtificialConsciousness", "Superintelligence"].filter(function(name) { return colonyState.isCompletedKnowledge(name); }).length);
+					break;
+				case "terraforming":
+					detail = TextRepository.get("ObjectiveStatus_terraforming").replace("%v", entry.value).replace("%t", entry.target).replace("%p", percent(entry.value, entry.target));
+					break;
+				default:
+					detail = "";
+			}
+			text += '<tr><td class="tableMainColumn ' + (entry.done ? 'notification_info' : '') + '">' + (entry.done ? "\u2713 " : "") + TextRepository.get("Objective_" + entry.type) + '</td></tr>';
+			text += '<tr><td class="tableIndentation">' + detail + '</td></tr>';
+		});
+		text += '</table>';
+		return text;
+	};
+
+	this.getName = function(){ return "Objectives"; };
+	this.getImageId = function(){ return image || "SpaceShip"; }
+}
+
 /** storico delle notifiche di fine turno, dalla più recente */
 function ReportNotifications(colonyState, image)
 {
@@ -541,6 +587,7 @@ function ReportQueueData(colonyState)
 	let queue = [];
 	let available = [];
 
+	queue.push(new ReportObjectives(colonyState, "SpaceShip"));
 	queue.push(new ReportNotifications(colonyState, "Pipes"));
 	queue.push(new ReportStoppedBuildings(colonyState, "Pipes"));
 	queue.push(new ReportMaintenance(colonyState, "Pipes"));
@@ -584,4 +631,4 @@ function ReportQueueData(colonyState)
 }
 inherits(ReportQueueData, QueueData);
 
-export { ReportNotifications, ReportProductionMaterial, ReportMetaMaterial, ReportMaintenance, ReportHumans, ReportStoppedBuildings, ReportQueueData };
+export { ReportObjectives, ReportNotifications, ReportProductionMaterial, ReportMetaMaterial, ReportMaintenance, ReportHumans, ReportStoppedBuildings, ReportQueueData };

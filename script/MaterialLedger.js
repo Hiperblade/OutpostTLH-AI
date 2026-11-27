@@ -95,9 +95,9 @@ function MaterialLedger()
 	let _joinPool = function(name, poolName)
 	{
 		let rec = _record(name);
-		if(poolName == null || rec === undefined)
+		if(poolName == null || rec === undefined || rec.pool === poolName)
 		{
-			return;
+			return;	// già nel pool: l'operazione si può ripetere
 		}
 		if(!pools.has(poolName))
 		{

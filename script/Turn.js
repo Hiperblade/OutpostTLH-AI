@@ -273,7 +273,8 @@ let _dispose = function(state, disposal)
  */
 const WORK_MATERIALS = ["researchUnit", "researchStructureAuto", "researchStructureSurface", "researchStructureSurfaceAdv",
 	"researchStructureUnderground", "researchStructureUndergroundAdv", "researchStructureDeep", "researchStructureDeepAdv",
-	"productionUnit", "productionStandardStructure", "productionChemicalStructure", "goodsUnit", "pharmaceuticalUnit"];
+	"productionUnit", "productionStandardStructure", "productionChemicalStructure", "goodsUnit", "pharmaceuticalUnit",
+	"dockUnit", "computeUnit"];
 
 /** materiali richiesti in questo turno: costi degli elementi in coda e consumi degli edifici */
 let _demand = function(ctx)
@@ -303,7 +304,7 @@ let _demand = function(ctx)
 };
 
 /** materiali che si accumulano in magazzino o nelle scorte: nella produzione manuale si pagano in proporzione ai punti */
-const STOCKABLE_MATERIALS = ["ironBar", "metalOre", "mineralOre", "cristalOre", "radioactiveOre"];
+const STOCKABLE_MATERIALS = ["ironBar", "metalOre", "mineralOre", "cristalOre", "radioactiveOre", "radioactiveBar"];
 
 /** unità generiche prodotte da molti edifici: da sole non bastano a far lavorare un laboratorio o un'industria */
 const GENERIC_WORK_MATERIALS = ["researchUnit", "productionUnit"];
@@ -890,15 +891,74 @@ let AlertPhase = {
  *     nessuna capsula e nessun Centro Criogenico in piedi.
  */
 let OutcomePhase = {
+	// valori predefiniti degli obiettivi (la missione li può cambiare)
 	VICTORY_POPULATION: 200,
 	VICTORY_TURNS: 20,
 	VICTORY_HAPPINESS: 0.75,
+	TERRAFORM_POINTS: 300,
+	SUPERINTELLIGENCE_STUDY: "Superintelligence",
+
+	/** coloni nati sani: quelli che possono essere contenti */
+	_content: function(state)
+	{
+		let population = state.getPopulation();
+		let citizens = population.registry.reduce(function(n, generation) { return n + (generation.isClone() ? 0 : generation.getHealthy()); }, 0);
+		return { citizens: citizens, happy: population.subsistence == 1 };
+	},
+
+	/**
+	 * Stato di ogni obiettivo: { type, done, value, target, extra } per i report.
+	 * @param {number} [streak] turni consecutivi di popolazione felice da considerare
+	 */
+	status: function(state, streak)
+	{
+		let population = state.getPopulation();
+		let content = OutcomePhase._content(state);
+		return state.getObjectives().map(function(objective)
+		{
+			let p = objective.params || {};
+			switch(objective.type)
+			{
+				case "happyPopulation":
+				{
+					let target = p.population || OutcomePhase.VICTORY_POPULATION;
+					let turns = p.turns || OutcomePhase.VICTORY_TURNS;
+					let happiness = (p.happiness !== undefined) ? p.happiness : OutcomePhase.VICTORY_HAPPINESS;
+					let current = (streak !== undefined) ? streak : state.getVictoryStreak();
+					return { type: objective.type, done: current >= turns, value: content.citizens, target: target,
+						streak: current, turns: turns, happiness: happiness,
+						ok: content.citizens >= target && content.happy && population.happiness >= happiness };
+				}
+				case "shipLaunch":
+					return { type: objective.type, done: state.getShipsLaunched() >= (p.ships || 1), value: state.getShipsLaunched(), target: p.ships || 1 };
+				case "superintelligence":
+					return { type: objective.type, done: state.isCompletedKnowledge(OutcomePhase.SUPERINTELLIGENCE_STUDY), value: 0, target: 1 };
+				case "terraforming":
+				{
+					let target = p.points || OutcomePhase.TERRAFORM_POINTS;
+					return { type: objective.type, done: state.getTerraformPoints() >= target, value: Math.min(target, state.getTerraformPoints()), target: target };
+				}
+			}
+			return { type: objective.type, done: false, value: 0, target: 1 };
+		});
+	},
+
+	project: function(ctx)
+	{
+		ctx.state.setObjectiveStatus(OutcomePhase.status(ctx.state));
+	},
 
 	apply: function(ctx)
 	{
 		let state = ctx.state;
 		let date = state.getDate();
 		let population = state.getPopulation();
+		// punti di terraformazione del turno
+		let points = Math.max(0, state.getProduced("terraformPoint"));
+		if(points > 0)
+		{
+			state.addTerraformPoints(points);
+		}
 		let people = 0, citizens = 0, workers = 0, young = 0;	// citizens: coloni non clonati; workers: chi fornisce manodopera
 		population.registry.forEach(function(generation)
 		{
@@ -910,10 +970,12 @@ let OutcomePhase = {
 			else if(phase == GenerationState.Infants || phase == GenerationState.Students || phase == GenerationState.Researchers) { young += n; }
 		});
 
-		// vittoria
-		let content = population.subsistence == 1 && population.happiness >= OutcomePhase.VICTORY_HAPPINESS;
-		state.setVictoryStreak((citizens >= OutcomePhase.VICTORY_POPULATION && content) ? state.getVictoryStreak() + 1 : 0);
-		if(state.getVictoryStreak() >= OutcomePhase.VICTORY_TURNS)
+		// vittoria: tutti gli obiettivi completati (senza obiettivi non si vince)
+		let happy = OutcomePhase.status(state).find(function(entry) { return entry.type == "happyPopulation"; });
+		state.setVictoryStreak((happy !== undefined && happy.ok) ? state.getVictoryStreak() + 1 : 0);
+		let status = OutcomePhase.status(state);
+		state.setObjectiveStatus(status);
+		if(status.length > 0 && status.every(function(entry) { return entry.done; }))
 		{
 			state.setOutcome(GameOutcome.Victory);
 			return;

@@ -41,6 +41,12 @@ function ColonySummaryView(elementId, map)
 		let colonists = awake > 0;
 
 		let text = '<div class="summaryTitle">' + TextRepository.get("Summary_turn").replace("%s", date) + '</div>';
+		let objectives = state.getObjectiveStatus();
+		if(objectives.length > 0)
+		{
+			let done = objectives.filter(function(entry) { return entry.done; }).length;
+			text += _row(TextRepository.get("Summary_objectives"), done + "/" + objectives.length, false);
+		}
 		text += _row(TextRepository.get("Summary_colonists"), awake + (capsules > 0 ? " + " + capsules + " " + TextRepository.get("Summary_inCapsule") : ""), false);
 		let sick = Cure.sick(state);
 		if(sick > 0)

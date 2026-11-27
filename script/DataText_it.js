@@ -409,7 +409,7 @@ TextRepository.add("LabAdvDescription", "Laboratorio sotterraneo avanzato. Richi
 TextRepository.add("DeepLabDescription", "Laboratorio profondo per le ricerche. Richiede personale.");
 TextRepository.add("DeepLabAdvDescription", "Laboratorio profondo avanzato. Richiede personale.");
 TextRepository.add("AutoLabDescription", "Centro di ricerca automatico: conduce senza coloni le ricerche per rendere la colonia abitabile.");
-TextRepository.add("SpacePortDescription", "Spazioporto: collegamento con lo spazio, obiettivo della colonia.");
+TextRepository.add("SpacePortDescription", "Spazioporto: con il personale prepara scafo, motori e carburante della navicella; dal suo pannello si lancia la navicella.");
 TextRepository.add("powerDescription", "Energia prodotta e consumata dagli edifici.");
 TextRepository.add("repairUnitDescription", "Manutenzione degli edifici: unità di riparazione disponibili e necessarie.");
 TextRepository.add("roboticStorageDescription", "Posti per i robot nelle rimesse.");
@@ -417,3 +417,46 @@ TextRepository.add("genericStorageDescription", "Spazio nei magazzini per beni, 
 TextRepository.add("radioactiveStorageDescription", "Spazio nelle aree di stoccaggio per i materiali radioattivi.");
 TextRepository.addDescription("MineMineral", "Miniera di Minerali", "Estrae 20 minerali e 6 cristalli a turno da un giacimento minerale.");
 TextRepository.addDescription("Depot", "Deposito", "Deposito profondo: aumenta di 5 la scorta di Barre di Ferro, unità farmaceutiche e unità per beni della colonia, anche senza energia.");
+
+// obiettivi
+TextRepository.add("ChooseObjectives", "3. Scegli gli obiettivi (nessuno: partita senza vittoria)");
+TextRepository.add("Objective_happyPopulation", "Popolazione felice");
+TextRepository.add("Objective_happyPopulationDescription", "Mantenere 200 coloni nati contenti (felicit\u00E0 almeno 75%) per 20 turni consecutivi.");
+TextRepository.add("Objective_shipLaunch", "Lancio della navicella");
+TextRepository.add("Objective_shipLaunchDescription", "Produrre allo Spazioporto scafo, motori e carburante e lanciare la navicella.");
+TextRepository.add("Objective_superintelligence", "Superintelligenza");
+TextRepository.add("Objective_superintelligenceDescription", "Completare gli studi Reti Neurali Avanzate, Coscienza Artificiale e Superintelligenza (servono le unit\u00E0 di calcolo del Mainframe).");
+TextRepository.add("Objective_terraforming", "Terraformazione");
+TextRepository.add("Objective_terraformingDescription", "Accumulare 300 punti di terraformazione con i Terraformatori attivi.");
+TextRepository.add("Objectives", "Obiettivi");
+TextRepository.add("ObjectivesDescription", "Gli obiettivi della partita: si vince completandoli tutti.");
+TextRepository.add("NoObjectives", "Partita libera senza obiettivi: non si vince, si gioca finch\u00E9 si vuole.");
+TextRepository.add("ObjectiveStatus_happyPopulation", "%v/%t coloni contenti, %s/%n turni consecutivi (felicit\u00E0 almeno %h%)");
+TextRepository.add("ObjectiveStatus_shipLaunch", "Navicelle lanciate %v/%t. Componenti:");
+TextRepository.add("ObjectiveStatus_superintelligence", "Studi completati %v/3");
+TextRepository.add("ObjectiveStatus_terraforming", "%v/%t punti di terraformazione (%p)");
+TextRepository.add("Summary_objectives", "Obiettivi");
+// navicella
+TextRepository.add("Launch_command", "Lancia la navicella");
+TextRepository.add("Launch_hint", "Servono uno scafo, dei motori e del carburante, prodotti allo Spazioporto dalla finestra di produzione.");
+TextRepository.add("Launch_done", "Navicella lanciata!");
+TextRepository.add("Launch_noSpacePort", "Serve uno Spazioporto costruito.");
+TextRepository.add("Launch_missingParts", "Per il lancio mancano: %s.");
+TextRepository.add("shipHull", "Scafi");
+TextRepository.add("shipEngine", "Motori");
+TextRepository.add("shipFuel", "Carburante");
+TextRepository.add("dockUnit", "Cantiere Spaziale");
+TextRepository.add("computeUnit", "Unit\u00E0 di Calcolo");
+TextRepository.add("terraformPoint", "Punti di Terraformazione");
+TextRepository.addDescription("ShipHull", "Scafo della Navicella", "Scafo della navicella: si prepara al cantiere dello Spazioporto con Barre di Ferro e strutture standard.");
+TextRepository.addDescription("ShipEngine", "Motori della Navicella", "Motori della navicella: Barre di Ferro e strutture chimiche, al cantiere dello Spazioporto.");
+TextRepository.addDescription("ShipFuel", "Carburante della Navicella", "Carburante della navicella: Barre Radioattive, al cantiere dello Spazioporto.");
+TextRepository.addDescription("AdvancedNeuralNetworks", "Reti Neurali Avanzate", "Reti neurali su larga scala: sblocca il Mainframe.");
+TextRepository.addDescription("ArtificialConsciousness", "Coscienza Artificiale", "Studio della coscienza artificiale: richiede le unit\u00E0 di calcolo del Mainframe.");
+TextRepository.addDescription("Superintelligence", "Superintelligenza", "Un'intelligenza artificiale superiore a quella umana: completa l'obiettivo Superintelligenza.");
+TextRepository.addDescription("Terraforming", "Terraformazione", "Trasformazione dell'atmosfera del pianeta: sblocca il Terraformatore.");
+TextRepository.addDescription("AdvancedTerraforming", "Terraformazione Avanzata", "Terraformazione su larga scala: sblocca il Terraformatore Avanzato.");
+TextRepository.addDescription("Mainframe", "Mainframe", "Calcolatore profondo: produce le unit\u00E0 di calcolo per gli studi sulla superintelligenza. Automatico, consuma molta energia.");
+TextRepository.addDescription("Terraformer", "Terraformatore", "Trasforma l'atmosfera: 1 punto di terraformazione a ogni turno di funzionamento. Automatico, consuma molta energia.");
+TextRepository.addDescription("TerraformerAdv", "Terraformatore Avanzato", "Terraformatore su due caselle: 3 punti di terraformazione a ogni turno di funzionamento.");
+TextRepository.add("TerraformerAdv_e", "Terraformatore Avanzato");

@@ -34,7 +34,7 @@ function showGameCreation()
 {
 	GameCreationView.show({
 		canResume: SaveGame.exists(),
-		onStart: function(site) { startGame(site, createGame(site)); },
+		onStart: function(site, objectives) { startGame(site, createGame(site, objectives)); },
 		onResume: function()
 		{
 			let saved = SaveGame.load();

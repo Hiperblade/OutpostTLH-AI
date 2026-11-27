@@ -324,6 +324,19 @@ PrototypeLib.add("SmelterAdv", TerrainLayer.Surface, 7, { ironBar: 1 }, { consum
 PrototypeLib.add("GoodsFactory", TerrainLayer.Surface, 10, {}, { staff: 5, consumption: { power: 40, mineralOre: 4, metalOre: 2 }, production: { goodsUnit: 30 }, capacity: { goodsUnit: 10 } });
 PrototypeLib.add("PharmaceuticalIndustry", TerrainLayer.Surface, 20, {}, { staff: 5, consumption: { power: 40, mineralOre: 10, cristalOre: 4 }, production: { pharmaceuticalUnit: 60 }, capacity: { pharmaceuticalUnit: 10 } });
 
+// Mainframe: unità di calcolo per gli studi sulla superintelligenza
+PrototypeLib.add("Mainframe", TerrainLayer.Deep, 12, { ironBar: 2 }, { consumption: { power: 300 }, production: { computeUnit: 4 } });
+
+// Terraformatori: punti di terraformazione a ogni turno di funzionamento
+PrototypeLib.add("Terraformer", TerrainLayer.Surface, 8, { ironBar: 1 }, { consumption: { power: 300 }, production: { terraformPoint: 1 } });
+PrototypeLib.add("TerraformerAdv", TerrainLayer.Surface, 12, { ironBar: 2 }, { consumption: { power: 600 }, production: { terraformPoint: 3 },
+	imageId: "TerraformerAdv_Mini",
+	areaType: AreaTypes.TwoEast,
+	parts: [
+		{ type: "TerraformerAdv_e", dx: 1, dy: 0 }
+	] });
+PrototypeLib.add("TerraformerAdv_e", TerrainLayer.Surface, 1, {});
+
 // Deposito: +5 alla capienza di ogni semilavorato, finché esiste (anche senza energia)
 PrototypeLib.add("Depot", TerrainLayer.Deep, 6, { ironBar: 1 }, { consumption: { power: 20 }, capacity: { ironBar: 5, pharmaceuticalUnit: 5, goodsUnit: 5 } });
 
@@ -346,7 +359,8 @@ PrototypeLib.add("AutoLab", TerrainLayer.Surface, 4, {}, { consumption: { power:
 //-------------------------------------------------------------
 // speciali
 
-PrototypeLib.add("SpacePort", TerrainLayer.Surface, 4, {}, { consumption: { power: 200 }, production: {  },
+// spazioporto: con il personale prepara il cantiere spaziale per i componenti della navicella
+PrototypeLib.add("SpacePort", TerrainLayer.Surface, 4, {}, { staff: 5, consumption: { power: 200 }, production: { dockUnit: 4 },
 	imageId: "SpacePort_mini",
 	areaType: AreaTypes.Four,
 	parts: [
