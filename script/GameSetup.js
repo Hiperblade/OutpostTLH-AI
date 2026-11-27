@@ -87,8 +87,9 @@ let _randomPosition = function()
  * @param {Site} site
  * @param {Array<{type, params}>} [objectives] obiettivi della partita (predefinito: popolazione felice)
  * @param {object} [mission] missione normalizzata (Mission.normalize): sostituisce gli obiettivi
+ * @param {object} [campaign] campagna da cui si gioca la missione (Campaign.normalize)
  */
-function createGame(site, objectives, mission)
+function createGame(site, objectives, mission, campaign)
 {
 	let map = new TerrainMap(site.getTypology(), MAP_SIZE, site.getMorphology());
 
@@ -114,6 +115,10 @@ function createGame(site, objectives, mission)
 	if(mission)
 	{
 		_applyMission(state, mission);
+	}
+	if(mission && campaign)
+	{
+		state.setCampaign({ id: campaign.id, name: campaign.name, missions: campaign.missions.slice(), missionId: mission.id });
 	}
 	return map;
 }

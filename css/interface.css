@@ -377,6 +377,17 @@ body
 	max-width: 520px;
 }
 
+.creationMissionLocked
+{
+	color: #667;
+	cursor: default;
+}
+
+.creationCampaignMission
+{
+	margin-top: 10px;
+}
+
 .creationMissionBriefing
 {
 	color: #ccc;
@@ -410,6 +421,12 @@ body
 	font-family: sans-serif;
 	font-size: 13px;
 	line-height: 1.4;
+}
+
+.notificationAction
+{
+	display: inline-block;
+	margin-top: 6px;
 }
 
 .notificationClose

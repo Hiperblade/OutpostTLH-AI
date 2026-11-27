@@ -27,8 +27,12 @@ Il numero massimo di turni di una missione: superarlo senza aver completato gli 
 _Evitare_: timer, scadenza
 
 **Campagna**:
-Una sequenza ordinata di missioni.
+Una sequenza ordinata di missioni, con nome e presentazione: la prima è subito disponibile, ognuna delle successive si sblocca vincendo la precedente. Le missioni restano indipendenti: ciascuna parte dalle proprie condizioni iniziali.
 _Evitare_: storia, carriera
+
+**Avanzamento della campagna**:
+Le missioni di una campagna già vinte giocandole dalla campagna; resta anche iniziando altre partite.
+_Evitare_: progressi, salvataggio della campagna
 
 **Obiettivo**:
 Una condizione da raggiungere per vincere: popolazione felice, lancio della navicella, superintelligenza, terraformazione.

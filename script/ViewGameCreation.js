@@ -3,6 +3,7 @@
 import { PlanetCatalog, PlanetTypes, catalogImageId } from "./DataPlanets.js";
 import { Site } from "./GameSetup.js";
 import { ImagesLib } from "./ImagesLib.js";
+import { Campaign, CampaignProgress, Campaigns } from "./Campaign.js";
 import { Missions } from "./Mission.js";
 import { TextRepository } from "./TextRepository.js";
 
@@ -108,10 +109,18 @@ function GameCreationViewConstructor()
 		let modes = $('<div class="creationModes"></div>').appendTo(panel);
 		let freeMode = $('<div class="creationButton creationMode"></div>').text(TextRepository.get("FreeGame")).appendTo(modes);
 		let missionMode = $('<div class="creationButton creationMode"></div>').text(TextRepository.get("Missions")).appendTo(modes);
+		let campaignMode = $('<div class="creationButton creationMode"></div>').text(TextRepository.get("Campaigns")).appendTo(modes);
 		let free = $('<div id="creationFree"></div>').appendTo(panel);
 		let missions = $('<div id="creationMissions" class="hide"></div>').appendTo(panel);
-		freeMode.on("click", function() { free.show(); missions.hide(); freeMode.addClass("creationModeSelected"); missionMode.removeClass("creationModeSelected"); });
-		missionMode.on("click", function() { missions.show(); free.hide(); missionMode.addClass("creationModeSelected"); freeMode.removeClass("creationModeSelected"); _showMissions(missions); });
+		let campaigns = $('<div id="creationCampaigns" class="hide"></div>').appendTo(panel);
+		let select = function(mode, section)
+		{
+			[free, missions, campaigns].forEach(function(s) { s.toggle(s === section); });
+			[freeMode, missionMode, campaignMode].forEach(function(m) { m.toggleClass("creationModeSelected", m === mode); });
+		};
+		freeMode.on("click", function() { select(freeMode, free); });
+		missionMode.on("click", function() { select(missionMode, missions); _showMissions(missions); });
+		campaignMode.on("click", function() { select(campaignMode, campaigns); _showCampaigns(campaigns); });
 		freeMode.addClass("creationModeSelected");
 		panel = free;
 
@@ -183,7 +192,7 @@ function GameCreationViewConstructor()
 		});
 	};
 
-	let _showMissionDetail = function(detail, mission)
+	let _showMissionDetail = function(detail, mission, campaign)
 	{
 		let planet = PlanetCatalog.find(function(p) { return p.id == mission.planetId; });
 		let site = planet ? planet.sites.find(function(s) { return s.id == mission.siteId; }) : null;
@@ -206,7 +215,64 @@ function GameCreationViewConstructor()
 		}
 		$('<div class="creationButton"></div>').text(TextRepository.get("StartGame")).appendTo(detail).on("click", function()
 		{
-			options.onStartMission(mission);
+			options.onStartMission(mission, campaign || null);
+		});
+	};
+
+	/** elenco delle campagne e scheda di quella scelta, con le missioni vinte, disponibili e bloccate */
+	let _showCampaigns = function(container)
+	{
+		container.empty().append($('<p></p>').text(TextRepository.get("MissionsLoading")));
+		Promise.all([Campaigns.list(), Missions.list()]).then(function(lists)
+		{
+			let campaigns = lists[0];
+			let missions = lists[1];
+			container.empty();
+			if(campaigns.length == 0)
+			{
+				container.append($('<p></p>').text(TextRepository.get("NoCampaigns")));
+				return;
+			}
+			let listBox = $('<div class="creationMissionList"></div>').appendTo(container);
+			let detail = $('<div class="creationMissionDetail"></div>').appendTo(container);
+			campaigns.forEach(function(campaign)
+			{
+				$('<div class="creationMissionItem"></div>').text(campaign.name).appendTo(listBox).on("click", function()
+				{
+					listBox.children().removeClass("creationItemSelected");
+					$(this).addClass("creationItemSelected");
+					_showCampaignDetail(detail, campaign, missions);
+				});
+			});
+		});
+	};
+
+	let _showCampaignDetail = function(detail, campaign, missions)
+	{
+		let won = CampaignProgress.won(campaign.id);
+		detail.empty();
+		detail.append($('<h3></h3>').text(campaign.name));
+		detail.append($('<p class="creationMissionBriefing"></p>').text(campaign.briefing));
+		let list = $('<div></div>').appendTo(detail);
+		let missionDetail = $('<div class="creationCampaignMission"></div>').appendTo(detail);
+		campaign.missions.forEach(function(id, index)
+		{
+			let mission = missions.find(function(m) { return m.id == id; });
+			let unlocked = Campaign.isUnlocked(campaign, index, won);
+			let mark = (won.indexOf(id) >= 0) ? "\u2713 " : (unlocked ? "\u25B6 " : "\uD83D\uDD12 ");
+			let item = $('<div class="creationMissionItem"></div>').text(mark + (index + 1) + ". " + (mission ? mission.name : id)).appendTo(list);
+			if(!mission || !unlocked)
+			{
+				item.addClass("creationMissionLocked");
+				item.attr("title", mission ? TextRepository.get("CampaignLocked") : TextRepository.get("CampaignMissingMission"));
+				return;
+			}
+			item.on("click", function()
+			{
+				list.children().removeClass("creationItemSelected");
+				item.addClass("creationItemSelected");
+				_showMissionDetail(missionDetail, mission, campaign);
+			});
 		});
 	};
 

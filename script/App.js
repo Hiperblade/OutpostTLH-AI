@@ -6,7 +6,8 @@ import { imagesList } from "./DataImagesLib.js";
 import { Site, createGame } from "./GameSetup.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { InitializeMainSystem, Main, MainCommand } from "./Main.js";
-import { Mission } from "./Mission.js";
+import { Campaign, CampaignProgress, Campaigns } from "./Campaign.js";
+import { Mission, Missions } from "./Mission.js";
 import { SaveGame } from "./SaveGame.js";
 import { Log } from "./SystemLib.js";
 import { TextRepository } from "./TextRepository.js";
@@ -36,10 +37,10 @@ function showGameCreation()
 	GameCreationView.show({
 		canResume: SaveGame.exists(),
 		onStart: function(site, objectives) { startGame(site, createGame(site, objectives)); },
-		onStartMission: function(mission)
+		onStartMission: function(mission, campaign)
 		{
 			let site = new Site(mission.planetId, mission.siteId);
-			startGame(site, createGame(site, null, mission));
+			startGame(site, createGame(site, null, mission, campaign));
 		},
 		onResume: function()
 		{
@@ -111,6 +112,24 @@ function showState()
 	stateDiv.innerHTML = text + "</div>";
 }
 
+/** avvia una missione di una campagna (dopo la vittoria della precedente); se manca, torna alla schermata iniziale */
+function startCampaignMission(campaignId, missionId)
+{
+	Promise.all([Campaigns.list(), Missions.list()]).then(function(lists)
+	{
+		let campaign = lists[0].find(function(c) { return c.id == campaignId; });
+		let mission = lists[1].find(function(m) { return m.id == missionId; });
+		let index = campaign ? campaign.missions.indexOf(missionId) : -1;
+		if(!campaign || !mission || !Campaign.isUnlocked(campaign, index, CampaignProgress.won(campaignId)))
+		{
+			showGameCreation();
+			return;
+		}
+		let site = new Site(mission.planetId, mission.siteId);
+		startGame(site, createGame(site, null, mission, campaign));
+	});
+}
+
 /** chiave dell'archivio del browser con cui l'editor passa la missione da provare */
 const TEST_MISSION_KEY = "outposttlh-test-mission";
 
@@ -126,6 +145,13 @@ let onUpdateLoading = function()
 		document.getElementById("loadingScreen").style.display = "none";
 		// prova dall'editor: la missione arriva dall'archivio del browser e la partita non si salva
 		let test = (location.search.indexOf("test=1") >= 0) ? localStorage.getItem(TEST_MISSION_KEY) : null;
+		// prossima missione di una campagna: ?campaign=<id>&mission=<id>
+		let query = new URLSearchParams(location.search);
+		if(query.get("campaign") && query.get("mission"))
+		{
+			startCampaignMission(query.get("campaign"), query.get("mission"));
+			return;
+		}
 		if(test)
 		{
 			SaveGame.setDisabled(true);

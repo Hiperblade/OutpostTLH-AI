@@ -5,7 +5,8 @@
  *
  *   Notifications.show(items, options)
  *     items    [{ text, level }]  level: "info" (verde), "warning" (giallo), "danger" (rosso)
- *     options  { sticky }         sticky: niente chiusura automatica (vittoria, sconfitta)
+ *     options  { sticky, actions } sticky: niente chiusura automatica (vittoria, sconfitta);
+ *                                 actions: [{ label, onClick }] pulsanti sotto le notifiche
  *
  * Un nuovo gruppo sostituisce quello aperto. Il pannello si chiude con il pulsante o da solo dopo
  * AUTO_CLOSE millisecondi; con il mouse sopra il conto alla rovescia si ferma.
@@ -102,6 +103,14 @@ function NotificationsConstructor()
 		{
 			return '<div class="notification notification_' + (item.level || "info") + '">' + _escape(item.text) + '</div>';
 		}).join("");
+		((options && options.actions) || []).forEach(function(action)
+		{
+			let button = document.createElement("div");
+			button.className = "creationButton notificationAction";
+			button.textContent = action.label;
+			button.addEventListener("click", function() { _hide(); action.onClick(); });
+			list.appendChild(button);
+		});
 		panel.style.display = "block";
 		_place();
 		_startTimer();

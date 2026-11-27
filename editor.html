@@ -15,9 +15,9 @@
 		.tool { border: 1px solid rgb(71,143,22); padding: 4px 8px; cursor: pointer; user-select: none; }
 		.tool:hover { background: #2f6A08; }
 		.tool.primary { background: #2f6A08; }
-		#missionList .item { border: 1px solid rgb(47,106,8); padding: 6px 8px; margin-bottom: 4px; cursor: pointer; }
-		#missionList .item.selected { background: #2f6A08; color: #fff; }
-		#missionList .item .dirty { color: rgb(230,190,60); }
+		#missionList .item, #campaignList .item { border: 1px solid rgb(47,106,8); padding: 6px 8px; margin-bottom: 4px; cursor: pointer; }
+		#missionList .item.selected, #campaignList .item.selected { background: #2f6A08; color: #fff; }
+		#missionList .item .dirty, #campaignList .item .dirty { color: rgb(230,190,60); }
 		label { display: inline-block; margin: 3px 10px 3px 0; }
 		input, select, textarea { background: #101810; color: #dfe; border: 1px solid rgb(71,143,22); padding: 3px 5px; font-family: sans-serif; }
 		input[type=number] { width: 70px; }
@@ -37,6 +37,31 @@
 	<div id="editor">
 		<div id="side">
 			<h1>Editor delle missioni</h1>
+			<div class="tools">
+				<div class="tool primary" id="modeMissions">Missioni</div>
+				<div class="tool" id="modeCampaigns">Campagne</div>
+			</div>
+			<div id="campaignSide" style="display:none">
+				<div class="tools">
+					<div class="tool primary" id="openCampaignFolder" title="Sceglie la cartella data/campaigns: l'editor legge e salva i file direttamente (Chrome, Edge)">Apri cartella campagne</div>
+				</div>
+				<div class="status" id="campaignFolderStatus"></div>
+				<div class="tools">
+					<div class="tool" id="newCampaign">Nuova</div>
+					<div class="tool" id="duplicateCampaign">Duplica</div>
+					<div class="tool" id="deleteCampaign">Elimina</div>
+					<div class="tool" id="campaignUp">Su</div>
+					<div class="tool" id="campaignDown">Giù</div>
+				</div>
+				<div id="campaignList"></div>
+				<div class="tools">
+					<div class="tool primary" id="saveCampaign" title="Salva le campagne e l'indice nella cartella">Salva</div>
+					<div class="tool" id="exportCampaign">Esporta</div>
+					<div class="tool" id="importCampaign">Importa</div>
+					<input type="file" id="importCampaignFile" accept=".json,application/json" style="display:none">
+				</div>
+			</div>
+			<div id="missionSide">
 			<div class="tools">
 				<div class="tool primary" id="openFolder" title="Sceglie la cartella data/missions: l'editor legge e salva i file direttamente (Chrome, Edge)">Apri cartella missioni</div>
 			</div>
@@ -59,10 +84,12 @@
 				<input type="file" id="importFile" accept=".json,application/json" style="display:none">
 			</div>
 			<div class="status">Esporta/Importa: per i browser senza accesso alle cartelle; i file esportati vanno copiati in data/missions e aggiunti a index.json.</div>
+			</div>
 		</div>
 		<div id="form"></div>
 	</div>
 	<script src="lib/jquery-1.10.0.min.js"></script>
 	<script src="script/Editor.js" type="module"></script>
+	<script src="script/EditorCampaigns.js" type="module"></script>
 </body>
 </html>

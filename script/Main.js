@@ -2,6 +2,7 @@
 
 import { PipeType, RobotTypes, TerrainLayer } from "./Enums.js";
 import { Placement, PlacementReason } from "./Placement.js";
+import { Campaign, CampaignProgress } from "./Campaign.js";
 import { Cure } from "./Cure.js";
 import { Launch } from "./Launch.js";
 import { Revival } from "./Revival.js";
@@ -573,8 +574,24 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 			SaveGame.clear();
 			_setAbilitationButton(MainCommand.DoNext, false);
 		}
+		// campagna: la missione vinta sblocca la successiva
+		let actions = [];
+		let campaign = state.getCampaign();
+		if(report.outcome == GameOutcome.Victory && campaign)
+		{
+			CampaignProgress.markWon(campaign.id, campaign.missionId);
+			let next = Campaign.next(campaign, campaign.missionId);
+			messages.push({ text: TextRepository.get(next ? "CampaignNextUnlocked" : "CampaignCompleted").replace("%s", campaign.name), level: "info" });
+			if(next)
+			{
+				actions.push({ label: TextRepository.get("NextMission"), onClick: function()
+				{
+					window.location.href = "Outpost3.html?campaign=" + encodeURIComponent(campaign.id) + "&mission=" + encodeURIComponent(next);
+				} });
+			}
+		}
 		// vittoria e sconfitta restano aperte finché il giocatore non le chiude
-		Notifications.show(messages, { sticky: report.outcome != null });
+		Notifications.show(messages, { sticky: report.outcome != null, actions: actions });
 	};
 
 	let saveWarningShown = false;

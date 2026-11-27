@@ -474,3 +474,12 @@ TextRepository.add("TimeUnitTurns", "turni");
 TextRepository.add("NoObjectivesShort", "Nessun obiettivo");
 TextRepository.add("TurnsLeft", "Turni rimasti");
 TextRepository.add("TestMission", "Prova della missione \u201C%s\u201D: la partita non viene salvata.");
+
+// campagne
+TextRepository.add("Campaigns", "Campagne");
+TextRepository.add("NoCampaigns", "Nessuna campagna disponibile (servono i file in data/campaigns).");
+TextRepository.add("CampaignLocked", "Si sblocca vincendo la missione precedente.");
+TextRepository.add("CampaignMissingMission", "Missione non trovata in data/missions.");
+TextRepository.add("CampaignNextUnlocked", "Campagna \u201C%s\u201D: la prossima missione \u00E8 sbloccata.");
+TextRepository.add("CampaignCompleted", "Campagna \u201C%s\u201D completata!");
+TextRepository.add("NextMission", "Prossima missione");

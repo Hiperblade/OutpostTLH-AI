@@ -42,6 +42,8 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		state.terraformPoints = 0;
 		// missione in corso (copia dei dati), null nella partita libera
 		state.mission = null;
+		// campagna da cui si gioca la missione: { id, name, missions, missionId }, null altrimenti
+		state.campaign = null;
 		state.shipsLaunched = 0;
 		state.kitDelivered = false;
 		// capsule criogeniche di cui il giocatore ha chiesto il risveglio
@@ -285,6 +287,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 				objectives: JSON.parse(JSON.stringify(state.objectives)),
 				terraformPoints: state.terraformPoints,
 				mission: state.mission ? JSON.parse(JSON.stringify(state.mission)) : null,
+				campaign: state.campaign ? JSON.parse(JSON.stringify(state.campaign)) : null,
 				shipsLaunched: state.shipsLaunched,
 				kitDelivered: state.kitDelivered,
 				pendingRevival: state.pendingRevival,
@@ -323,6 +326,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 			state.objectives = Array.isArray(data.objectives) ? data.objectives : [{ type: "happyPopulation", params: {} }];
 			state.terraformPoints = data.terraformPoints || 0;
 			state.mission = data.mission || null;
+			state.campaign = data.campaign || null;
 			state.shipsLaunched = data.shipsLaunched || 0;
 			state.kitDelivered = data.kitDelivered;
 			state.pendingRevival = data.pendingRevival || 0;
@@ -365,6 +369,8 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		this.setVictoryStreak = function(value) { state.victoryStreak = value; };
 		this.getObjectives = function() { return state.objectives; };
 		this.getMission = function() { return state.mission; };
+		this.getCampaign = function() { return state.campaign; };
+		this.setCampaign = function(campaign) { state.campaign = campaign ? JSON.parse(JSON.stringify(campaign)) : null; };
 		this.setMission = function(mission) { state.mission = mission ? JSON.parse(JSON.stringify(mission)) : null; };
 		this.isExcludedBuilding = _isExcludedBuilding;
 		this.isExcludedResearch = _isExcludedResearch;

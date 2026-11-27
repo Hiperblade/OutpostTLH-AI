@@ -1,0 +1,10 @@
+{
+	"id": "pionieri",
+	"name": "Pionieri",
+	"briefing": "Le prime tre spedizioni della compagnia: fondare una colonia vivibile, lanciare una navicella e costruire una mente artificiale. Ogni successo apre la strada alla missione successiva.",
+	"missions": [
+		"primo-atterraggio",
+		"corsa-allo-spazio",
+		"mente-superiore"
+	]
+}

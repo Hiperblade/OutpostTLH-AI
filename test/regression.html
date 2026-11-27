@@ -27,6 +27,7 @@ import { RecipeLib } from "../script/RecipeLib.js";
 import { Cure } from "../script/Cure.js";
 import { Launch } from "../script/Launch.js";
 import { Mission } from "../script/Mission.js";
+import { Campaign } from "../script/Campaign.js";
 import { IllnessPhase, foodNeed } from "../script/TurnPopulation.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
 import { Placement } from "../script/Placement.js";
@@ -612,6 +613,15 @@ function checks()
 	let limitTurns = 1;
 	while(mstate.getOutcome() == null && limitTurns < 20) { Turn.advance(missionMap); limitTurns++; }
 	expect("missione: sconfitta al limite di turni", [mstate.getOutcome(), limitTurns], [GameOutcome.Defeat, 6]);
+
+	// campagne: sblocco in ordine, missione successiva, campagna salvata con la partita
+	let pioneers = Campaign.normalize({ id: "c", name: "C", missions: ["a", "b", "c"] });
+	expect("campagna: sblocco in ordine", [0, 1, 2].map(i => Campaign.isUnlocked(pioneers, i, ["a"])), [true, true, false]);
+	expect("campagna: missione successiva", [Campaign.next(pioneers, "a"), Campaign.next(pioneers, "c")], ["b", null]);
+	let campaignMap = createGame(new Site("ceres", "2"), null, mission, pioneers);
+	let savedCampaign = TerrainMap.fromData(JSON.parse(JSON.stringify(campaignMap.toData()))).getState().getCampaign();
+	expect("campagna salvata con la partita", [savedCampaign.id, savedCampaign.missionId, savedCampaign.missions], ["c", "prova", ["a", "b", "c"]]);
+	expect("missione fuori campagna: nessuna campagna", missionMap.getState().getCampaign(), null);
 
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
