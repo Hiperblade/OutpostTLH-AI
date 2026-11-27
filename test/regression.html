@@ -34,7 +34,8 @@ import { Placement } from "../script/Placement.js";
 import { PrototypeLib } from "../script/PrototypeLib.js";
 import { Site, createGame, MAP_SIZE } from "../script/GameSetup.js";
 import { SiteTerrain } from "../script/SiteTerrain.js";
-import { PlanetTypes } from "../script/DataPlanets.js";
+import { imagesList } from "../script/DataImagesLib.js";
+import { PlanetCatalog, PlanetTypes } from "../script/DataPlanets.js";
 import "../script/DataPrototype.js";
 import "../script/DataRecipe.js";
 import "../script/DataText_it.js";
@@ -330,7 +331,10 @@ function checks()
 	let deposits = created.getStructure().filter(el => el.getType() == "resource").length;
 	let expected = Object.values(PlanetTypes[site.getTypology()].resources).reduce((a, b) => a + b, 0);
 	expect("sito: giacimenti del tipo di pianeta", deposits <= expected && deposits > expected * 0.8, true);
-	expect("sito: sfondo 300x150", [site.getBackground().width, site.getBackground().height], [300, 150]);
+	let rendered = SiteTerrain.render(site.getMorphology(), MAP_SIZE);
+	expect("sito: terreno disegnato 300x150", [rendered.width, rendered.height], [300, 150]);
+	expect("catalogo: foto dei siti e immagini dei pianeti registrate", [PlanetCatalog.every(p => p.image && p.sites.length == 5 && p.sites.every(x => x.photo)),
+		imagesList.some(i => i.fileName == "planets/Sites/Site_Asteroid_2.BMP"), imagesList.some(i => i.fileName == "planets/Terrains/Terrain_asteroid_surface_clear.png")], [true, true, true]);
 	expect("sito: salvataggio", Site.fromData(site.toData()).getName(), site.getName());
 	expect("sito: non più nel catalogo", Site.fromData({ planetId: "nessuno", siteId: "1" }), null);
 	let painted = document.createElement("canvas"); painted.width = 300; painted.height = 150;
