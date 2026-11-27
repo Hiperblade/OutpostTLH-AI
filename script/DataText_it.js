@@ -483,3 +483,7 @@ TextRepository.add("CampaignMissingMission", "Missione non trovata in data/missi
 TextRepository.add("CampaignNextUnlocked", "Campagna \u201C%s\u201D: la prossima missione \u00E8 sbloccata.");
 TextRepository.add("CampaignCompleted", "Campagna \u201C%s\u201D completata!");
 TextRepository.add("NextMission", "Prossima missione");
+
+// minimappa
+TextRepository.add("MapMarkersHint", "Mostra o nasconde i segnalatori delle risorse dello strato visualizzato.");
+TextRepository.add("MapAnalysisHint", "Analisi: segnalatori di tutti gli strati e cerchi sulle zone con almeno una risorsa di ogni tipo presente sul pianeta.");

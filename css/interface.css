@@ -131,6 +131,36 @@ body
 	right: -2px; /* bordo */
 }
 
+.mapTools
+{
+	position: absolute;
+	top: 154px;
+	right: 0;
+	display: flex;
+	gap: 3px;
+	z-index: 5;
+}
+
+.mapTool
+{
+	width: 22px;
+	height: 22px;
+	line-height: 22px;
+	text-align: center;
+	border: 1px solid rgb(71,143,22);
+	background: rgba(0,0,0,0.75);
+	color: rgb(119,207,60);
+	cursor: pointer;
+	font-size: 14px;
+	user-select: none;
+}
+
+.mapToolOn
+{
+	background: #2f6A08;
+	color: #fff;
+}
+
 .colorError
 {
 	color: rgb(200,100,100);
