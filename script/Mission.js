@@ -1,5 +1,7 @@
 "use strict";
 
+import { Events } from "./Events.js";
+
 /**
  * Missioni: partite preparate, descritte da file JSON in data/missions/ (elencati in index.json).
  *
@@ -15,13 +17,19 @@
  *   "completedResearch": ["Medicine"],
  *   "excludedResearch": ["Terraforming"],
  *   "excludedBuildings": ["Terraformer"],
+ *   "includedBuildings": ["Drill"],
+ *   "events": { "earthquake": { "enabled": true, "probability": 0.01, ... } },
  *   "turnLimit": 400
  * }
+ * Gli edifici a inclusione (INCLUSION_BUILDINGS) esistono solo nelle missioni che li elencano in includedBuildings;
+ * gli eventi sono spenti finché la missione non li attiva (parametri: vedi Events.DEFAULTS).
  *
  *   Mission.normalize(data)  missione con tutti i campi (valori predefiniti per quelli mancanti)
  *   Mission.KIT              contenuto predefinito del kit di atterraggio
  *   Missions.list()          -> Promise<Array<missione>> nell'ordine di index.json
  */
+/** edifici a inclusione: non esistono nella partita libera, solo nelle missioni che li includono */
+const INCLUSION_BUILDINGS = ["Drill"];
 const KIT = { roboWorker: 10, dozer: 3, digger: 1, miner: 2, MicrowaveSatellite: 1 };
 const BASE_PATH = "data/missions/";
 
@@ -42,6 +50,8 @@ let Mission = {
 			completedResearch: (data.completedResearch || []).slice(),
 			excludedResearch: (data.excludedResearch || []).slice(),
 			excludedBuildings: (data.excludedBuildings || []).slice(),
+			includedBuildings: (data.includedBuildings || []).filter(function(id) { return INCLUSION_BUILDINGS.indexOf(id) >= 0; }),
+			events: Events.normalize(data.events),
 			turnLimit: data.turnLimit || 0
 		};
 	}
@@ -67,4 +77,4 @@ let Missions = {
 	}
 };
 
-export { Mission, Missions };
+export { INCLUSION_BUILDINGS, Mission, Missions };

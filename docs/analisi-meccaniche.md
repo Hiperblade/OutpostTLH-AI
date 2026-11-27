@@ -18,13 +18,13 @@ Stato: ✅ risolto · ⏳ aperto
 | 8 | La fame uccide in fretta e senza preavviso | Equilibrio | ✅ |
 | 9 | Con poca manodopera il lavoro costa più materiali | Equilibrio | ✅ |
 | 10 | Manca la terza fase (Spazioporto, terraformazione) | Meccaniche mancanti | ✅ |
-| 11 | Manca il sistema di eventi | Meccaniche mancanti | ⏳ |
+| 11 | Manca il sistema di eventi | Meccaniche mancanti | ✅ (primi eventi) |
 | 12 | Limite della precedenza del personale | Meccaniche mancanti | ✅ |
 | 13 | Mancano avvisi di fine turno | Informazioni | ✅ |
 | 14 | Il report Energia non distingue gli edifici a riposo | Informazioni | ✅ |
 | 15 | Refusi e descrizioni segnaposto nei testi | Informazioni | ✅ |
 
-**Da dove partire:** resta aperto il punto 11 (eventi). Sono interventi piccoli che cambiano molto la sensazione di gioco.
+**Da dove partire:** i primi eventi ci sono (epidemia, terremoto, tempesta di sabbia); restano da fare altri incidenti, le scoperte e la ribellione.
 
 ## A. Regole che non funzionano o si contraddicono
 
@@ -113,6 +113,13 @@ Lo Spazioporto non produce niente e la terraformazione non esiste. La vittoria d
 ### 11. Manca il sistema di eventi
 
 Incidenti, catastrofi, scoperte e ribellioni per felicità bassa protratta sono rimandati. Gli eventi del turno hanno già un registro dove inserirli.
+
+**Primi eventi ✅:** la fase degli eventi (`script/Events.js`) è la prima del turno.
+- **Epidemia**: dopo qualche turno di Centro di ricerca medico attivo può comparire un Nido Alieno in una casella esplorata del sottosuolo; l'1% dei coloni nati si ammala e ogni malato ne contagia uno a turno (uno ogni due con il Nucleo di risposta epidemie) finché non si studia il Vaccino.
+- **Terremoto** (pianeti vulcanici): per 1-3 turni danneggia tutti gli edifici secondo l'intensità e può distruggerne alcuni (non tubi e Headquarter).
+- **Tempesta di sabbia** (pianeti desertici): per 2-4 turni danneggia lievemente gli edifici di superficie e ferma gli Impianti a Microonde.
+
+Nella partita libera si possono spegnere alla creazione; nelle missioni sono spenti finché l'editor non li attiva e li configura. Restano da fare gli altri incidenti, le scoperte e la ribellione.
 
 ### 12. Limite della precedenza del personale
 

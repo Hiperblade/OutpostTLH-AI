@@ -4,6 +4,7 @@ import { PlanetCatalog, PlanetTypes, catalogImageId } from "./DataPlanets.js";
 import { Site } from "./GameSetup.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { Campaign, CampaignProgress, Campaigns } from "./Campaign.js";
+import { EVENT_TYPES, Events } from "./Events.js";
 import { Missions } from "./Mission.js";
 import { TextRepository } from "./TextRepository.js";
 
@@ -11,7 +12,7 @@ import { TextRepository } from "./TextRepository.js";
  * Schermata di Creazione della partita: scelta del pianeta, poi del sito; in alternativa
  * ripresa della partita salvata.
  *
- * GameCreationView.show({ canResume, onStart(site, objectives), onStartMission(mission), onResume() })
+ * GameCreationView.show({ canResume, onStart(site, objectives, events), onStartMission(mission), onResume() })
  */
 function GameCreationViewConstructor()
 {
@@ -149,13 +150,29 @@ function GameCreationViewConstructor()
 			objectives.append(label);
 		});
 
+		// 4. eventi: tutti attivi, ciascuno si può spegnere; accanto, i pianeti su cui può avvenire
+		panel.append($('<h3></h3>').text(TextRepository.get("ChooseEvents")));
+		let events = $('<div id="creationEvents" class="creationObjectives"></div>').appendTo(panel);
+		EVENT_TYPES.forEach(function(type)
+		{
+			let label = $('<label class="creationObjective"></label>');
+			$('<input type="checkbox">').attr("data-event", type).prop("checked", true).appendTo(label);
+			let planets = Events.PLANETS[type];
+			let where = (planets === null) ? TextRepository.get("EventAllPlanets") : planets.map(function(t) { return TextRepository.get("Typology_" + t); }).join(", ");
+			label.append($('<span></span>').text(" " + TextRepository.get("GameEvent_" + type) + " (" + where + ")"));
+			label.attr("title", TextRepository.get("GameEvent_" + type + "Description"));
+			events.append(label);
+		});
+
 		$('<div id="creationStart" class="creationButton buttonDisable"></div>').text(TextRepository.get("StartGame"))
 			.on("click", function()
 			{
 				if(selectedSite !== null)
 				{
 					let chosen = $("#creationObjectives input:checked").map(function() { return { type: $(this).attr("data-objective"), params: {} }; }).get();
-					options.onStart(selectedSite, chosen);
+					let enabled = {};
+					$("#creationEvents input").each(function() { enabled[$(this).attr("data-event")] = $(this).prop("checked"); });
+					options.onStart(selectedSite, chosen, enabled);
 				}
 			})
 			.appendTo(panel);

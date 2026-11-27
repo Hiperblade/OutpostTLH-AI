@@ -236,6 +236,10 @@ imagesList.push({ id: "Smelter", fileName: "buildings/Smelter.gif" });
 imagesList.push({ id: "SmelterAdv", fileName: "buildings/SmelterAdv.gif" });
 imagesList.push({ id: "Depot", fileName: "buildings/Depot.gif" });
 imagesList.push({ id: "Mainframe", fileName: "buildings/Mainframe.gif" });
+imagesList.push({ id: "Drill", fileName: "buildings/Drill.gif" });
+imagesList.push({ id: "MedicalResearchCenter", fileName: "buildings/MedicalResearchCenter.gif" });
+imagesList.push({ id: "EpidemicResponseCore", fileName: "buildings/EpidemicResponseCore.gif" });
+imagesList.push({ id: "Resource_AlienNest", fileName: "buildings/AlienNest.gif" });
 imagesList.push({ id: "Terraformer", fileName: "buildings/Terraformer.gif" });
 imagesList.push({ id: "TerraformerAdv", fileName: "buildings/TerraformerAdv.gif" });
 imagesList.push({ id: "TerraformerAdv_Mini", fileName: "buildings/TerraformerAdv_Mini.gif" });
@@ -247,7 +251,7 @@ imagesList.push({ id: "ShipFuel", fileName: "illustrations/RadioactiveBar.BMP" }
 imagesList.push({ id: "AdvancedNeuralNetworks", fileName: "illustrations/NeuralNetwork.BMP" });
 imagesList.push({ id: "ArtificialConsciousness", fileName: "illustrations/Artificial%20Consciousness.BMP" });
 imagesList.push({ id: "Superintelligence", fileName: "illustrations/SuperIntelligence.BMP" });
-imagesList.push({ id: "Terraforming", fileName: "buildings/Terraformer.gif" });
+imagesList.push({ id: "Terraforming", fileName: "illustrations/Terraforming.png" });
 imagesList.push({ id: "AdvancedTerraforming", fileName: "buildings/TerraformerAdv_Mini.gif" });
 imagesList.push({ id: "SpacePort", fileName: "buildings/SpacePort.gif" });
 imagesList.push({ id: "SpacePort_e", fileName: "buildings/SpacePort_e.gif" });
@@ -308,5 +312,10 @@ imagesList.push({ id: "HumanScience", fileName: "illustrations/HumanScience.png"
 imagesList.push({ id: "Psicology", fileName: "illustrations/Psicology.png" });
 imagesList.push({ id: "Sociology", fileName: "illustrations/Sociology.png" });
 imagesList.push({ id: "SocialControl", fileName: "illustrations/SocialControl.png" });
+// studi medici (Triage, Patogeno alieno e Vaccino usano provvisoriamente l'immagine del Virus)
+imagesList.push({ id: "Virus", fileName: "illustrations/Virus.png" });
+imagesList.push({ id: "Triage", fileName: "illustrations/Virus.png" });
+imagesList.push({ id: "AlienPathogen", fileName: "illustrations/Virus.png" });
+imagesList.push({ id: "Vaccine", fileName: "illustrations/Virus.png" });
 
 export { imagesList };

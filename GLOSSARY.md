@@ -197,6 +197,21 @@ Satellite prodotto dalla colonia (con Barre di Ferro) che alimenta un Impianto a
 Edificio di superficie che conduce senza coloni le ricerche necessarie a rendere la colonia abitabile.
 _Evitare_: laboratorio robotico
 
+**Centro di ricerca medico**:
+Laboratorio di superficie con personale, l'unico che permette gli studi medici (Virus, Triage, Patogeno alieno, Vaccino); le sue unità di ricerca valgono anche per gli altri studi.
+_Evitare_: laboratorio medico, ospedale
+
+**Nucleo di risposta epidemie**:
+Edificio che, finché è attivo, dimezza la propagazione di un'epidemia: servono due contagiati per infettare un colono sano. Più nuclei non si sommano.
+
+**Trivella**:
+Edificio automatico delle profondità che estrae piccole quantità di metallo e minerali senza bisogno di una risorsa sotto di sé.
+_Evitare_: miniera profonda, perforatrice
+
+**Edificio a inclusione**:
+Edificio che non esiste nella partita libera e compare solo nelle missioni che lo includono (per esempio la Trivella).
+_Evitare_: edificio opzionale, edificio sbloccabile
+
 ### Robot di cantiere
 
 **RoboMiner**:
@@ -230,6 +245,30 @@ _Evitare_: waste, rifiuti
 **Evento**:
 Un fatto imprevisto che colpisce la colonia (incidente, catastrofe, scoperta, ribellione).
 _Evitare_: incidente generico, accadimento
+
+Nella partita libera ogni tipo di evento si può disattivare alla creazione; nelle missioni gli eventi sono spenti finché la missione non li attiva e ne stabilisce probabilità, durata e intensità.
+
+**Nido alieno**:
+Struttura aliena che può comparire nel sottosuolo solo dopo la costruzione di un Centro di ricerca medico, in una casella già esplorata e libera; viene scoperto appena compare, occupa la casella per sempre e la sua scoperta fa scoppiare un'epidemia.
+_Evitare_: alveare, covo
+
+**Epidemia**:
+Evento causato dalla scoperta di un Nido alieno: all'inizio si ammala l'1% dei coloni nati (i cloni sono immuni) e a ogni turno ogni contagiato ne infetta un altro, finché lo studio Vaccino non ferma il contagio; i malati si curano come sempre con i Kit Medici.
+_Evitare_: pandemia, infezione
+
+**Vaccino**:
+Lo studio che ferma la propagazione dell'epidemia; compare quando si scopre un Nido alieno e si completa in pochi turni.
+
+**Triage**:
+Lo studio che dimezza per sempre la probabilità che i coloni si ammalino.
+
+**Terremoto**:
+Evento dei pianeti vulcanici: per alcuni turni danneggia tutti gli edifici di ogni strato, in proporzione alla sua intensità, e può distruggerne alcuni.
+_Evitare_: sisma, scossa
+
+**Tempesta di sabbia**:
+Evento dei pianeti desertici: per alcuni turni danneggia lievemente gli edifici di superficie e spegne gli Impianti a Microonde.
+_Evitare_: tempesta, uragano
 
 **Ribellione**:
 Evento causato da una felicità bassa protratta troppo a lungo.

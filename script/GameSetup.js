@@ -2,6 +2,7 @@
 
 import { PlanetCatalog, PlanetTypes, catalogImageId } from "./DataPlanets.js";
 import { ImagesLib } from "./ImagesLib.js";
+import { Events } from "./Events.js";
 import { RecipeLib } from "./RecipeLib.js";
 import { SiteTerrain } from "./SiteTerrain.js";
 import { TerrainMap } from "./TerrainMap.js";
@@ -88,8 +89,9 @@ let _randomPosition = function()
  * @param {Array<{type, params}>} [objectives] obiettivi della partita (predefinito: popolazione felice)
  * @param {object} [mission] missione normalizzata (Mission.normalize): sostituisce gli obiettivi
  * @param {object} [campaign] campagna da cui si gioca la missione (Campaign.normalize)
+ * @param {object} [events] eventi attivi nella partita libera: { epidemic: bool, ... } (predefinito: tutti)
  */
-function createGame(site, objectives, mission, campaign)
+function createGame(site, objectives, mission, campaign, events)
 {
 	let map = new TerrainMap(site.getTypology(), MAP_SIZE, site.getMorphology());
 
@@ -112,6 +114,7 @@ function createGame(site, objectives, mission, campaign)
 
 	configureStorage(state);
 	state.setObjectives(objectives || [{ type: "happyPopulation", params: {} }]);
+	state.setEventsConfig(Events.freeGame(events));
 	if(mission)
 	{
 		_applyMission(state, mission);
@@ -128,6 +131,7 @@ function _applyMission(state, mission)
 {
 	state.setMission(mission);
 	state.setObjectives(mission.objectives);
+	state.setEventsConfig(mission.events);
 	mission.completedResearch.forEach(function(name)
 	{
 		let recipe = RecipeLib.get(name);

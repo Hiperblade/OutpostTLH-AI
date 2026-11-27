@@ -11,7 +11,8 @@
 
 import { imagesList } from "./DataImagesLib.js";
 import { PlanetCatalog } from "./DataPlanets.js";
-import { LANDING_TECHNOLOGIES } from "./DataPrototype.js";
+import { INCLUSION_BUILDINGS, LANDING_TECHNOLOGIES } from "./DataPrototype.js";
+import { EVENT_TYPES, Events } from "./Events.js";
 import { Site } from "./GameSetup.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { Mission, Missions } from "./Mission.js";
@@ -52,8 +53,29 @@ let buildings = (function()
 {
 	let set = new Set(LANDING_TECHNOLOGIES);
 	studies.forEach(function(r) { (r.getResult().technology || []).forEach(function(t) { set.add(t); }); });
-	return Array.from(set).sort(function(a, b) { return name(a).localeCompare(name(b)); });
+	// gli edifici a inclusione hanno una sezione a parte: non esistono se la missione non li include
+	return Array.from(set).filter(function(id) { return INCLUSION_BUILDINGS.indexOf(id) < 0; }).sort(function(a, b) { return name(a).localeCompare(name(b)); });
 })();
+
+/** parametri degli eventi modificabili nell'editor */
+const EVENT_FIELDS = {
+	epidemic: [
+		{ key: "probability", label: "probabilità a turno (0-1)", step: 0.01 },
+		{ key: "delay", label: "turni di Centro di ricerca medico prima del Nido" },
+		{ key: "maxNests", label: "Nidi al massimo" }],
+	earthquake: [
+		{ key: "probability", label: "probabilità a turno (0-1)", step: 0.005 },
+		{ key: "minTurn", label: "dal turno" },
+		{ key: "minDuration", label: "durata minima" },
+		{ key: "maxDuration", label: "durata massima" },
+		{ key: "minIntensity", label: "intensità minima (1-3)" },
+		{ key: "maxIntensity", label: "intensità massima (1-3)" }],
+	sandstorm: [
+		{ key: "probability", label: "probabilità a turno (0-1)", step: 0.01 },
+		{ key: "minTurn", label: "dal turno" },
+		{ key: "minDuration", label: "durata minima" },
+		{ key: "maxDuration", label: "durata massima" }]
+};
 
 /** studi che producono una conoscenza (teoria o tecnologia) */
 let producersOf = function(item)
@@ -114,6 +136,19 @@ let warnings = function(m)
 	if(m.excludedResearch.some(function(id) { return m.completedResearch.indexOf(id) >= 0; }))
 	{
 		list.push("Alcuni studi sono sia esclusi sia già completati.");
+	}
+	// eventi attivi che non possono avvenire sul pianeta della missione
+	let planet = PlanetCatalog.find(function(p) { return p.id == m.planetId; });
+	EVENT_TYPES.forEach(function(type)
+	{
+		if(m.events[type].enabled && planet && !Events.canHappen(type, planet.typology))
+		{
+			list.push("L'evento “" + name("GameEvent_" + type) + "” non può avvenire su questo tipo di pianeta.");
+		}
+	});
+	if(m.events.epidemic.enabled && (excludedBuilding("MedicalResearchCenter") || excludedStudy("AdvancedMedicine")))
+	{
+		list.push("Epidemia: il Nido compare solo dopo un Centro di ricerca medico, che è escluso.");
 	}
 	return list;
 };
@@ -268,6 +303,46 @@ let render = function()
 			changed();
 		});
 		$('<label class="entry"></label>').append($('<span></span>').text(name(id))).append(check).appendTo(buildingBox);
+	});
+
+	// edifici a inclusione: esistono solo se la missione li include
+	form.append('<h3>Edifici inclusi (non esistono nella partita libera)</h3>');
+	let includedBox = $('<div class="grid"></div>').appendTo(form);
+	INCLUSION_BUILDINGS.forEach(function(id)
+	{
+		let check = $('<input type="checkbox">').prop("checked", m.includedBuildings.indexOf(id) >= 0).on("change", function()
+		{
+			m.includedBuildings = m.includedBuildings.filter(function(x) { return x != id; });
+			if(this.checked) { m.includedBuildings.push(id); }
+			changed();
+		});
+		$('<label class="entry"></label>').append($('<span></span>').text(name(id))).append(check).appendTo(includedBox);
+	});
+
+	// eventi: spenti se non attivati; i parametri partono dai valori predefiniti
+	form.append('<h3>Eventi</h3>');
+	EVENT_TYPES.forEach(function(type)
+	{
+		let config = m.events[type];
+		let box = $('<div class="objective"></div>').appendTo(form);
+		let planets = Events.PLANETS[type];
+		let where = (planets === null) ? "tutti i pianeti" : planets.map(function(t) { return name("Typology_" + t); }).join(", ");
+		let params = $('<div class="row"></div>');
+		$('<label></label>').append($('<input type="checkbox">').prop("checked", config.enabled).on("change", function()
+		{
+			config.enabled = this.checked;
+			params.toggle(this.checked);
+			changed();
+		})).append($('<span></span>').text(" " + name("GameEvent_" + type) + " (" + where + ")")).appendTo(box);
+		EVENT_FIELDS[type].forEach(function(field)
+		{
+			$('<label></label>').text(field.label + " ").append($('<input type="number" min="0">').attr("step", field.step || 1).val(config[field.key]).on("input", function()
+			{
+				config[field.key] = Number(this.value) || 0;
+				changed();
+			})).appendTo(params);
+		});
+		params.toggle(config.enabled).appendTo(box);
 	});
 
 	form.append('<h3>Avvisi</h3><div id="warnings"></div>');

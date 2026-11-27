@@ -1,5 +1,6 @@
 "use strict";
 
+import { Epidemic } from "./Events.js";
 import { Generation, GenerationState, createClones } from "./Generations.js";
 import { Cure } from "./Cure.js";
 import { BuildingGraph } from "./PipeNetwork.js";
@@ -376,13 +377,15 @@ let _randomCount = function(expected)
  *   cure: prenotate dal giocatore o automatiche, un Kit Medico per malato, nei limiti delle Strutture Mediche,
  *         prima i Lavoratori, poi Universitari e Studenti, poi Bambini, per ultimi i Pensionati;
  *   guarigione spontanea (RECOVERY_RATE) e morte dei malati (DEATH_RATE, RETIREE_DEATH_RATE per i Pensionati);
- *   nuovi malati: ILLNESS_RATE dei sani quando il Benessere è 0, nessuno con il Benessere pieno.
+ *   contagio dell'epidemia, se in corso (vedi Epidemic.spread);
+ *   nuovi malati: ILLNESS_RATE dei sani quando il Benessere è 0, nessuno con il Benessere pieno (metà con il Triage).
  */
 let IllnessPhase = {
 	ILLNESS_RATE: 0.1,
 	RECOVERY_RATE: 0.1,
 	DEATH_RATE: 0.05,
 	RETIREE_DEATH_RATE: 0.1,
+	TRIAGE_FACTOR: 0.5,
 	CURE_ORDER: [GenerationState.Scientists, GenerationState.Researchers, GenerationState.Students, GenerationState.Infants, GenerationState.Retirees],
 
 	apply: function(ctx)
@@ -438,8 +441,11 @@ let IllnessPhase = {
 			generation.prune();
 		});
 
-		// nuovi malati, in proporzione al Benessere che manca
-		let rate = IllnessPhase.ILLNESS_RATE * Math.max(0, 1 - population.wellness);
+		// contagio dell'epidemia (dai malati rimasti dopo cure e guarigioni)
+		Epidemic.spread(ctx);
+
+		// nuovi malati, in proporzione al Benessere che manca; il Triage dimezza la probabilità
+		let rate = IllnessPhase.ILLNESS_RATE * Math.max(0, 1 - population.wellness) * (state.isCompletedKnowledge("Triage") ? IllnessPhase.TRIAGE_FACTOR : 1);
 		let ill = 0;
 		colonists.forEach(function(generation)
 		{

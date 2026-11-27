@@ -1,6 +1,7 @@
 "use strict";
 
 import { RobotTypes, StructureTypes } from "./Enums.js";
+import { EventPhase } from "./Events.js";
 import { GenerationState } from "./Generations.js";
 import { BuildingGraph } from "./PipeNetwork.js";
 import { PrototypeLib } from "./PrototypeLib.js";
@@ -21,7 +22,7 @@ import { CapsulePhase, IllnessPhase, PopulationPhase, RevivalPhase } from "./Tur
  *   apply(ctx, plan)             applica gli effetti del piano (avanzamenti, danni, nascite...)
  * L'ordine di PHASES è anche l'ordine di priorità nel consumo dei materiali.
  *
- * TODO: fase eventi (incidenti, catastrofi, scoperte) - vedi Events.js
+ * La fase degli eventi è la prima: nella proiezione ferma gli edifici colpiti dagli eventi in corso.
  * TODO: fase sistemi avanzati (terraforming ecc.)
  */
 function TurnConstructor()
@@ -29,6 +30,7 @@ function TurnConstructor()
 	let _phases = function()
 	{
 		return [
+			EventPhase,
 			WorkforcePhase,
 			BuildingProductionPhase,
 			ProductionQueuePhase,
@@ -151,7 +153,17 @@ let TurnEventType = {
 	PowerShortage: "POWER_SHORTAGE",
 	PowerOk: "POWER_OK",
 	MaintenanceShortage: "MAINTENANCE_SHORTAGE",
-	MaintenanceOk: "MAINTENANCE_OK"
+	MaintenanceOk: "MAINTENANCE_OK",
+	// eventi (vedi Events.js)
+	Epidemic: "EPIDEMIC",
+	EpidemicSpread: "EPIDEMIC_SPREAD",
+	EpidemicVaccine: "EPIDEMIC_VACCINE",
+	EpidemicEnd: "EPIDEMIC_END",
+	Earthquake: "EARTHQUAKE",
+	EarthquakeDestroyed: "EARTHQUAKE_DESTROYED",
+	EarthquakeEnd: "EARTHQUAKE_END",
+	Sandstorm: "SANDSTORM",
+	SandstormEnd: "SANDSTORM_END"
 };
 
 // singleton
@@ -274,7 +286,7 @@ let _dispose = function(state, disposal)
  * riposo senza consumare energia né personale.
  */
 const WORK_MATERIALS = ["researchUnit", "researchStructureAuto", "researchStructureSurface", "researchStructureSurfaceAdv",
-	"researchStructureUnderground", "researchStructureUndergroundAdv", "researchStructureDeep", "researchStructureDeepAdv",
+	"researchStructureUnderground", "researchStructureUndergroundAdv", "researchStructureDeep", "researchStructureDeepAdv", "researchStructureMedical",
 	"productionUnit", "productionStandardStructure", "productionChemicalStructure", "goodsUnit", "pharmaceuticalUnit",
 	"dockUnit", "computeUnit"];
 
@@ -513,6 +525,13 @@ let BuildingProductionPhase = {
 						if(_isSuspended(state, building))
 						{
 							state.setBuildingIssue(building, { reason: "suspended", missing: [] });
+							return;
+						}
+						// fermati da un evento in corso (es. Impianti a Microonde durante la Tempesta di sabbia)
+						if((ctx.stoppedTypes || []).indexOf(buildingType) >= 0)
+						{
+							state.setBuildingIssue(building, { reason: "storm", missing: [] });
+							state.addToInactiveList(building);
 							return;
 						}
 						if(_isIdle(prototype, demand))

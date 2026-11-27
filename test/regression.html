@@ -27,6 +27,7 @@ import { RecipeLib } from "../script/RecipeLib.js";
 import { Cure } from "../script/Cure.js";
 import { Launch } from "../script/Launch.js";
 import { Mission } from "../script/Mission.js";
+import { EVENT_TYPES, Events, EventPhase } from "../script/Events.js";
 import { Campaign } from "../script/Campaign.js";
 import { IllnessPhase, foodNeed } from "../script/TurnPopulation.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
@@ -740,6 +741,92 @@ function checks()
 	expect("turno dopo una generazione estinta", (() => { try { Turn.advance(aging); return "ok"; } catch(e) { return String(e); } })(), "ok");
 	let reloaded = TerrainMap.fromData(JSON.parse(JSON.stringify(aging.toData())));
 	expect("salvataggio dei cloni", reloaded.getState().getPopulation().registry.map(g => g.isClone()), [true, false, true]);
+
+	// terraformazione indipendente dallo Spazioporto
+	expect("terraformazione: requisiti", RecipeLib.get("Terraforming").getRequirement(), { theory: ["Chemistry", "Physics"] });
+
+	// eventi: configurazione
+	let noEvents = Events.normalize({});
+	expect("eventi: spenti se non configurati", EVENT_TYPES.map(t => noEvents[t].enabled), [false, false, false]);
+	expect("eventi: partita libera tutti attivi", EVENT_TYPES.map(t => Events.freeGame()[t].enabled), [true, true, true]);
+	expect("eventi: partita libera con un evento spento", EVENT_TYPES.map(t => Events.freeGame({ earthquake: false })[t].enabled), [true, false, true]);
+	expect("eventi: parametri predefiniti", Events.normalize({ sandstorm: { enabled: true, maxDuration: 6 } }).sandstorm, { probability: 0.02, minTurn: 20, minDuration: 2, maxDuration: 6, enabled: true });
+	expect("missione: eventi spenti e solo edifici a inclusione validi", (() => { let m = Mission.normalize({ id: "x", planetId: "p", siteId: 1, includedBuildings: ["Drill", "Lab"] }); return [m.events.epidemic.enabled, m.includedBuildings]; })(), [false, ["Drill"]]);
+
+	// edificio a inclusione: la Trivella esiste solo nelle missioni che la includono
+	let freeDrill = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	freeDrill.getState().addKnowledge({ technology: ["Drill", "Lab"] });
+	let missionDrill = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	missionDrill.getState().setMission(Mission.normalize({ id: "x", planetId: "p", siteId: 1, includedBuildings: ["Drill"] }));
+	missionDrill.getState().addKnowledge({ technology: ["Drill"] });
+	let plainMission = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	plainMission.getState().setMission(Mission.normalize({ id: "x", planetId: "p", siteId: 1 }));
+	plainMission.getState().addKnowledge({ technology: ["Drill"] });
+	expect("trivella: solo se la missione la include", [freeDrill.getState().getTechnology(), missionDrill.getState().getTechnology(), plainMission.getState().getTechnology()], [["Lab"], ["Drill"], []]);
+
+	// epidemia: il Nido compare in una casella esplorata, si ammala l'1% dei coloni nati, ogni malato ne contagia uno
+	let rates = [IllnessPhase.ILLNESS_RATE, IllnessPhase.RECOVERY_RATE, IllnessPhase.DEATH_RATE];
+	IllnessPhase.ILLNESS_RATE = 0; IllnessPhase.RECOVERY_RATE = 0; IllnessPhase.DEATH_RATE = 0;
+	let plague = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let pls = plague.getState();
+	pls.addKnowledge({ technology: ["LandingModule"] });
+	pls.createMaterials({ foodUnit: 5000, residentialUnit: 5000, habitatUnit: 500 });
+	plague.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(plague);
+	let plagueWorkers = createWorkers(pls.getDate(), 20);
+	let plagueClones = createClones(pls.getDate(), 4);
+	pls.getPopulation().registry.push(plagueWorkers, plagueClones);
+	let plagueCtx = { state: pls, map: plague, events: [] };
+	expect("nido: nessuna casella esplorata", EventPhase.spawnNest(plagueCtx), null);
+	plague.discoveryTile({ x: 5, y: 5 }, TerrainLayer.Underground);
+	let nestAt = EventPhase.spawnNest(plagueCtx);
+	expect("nido: compare nella casella esplorata e fa scoppiare l'epidemia",
+		[nestAt, plague.findResource({ x: 5, y: 5 }, TerrainLayer.Underground) != null, pls.getDiscovery().indexOf("Alien_Nest") >= 0, plagueCtx.events.map(e => [e.type, e.count]), plagueWorkers.getSick(), plagueClones.getSick()],
+		[{ x: 5, y: 5 }, true, true, [["EPIDEMIC", 1]], 1, 0]);
+	expect("nido: studi del Vaccino e del Patogeno alieno", ["Vaccine", "AlienPathogen"].map(n => pls.checkKnowledge(RecipeLib.get(n).getRequirement())), [false, false]);
+	pls.addKnowledge({ theory: ["Medicine", "Virus"] });
+	expect("nido: studi disponibili con la scoperta", ["Vaccine", "AlienPathogen"].map(n => pls.checkKnowledge(RecipeLib.get(n).getRequirement())), [true, true]);
+	let spread1 = Turn.advance(plague).events.filter(e => e.type == "EPIDEMIC_SPREAD");
+	let spread2 = Turn.advance(plague).events.filter(e => e.type == "EPIDEMIC_SPREAD");
+	expect("epidemia: ogni malato contagia un sano a ogni turno", [spread1.map(e => e.count), spread2.map(e => e.count), plagueWorkers.getSick(), plagueClones.getSick()], [[1], [2], 4, 0]);
+	let plagueSaved = TerrainMap.fromData(JSON.parse(JSON.stringify(plague.toData())));
+	expect("epidemia: salvataggio", [plagueSaved.getState().getEvents().epidemic, plagueSaved.findResource({ x: 5, y: 5 }, TerrainLayer.Underground) != null], [true, true]);
+	pls.addCompletedResearch("Vaccine");
+	let vaccinated = Turn.advance(plague).events.map(e => e.type);
+	expect("epidemia: il Vaccino ferma il contagio", [vaccinated.indexOf("EPIDEMIC_VACCINE") >= 0, vaccinated.indexOf("EPIDEMIC_SPREAD"), plagueWorkers.getSick(), pls.getEvents().epidemic], [true, -1, 4, false]);
+	IllnessPhase.ILLNESS_RATE = rates[0]; IllnessPhase.RECOVERY_RATE = rates[1]; IllnessPhase.DEATH_RATE = rates[2];
+
+	// terremoto: solo sui pianeti vulcanici, danneggia gli edifici per la sua durata
+	let quakeMap = function(typology, config)
+	{
+		let m = new TerrainMap(typology, { x: 30, y: 30 });
+		m.getState().addKnowledge({ technology: ["LandingModule"] });
+		m.addBuilding("LandingModule", { x: 10, y: 10 });
+		for(let t = 0; t < 4; t++) Turn.advance(m);
+		m.getState().setEventsConfig(config);
+		return m;
+	};
+	let quakeConfig = { earthquake: { enabled: true, probability: 1, minTurn: 0, minDuration: 2, maxDuration: 2, minIntensity: 1, maxIntensity: 1 } };
+	let quake = quakeMap(Typology.Vulcanic, quakeConfig);
+	let commandCenter = quake.findBuilding({ x: 9, y: 9 }, TerrainLayer.Surface);
+	let integrityBefore = commandCenter.getIntegrity();
+	let quake1 = Turn.advance(quake).events.map(e => e.type);
+	let integrityAfter = commandCenter.getIntegrity();
+	let quake2 = Turn.advance(quake).events.map(e => e.type);
+	expect("terremoto: inizio, danni e fine dopo la durata", [quake1.indexOf("EARTHQUAKE") >= 0, integrityAfter < integrityBefore, quake2.indexOf("EARTHQUAKE_END") >= 0, quake.getState().getEvents().earthquake], [true, true, true, null]);
+	let calm = quakeMap(Typology.Desert, quakeConfig);
+	let off = quakeMap(Typology.Vulcanic, {});
+	expect("terremoto: non su altri pianeti e non se spento", [Turn.advance(calm).events.filter(e => e.type == "EARTHQUAKE").length, Turn.advance(off).events.filter(e => e.type == "EARTHQUAKE").length], [0, 0]);
+
+	// tempesta di sabbia: solo sui pianeti desertici, ferma gli Impianti a Microonde
+	let storm = quakeMap(Typology.Desert, { sandstorm: { enabled: true, probability: 1, minTurn: 0, minDuration: 2, maxDuration: 2 } });
+	let stormPlant = storm.addBuilding("MicrowavePlant", { x: 8, y: 9 }, true);
+	let storm1 = Turn.advance(storm).events.map(e => e.type);
+	expect("tempesta: inizio e Impianti a Microonde fermi", [storm1.indexOf("SANDSTORM") >= 0, (storm.getState().getBuildingIssue(stormPlant) || {}).reason], [true, "storm"]);
+	let storm2 = Turn.advance(storm).events.map(e => e.type);
+	storm.getState().setEventsConfig({});
+	Turn.project(storm);
+	expect("tempesta: fine e impianti di nuovo attivi", [storm2.indexOf("SANDSTORM_END") >= 0, (storm.getState().getBuildingIssue(stormPlant) || {}).reason !== "storm"], [true, true]);
 
 	return failures;
 }

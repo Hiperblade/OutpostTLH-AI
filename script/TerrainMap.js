@@ -572,6 +572,7 @@ function TerrainMap(terrainTypology, size, surfaceMorphology)
 	//-----------------------------------------
 
 	this.getSize = function() { return size; };
+	this.getTypology = function() { return typology; };
 	this.getLayer = function() { return layer; };
 	this.setLayer = function(newLayer) { layer = newLayer; };
 	this.getStructure = function() { return structure; };

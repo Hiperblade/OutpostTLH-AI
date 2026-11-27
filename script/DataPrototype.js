@@ -1,7 +1,7 @@
 "use strict";
 
 import { PipeType, TerrainLayer } from "./Enums.js";
-import { Mission } from "./Mission.js";
+import { INCLUSION_BUILDINGS, Mission } from "./Mission.js";
 import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
 
  
@@ -10,7 +10,7 @@ import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
 //-------------------------------------------------------------
 // landing
 
-/** edifici che il kit di atterraggio rende costruibili */
+/** edifici che il kit di atterraggio rende costruibili (quelli a inclusione solo se la missione li include) */
 const LANDING_TECHNOLOGIES = [
 	"MicrowavePlant",
 	"Capacitor",
@@ -30,7 +30,8 @@ const LANDING_TECHNOLOGIES = [
 	"AutoLab",
 	"HotLab",
 	"Lab",
-	"DeepLab"
+	"DeepLab",
+	"Drill"
 ];
 
 PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { controlUnit: 4 },
@@ -241,6 +242,12 @@ PrototypeLib.addMine("Mineral", TerrainLayer.Underground, 2, {}, { requiredResou
 
 PrototypeLib.addMine("Radioactive", TerrainLayer.Deep, 2, {}, { requiredResource: "Radioactive", consumption: { power: 5 }, production: { radioactiveOre: 2 }, capacity: { radioactiveOre: 4 } });
 
+// trivella: estrae poco metallo e pochi minerali ovunque nelle profondità, senza risorsa (edificio a inclusione)
+PrototypeLib.add("Drill", TerrainLayer.Deep, 4, {}, { consumption: { power: 10 }, production: { metalOre: 3, mineralOre: 3 }, capacity: { metalOre: 10, mineralOre: 10 } });
+
+// nido alieno: compare con l'evento Epidemia (vedi Events.js), occupa la casella per sempre
+PrototypeLib.addResource("AlienNest", TerrainLayer.Underground, "#C03030");
+
 // pozzi delle miniere sui layer inferiori
 PrototypeLib.add("Mine", TerrainLayer.Underground, 1000, {});
 PrototypeLib.add("MineDeep", TerrainLayer.Deep, 1000, {});
@@ -270,6 +277,9 @@ PrototypeLib.add("CryoCenter", TerrainLayer.Underground, 6, {}, { consumption: {
 // strutture mediche: unità mediche per il Benessere e cure (1 Kit Medico per malato), fino a "cures" a turno
 PrototypeLib.add("MedicalStructure", TerrainLayer.Underground, 10, {}, { staff: 3, cures: 1, consumption: { power: 20, pharmaceuticalUnit: 5 }, production: { medicalUnit: 15 } });
 PrototypeLib.add("MedicalStructureAdv", TerrainLayer.Underground, 10, { ironBar: 1 }, { staff: 3, cures: 3, consumption: { power: 30, pharmaceuticalUnit: 10 }, production: { medicalUnit: 30 } });
+
+// nucleo di risposta epidemie: finché è attivo servono 2 contagiati per infettare un sano (non cumulabile)
+PrototypeLib.add("EpidemicResponseCore", TerrainLayer.Underground, 8, { ironBar: 1 }, { staff: 3, consumption: { power: 30 } });
 
 PrototypeLib.add("School", TerrainLayer.Underground, 6, {}, { staff: 3, consumption: { power: 20 }, production: { educationUnit: 80 } });
 PrototypeLib.add("Univesity", TerrainLayer.Underground, 8, {}, { staff: 3, consumption: { power: 30 }, production: { highEducationUnit: 30 } });
@@ -333,6 +343,9 @@ PrototypeLib.add("LabAdv", TerrainLayer.Underground, 8, { ironBar: 1 }, { staff:
 PrototypeLib.add("DeepLab", TerrainLayer.Deep, 10, {}, { staff: 5, consumption: { power: 100 }, production: { researchUnit: 80, researchStructureDeep: 4 } });
 PrototypeLib.add("DeepLabAdv", TerrainLayer.Deep, 10, { ironBar: 1 }, { staff: 5, consumption: { power: 150 }, production: { researchUnit: 120, researchStructureDeep: 8, researchStructureDeepAdv: 4 } });
 
+// centro di ricerca medico: l'unico laboratorio degli studi medici; le sue unità di ricerca valgono per tutti gli studi
+PrototypeLib.add("MedicalResearchCenter", TerrainLayer.Surface, 10, {}, { staff: 4, consumption: { power: 40 }, production: { researchUnit: 40, researchStructureMedical: 4 } });
+
 // fase di preparazione: ricerca senza coloni
 PrototypeLib.add("AutoLab", TerrainLayer.Surface, 4, {}, { consumption: { power: 30 }, production: { researchUnit: 16, researchStructureAuto: 4 } });
 
@@ -361,4 +374,4 @@ PrototypeLib.add("SpacePort_u_w", TerrainLayer.Underground, 1, {});
 PrototypeLib.add("SpacePort_u_n", TerrainLayer.Underground, 1, {});
 PrototypeLib.add("SpacePort_u_e", TerrainLayer.Underground, 1, {});
 
-export { LANDING_TECHNOLOGIES };
+export { INCLUSION_BUILDINGS, LANDING_TECHNOLOGIES };

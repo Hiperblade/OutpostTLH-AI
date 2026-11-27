@@ -96,6 +96,8 @@ La felicità è 1 meno la carenza peggiore tra istruzione, alta istruzione e sva
 | Cure | Struttura Medica Avanzata (3 cure a turno), Fabbrica Chimica (strutture chimiche per i Kit Medici) | Medicina Avanzata, Chimica |
 | Robot e logistica | Comando Robotico (+8 robot di cantiere insieme) e Avanzato, Rimessa e Rimessa Avanzata, Deposito | Metallurgia Avanzata, Intelligenza Artificiale |
 | Ricerca | Laboratorio di Superficie, di Profondità e versioni avanzate | Informatica, Intelligenza Artificiale |
+| Ricerca medica ed epidemie | Centro di ricerca medico (superficie, 4 addetti), Nucleo di risposta epidemie (sottosuolo, 3 addetti) | Medicina Avanzata, Virus, Triage (dimezza le malattie), Patogeno alieno, Vaccino (ferma l'epidemia) |
+| Solo in alcune missioni | Trivella (profondità, automatica: 3 metallo e 3 minerali a turno, senza giacimento) | nessuno: disponibile dall'atterraggio se la missione la include |
 
 ## Obiettivi
 
@@ -130,7 +132,7 @@ Energia: Mainframe e laboratori avanzati superano facilmente i 1700 delle microo
 ### Terraformazione
 | Passo | Cosa serve |
 |---|---|
-| Terraformazione | Chimica e lo Spazioporto sbloccato (quindi Fisica Quantistica, vedi navicella) → **Terraformatore** (300 energia, 1 punto a turno) |
+| Terraformazione | Chimica e Fisica → **Terraformatore** (300 energia, 1 punto a turno) |
 | Terraformazione Avanzata | Metallurgia Avanzata e strutture di superficie avanzate → **Terraformatore Avanzato** (600 energia, 3 punti a turno, 2 caselle) |
 | Obiettivo | 300 punti: per esempio 4 Terraformatori Avanzati per 25 turni, con 2400 di energia |
 
@@ -138,6 +140,6 @@ Energia: Mainframe e laboratori avanzati superano facilmente i 1700 delle microo
 
 - **Mineralogia dipende da una scoperta**: finché non si scava fino a un giacimento minerale, il Centro Criogenico resta senza minerali e non arrivano coloni. È il primo collo di bottiglia della partita.
 - **Embriologia richiede un Laboratorio con personale** (20 punti): con i soli cloni servono 20 cloni, cioè 4 risvegli e 20 capsule (100 minerali).
-- **La terraformazione dipende dallo Spazioporto** (cioè da Fisica Quantistica): tutti e tre gli obiettivi avanzati passano dalla stessa lunga catena di ricerca. Si potrebbe far dipendere la Terraformazione da un altro studio, per dare strade diverse.
+- ~~La terraformazione dipende dallo Spazioporto~~: ora lo studio Terraformazione richiede solo Chimica e Fisica, una strada indipendente dalla navicella.
 - **Senza svago la felicità è 0**: la Struttura Ricreativa arriva solo dopo tre studi di scienze umane, quindi per molto tempo la manodopera dei coloni è dimezzata.
 - **Magazzino generico molto piccolo all'inizio** (20 nel Modulo Cargo): il primo Magazzino diventa necessario appena si producono Kit Medici o Beni.

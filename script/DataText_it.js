@@ -336,7 +336,7 @@ TextRepository.addDescription("ParticlePhysics", "Fisica delle particelle", "Fis
 TextRepository.addDescription("Hydroponics", "Idroponica", "Coltivazione senza terra: sblocca la Cupola Agricola Avanzata.");
 TextRepository.addDescription("Aquaponics", "Acquaponica", "Coltivazione integrata con l'allevamento ittico: sblocca la Cupola Agricola Intensiva.");
 TextRepository.addDescription("Medicine", "Medicina", "Basi della medicina: sblocca la Struttura Medica e il Centro Criogenico.");
-TextRepository.addDescription("AdvancedMedicine", "Medicina Avanzata", "Medicina avanzata: sblocca la Struttura Medica Avanzata.");
+TextRepository.addDescription("AdvancedMedicine", "Medicina Avanzata", "Medicina avanzata: sblocca la Struttura Medica Avanzata e il Centro di ricerca medico.");
 TextRepository.addDescription("Pharmacology", "Farmacologia", "Produzione dei farmaci: sblocca l'Industria Farmaceutica.");
 TextRepository.addDescription("Embryology", "Embriologia", "Studio dello sviluppo embrionale: sblocca l'Asilo, per le nascite.");
 TextRepository.addDescription("Robo-Worker", "Lavoratore Robotico", "Unità lavorativa di base utilizzata in tutte le strutture della colonia.");
@@ -456,7 +456,7 @@ TextRepository.addDescription("ShipFuel", "Carburante della Navicella", "Carbura
 TextRepository.addDescription("AdvancedNeuralNetworks", "Reti Neurali Avanzate", "Reti neurali su larga scala: sblocca il Mainframe.");
 TextRepository.addDescription("ArtificialConsciousness", "Coscienza Artificiale", "Studio della coscienza artificiale: richiede le unit\u00E0 di calcolo del Mainframe.");
 TextRepository.addDescription("Superintelligence", "Superintelligenza", "Un'intelligenza artificiale superiore a quella umana: completa l'obiettivo Superintelligenza.");
-TextRepository.addDescription("Terraforming", "Terraformazione", "Trasformazione dell'atmosfera del pianeta: sblocca il Terraformatore.");
+TextRepository.addDescription("Terraforming", "Terraformazione", "Trasformazione dell'atmosfera del pianeta (richiede Chimica e Fisica): sblocca il Terraformatore.");
 TextRepository.addDescription("AdvancedTerraforming", "Terraformazione Avanzata", "Terraformazione su larga scala: sblocca il Terraformatore Avanzato.");
 TextRepository.addDescription("Mainframe", "Mainframe", "Calcolatore profondo: produce le unit\u00E0 di calcolo per gli studi sulla superintelligenza. Automatico, consuma molta energia.");
 TextRepository.addDescription("Terraformer", "Terraformatore", "Trasforma l'atmosfera: 1 punto di terraformazione a ogni turno di funzionamento. Automatico, consuma molta energia.");
@@ -489,3 +489,33 @@ TextRepository.add("NextMission", "Prossima missione");
 // minimappa
 TextRepository.add("MapMarkersHint", "Mostra o nasconde i segnalatori delle risorse dello strato visualizzato.");
 TextRepository.add("MapAnalysisHint", "Analisi: segnalatori di tutti gli strati e cerchi sulle zone con almeno una risorsa di ogni tipo presente sul pianeta.");
+
+// trivella, ricerca medica ed eventi
+TextRepository.addDescription("Drill", "Trivella", "Trivella profonda automatica: estrae a ogni turno 3 Minerali Metallici e 3 Minerali ovunque nelle profondità, senza bisogno di un giacimento. Disponibile solo in alcune missioni.");
+TextRepository.addDescription("MedicalResearchCenter", "Centro di ricerca medico", "Laboratorio di superficie con personale: l'unico che permette gli studi medici (Virus, Triage, Patogeno alieno, Vaccino); le sue unità di ricerca valgono anche per gli altri studi.");
+TextRepository.addDescription("EpidemicResponseCore", "Nucleo di risposta epidemie", "Con il personale al lavoro dimezza la propagazione delle epidemie: servono due contagiati per infettare un colono sano. Più nuclei non si sommano.");
+TextRepository.addDescription("Resource_AlienNest", "Nido Alieno", "Struttura aliena comparsa nel sottosuolo: la sua scoperta ha fatto scoppiare un'epidemia. Occupa la casella per sempre.");
+TextRepository.add("researchStructureMedical", "Centri di ricerca medica");
+TextRepository.add("Alien_Nest", "Nido Alieno");
+TextRepository.addDescription("Virus", "Virus", "Studio dei virus nel Centro di ricerca medico: sblocca lo studio Triage.");
+TextRepository.addDescription("Triage", "Triage", "Organizzazione delle cure: dimezza per sempre la probabilità che i coloni si ammalino.");
+TextRepository.addDescription("AlienPathogen", "Patogeno alieno", "Studio del patogeno del Nido Alieno: sblocca il Nucleo di risposta epidemie.");
+TextRepository.addDescription("Vaccine", "Vaccino", "Vaccino contro il patogeno del Nido Alieno: l'epidemia non si propaga più. Richiede 3 turni nel Centro di ricerca medico.");
+TextRepository.add("Issue_storm", "Fermo: la tempesta di sabbia impedisce di ricevere l'energia dal satellite");
+TextRepository.add("ChooseEvents", "4. Eventi imprevisti (togli la spunta per disattivarli)");
+TextRepository.add("EventAllPlanets", "tutti i pianeti");
+TextRepository.add("GameEvent_epidemic", "Epidemia");
+TextRepository.add("GameEvent_epidemicDescription", "Dopo la costruzione di un Centro di ricerca medico può comparire un Nido Alieno: l'1% dei coloni si ammala e ogni malato ne contagia un altro a ogni turno, finché non si studia il Vaccino.");
+TextRepository.add("GameEvent_earthquake", "Terremoto");
+TextRepository.add("GameEvent_earthquakeDescription", "Per alcuni turni danneggia tutti gli edifici, in proporzione alla sua intensità, e può distruggerne alcuni.");
+TextRepository.add("GameEvent_sandstorm", "Tempesta di sabbia");
+TextRepository.add("GameEvent_sandstormDescription", "Per alcuni turni danneggia lievemente gli edifici di superficie e spegne gli Impianti a Microonde.");
+TextRepository.add("Event_EPIDEMIC", "Epidemia! È comparso un Nido Alieno nel sottosuolo: %s coloni si sono ammalati");
+TextRepository.add("Event_EPIDEMIC_SPREAD", "Epidemia: %s nuovi contagiati");
+TextRepository.add("Event_EPIDEMIC_VACCINE", "Il Vaccino ha fermato l'epidemia");
+TextRepository.add("Event_EPIDEMIC_END", "L'epidemia è finita: non restano malati");
+TextRepository.add("Event_EARTHQUAKE", "Terremoto di intensità %s: gli edifici si danneggiano");
+TextRepository.add("Event_EARTHQUAKE_DESTROYED", "Il terremoto ha distrutto %s edifici");
+TextRepository.add("Event_EARTHQUAKE_END", "Il terremoto è finito");
+TextRepository.add("Event_SANDSTORM", "Tempesta di sabbia per %s turni: Impianti a Microonde fermi");
+TextRepository.add("Event_SANDSTORM_END", "La tempesta di sabbia è finita");

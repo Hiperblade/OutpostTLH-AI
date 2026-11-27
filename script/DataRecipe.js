@@ -43,7 +43,13 @@ RecipeLib.add(RecipeType.Research, "Farming",				{ technology: ["AgridomeIntensi
 RecipeLib.add(RecipeType.Research, "VerticalFarming",		{ technology: ["VerticalFarm"] },			8, { researchUnit: 10, researchStructureUnderground: 2, researchStructureDeep: 2 },	{ technology: ["VerticalFarmAdv"] });
 
 RecipeLib.add(RecipeType.Research, "Medicine",				{ },										6, { researchUnit: 4, researchStructureAuto: 1 },	{ technology: ["MedicalStructure", "CryoCenter"], theory: ["Medicine"] });
-RecipeLib.add(RecipeType.Research, "AdvancedMedicine",		{ theory: ["Medicine"] },					3, { researchUnit: 5, researchStructureDeep: 1 },			{ technology: ["MedicalStructureAdv"] });
+RecipeLib.add(RecipeType.Research, "AdvancedMedicine",		{ theory: ["Medicine"] },					3, { researchUnit: 5, researchStructureDeep: 1 },			{ technology: ["MedicalStructureAdv", "MedicalResearchCenter"] });
+// studi medici: solo nel Centro di ricerca medico (researchStructureMedical)
+RecipeLib.add(RecipeType.Research, "Virus",					{ theory: ["Medicine"], technology: ["MedicalResearchCenter"] },	6, { researchUnit: 10, researchStructureMedical: 1 },	{ theory: ["Virus"] });
+RecipeLib.add(RecipeType.Research, "Triage",				{ theory: ["Virus"] },						3, { researchUnit: 8, researchStructureMedical: 1 },		{ theory: ["Triage"] });
+RecipeLib.add(RecipeType.Research, "AlienPathogen",			{ theory: ["Virus"], discovery: ["Alien_Nest"] },	6, { researchUnit: 15, researchStructureMedical: 1 },	{ theory: ["AlienPathogen"], technology: ["EpidemicResponseCore"] });
+// vaccino: 3 turni con il Centro di ricerca medico a pieno personale (4 passi a turno)
+RecipeLib.add(RecipeType.Research, "Vaccine",				{ theory: ["Medicine"], discovery: ["Alien_Nest"] },	3, { researchUnit: 5, researchStructureMedical: 1 },	{ theory: ["Vaccine"] });
 RecipeLib.add(RecipeType.Research, "Pharmacology",			{ theory: ["Medicine"] },					6, { researchUnit: 4, researchStructureAuto: 1 },	{ technology: ["PharmaceuticalIndustry"] });
 RecipeLib.add(RecipeType.Research, "Embryology",			{ theory: ["Medicine"] },					3, { researchUnit: 5, researchStructureUnderground: 1 },	{ technology: ["Nursery"] });
 
@@ -53,7 +59,7 @@ RecipeLib.add(RecipeType.Research, "AdvancedNeuralNetworks",	{ theory: ["AI"] },
 RecipeLib.add(RecipeType.Research, "ArtificialConsciousness",	{ theory: ["NeuralNetworks"] },				15, { researchUnit: 60, researchStructureUndergroundAdv: 1, computeUnit: 1 },	{ theory: ["ArtificialConsciousness"] });
 RecipeLib.add(RecipeType.Research, "Superintelligence",		{ theory: ["ArtificialConsciousness"] },	20, { researchUnit: 100, researchStructureDeepAdv: 1, computeUnit: 2 },	{ theory: ["Superintelligence"] });
 // terraformazione
-RecipeLib.add(RecipeType.Research, "Terraforming",				{ technology: ["SpacePort"], theory: ["Chemistry"] },	10, { researchUnit: 30, researchStructureSurface: 2 },	{ theory: ["Terraforming"], technology: ["Terraformer"] });
+RecipeLib.add(RecipeType.Research, "Terraforming",				{ theory: ["Chemistry", "Physics"] },	10, { researchUnit: 40, researchStructureSurface: 2, researchStructureUnderground: 1 },	{ theory: ["Terraforming"], technology: ["Terraformer"] });
 RecipeLib.add(RecipeType.Research, "AdvancedTerraforming",		{ theory: ["Terraforming", "AdvancedMetallurgy"] },	15, { researchUnit: 50, researchStructureSurfaceAdv: 1 },	{ technology: ["TerraformerAdv"] });
 RecipeLib.add(RecipeType.Research, "AI",					{ theory: ["ComputerScience"] },			8, { researchUnit: 10, researchStructureSurface: 2 },		{ theory: ["AI"], technology: ["HotLabAdv", "LabAdv", "DeepLabAdv", "RoboCommanderAdv", "UnivesityAdv"] });
 

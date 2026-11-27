@@ -610,7 +610,12 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 		FOOD_EXHAUSTED: "danger",
 		STARVATION_DEATHS: "danger",
 		HABITAT_DEATHS: "danger",
-		ILLNESS_DEATHS: "danger"
+		ILLNESS_DEATHS: "danger",
+		EPIDEMIC: "danger",
+		EPIDEMIC_SPREAD: "warning",
+		EARTHQUAKE: "danger",
+		EARTHQUAKE_DESTROYED: "danger",
+		SANDSTORM: "warning"
 	};
 
 	const Event_HAS_NAME = ["STORAGE_FULL", "STORAGE_OK"];

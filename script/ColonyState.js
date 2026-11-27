@@ -1,7 +1,9 @@
 "use strict";
 
+import { Events } from "./Events.js";
 import { generationFromData } from "./Generations.js";
 import { MaterialLedger } from "./MaterialLedger.js";
+import { INCLUSION_BUILDINGS } from "./Mission.js";
 import { RecipeLib } from "./RecipeLib.js";
 
 const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
@@ -60,6 +62,8 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		state.alerts = { storage: {}, power: false };
 		// usura di ogni robot, per tipo: [{ wear, life }] (vedi RobotWearPhase)
 		state.robotWear = { roboWorker: [], dozer: [], digger: [] };
+		// eventi: configurazione della partita ed eventi in corso (vedi Events.js); spenti finché non si configurano
+		state.events = Events.emptyState();
 
 		// i materiali sono gestiti dal Material ledger
 		let ledger = new MaterialLedger();
@@ -169,7 +173,15 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 			return ret;
 		};
 
-		let _isExcludedBuilding = function(name) { return state.mission != null && state.mission.excludedBuildings.indexOf(name) >= 0; };
+		/** escluso dalla missione, oppure edificio a inclusione che la missione non include (o partita libera) */
+		let _isExcludedBuilding = function(name)
+		{
+			if(INCLUSION_BUILDINGS.indexOf(name) >= 0)
+			{
+				return state.mission == null || (state.mission.includedBuildings || []).indexOf(name) < 0;
+			}
+			return state.mission != null && state.mission.excludedBuildings.indexOf(name) >= 0;
+		};
 		let _isExcludedResearch = function(name) { return state.mission != null && state.mission.excludedResearch.indexOf(name) >= 0; };
 
 		let _delKnowledge = function(knowledge)
@@ -298,6 +310,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 				notifications: state.notifications.slice(),
 				alerts: JSON.parse(JSON.stringify(state.alerts)),
 				robotWear: JSON.parse(JSON.stringify(state.robotWear)),
+				events: JSON.parse(JSON.stringify(state.events)),
 				robotsAvailable: Object.assign({}, state.robotsAvailable),
 				knowledge: {
 					discovery: knowledge.discovery.slice(),
@@ -343,6 +356,9 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 				if(Array.isArray(data.robotWear[type])) { state.robotWear[type] = data.robotWear[type].map(function(r) { return { wear: r.wear, life: r.life }; }); }
 			});
 			state.robotsAvailable = Object.assign({}, data.robotsAvailable);
+			// i salvataggi precedenti non avevano eventi: restano spenti
+			state.events = Object.assign(Events.emptyState(), data.events || {});
+			state.events.config = Events.normalize(state.events.config);
 			["discovery", "theory", "technology", "completed"].forEach(function(type)
 			{
 				state.knowledge[type] = data.knowledge[type].slice();
@@ -408,6 +424,9 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		this.getAlerts = function() { return state.alerts; };
 		this.setPendingRevival = function(value) { state.pendingRevival = value; };
 		this.getRobotWear = function() { return state.robotWear; };
+		/** eventi: { config, earthquake, sandstorm, epidemic, nests, medicalSince } (vedi Events.js) */
+		this.getEvents = function() { return state.events; };
+		this.setEventsConfig = function(config) { state.events.config = Events.normalize(config); };
 
 		this.getLedger = function() { return ledger; };
 		this.getConsumed = ledger.getConsumed;

@@ -185,7 +185,7 @@ function IsometricView(map, canvasId, viewSize, viewTileDimension)
 	/**
 	 * segnale sopra un edificio che non funziona:
 	 *   "!" rosso fermo o scollegato; "!" giallo rendimento ridotto o cantiere fermo;
-	 *   "z" grigia a riposo; "-" rosso disattivato dal giocatore
+	 *   "z" grigia a riposo; "-" rosso disattivato dal giocatore; "~" arancione fermato da un evento
 	 */
 	let _drawIssue = function(ctx, point, issue)
 	{
@@ -198,6 +198,7 @@ function IsometricView(map, canvasId, viewSize, viewTileDimension)
 		let symbol = "!", color = "rgb(210,60,50)";
 		if(issue.reason == "idle") { symbol = "z"; color = "rgb(130,140,150)"; }
 		else if(issue.reason == "suspended") { symbol = "\u2013"; }
+		else if(issue.reason == "storm") { symbol = "~"; color = "rgb(220,150,40)"; }
 		else if(issue.reason == "stalled" || issue.reason == "understaffed") { color = "rgb(220,170,40)"; }
 		ctx.beginPath();
 		ctx.arc(x, y, 8, 0, Math.PI * 2);
