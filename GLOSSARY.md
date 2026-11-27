@@ -137,9 +137,9 @@ _Evitare_: edificio presidiato
 Laboratorio o industria che in questo turno non lavora perché nessuno studio o produzione in coda (né altro edificio) usa ciò che produce: non consuma energia né personale.
 _Evitare_: edificio spento, in pausa
 
-**Precedenza del personale**:
-L'ordine in cui la manodopera di Lavoratori, Pensionati e cloni va agli edifici con personale, scelto dal giocatore per ogni edificio: Alta, Normale (predefinita) o Bassa; a pari precedenza decide il tipo di edificio.
-_Evitare_: priorità (riservato all'ordine fisso dei tipi di edificio)
+**Precedenza**:
+L'ordine in cui gli edifici ricevono ciò che serve per lavorare (personale, energia, materiali) e i cantieri robot, manodopera e materiali: prima Alta, poi Normale (predefinita), poi Bassa; a pari precedenza chi produce un materiale lavora prima di chi lo consuma. Un edificio che rifornisce un edificio con precedenza più alta lavora con quella precedenza.
+_Evitare_: priorità (riservato all'ordine fisso dei tipi di edificio), precedenza del personale
 
 **Costo per turno di cantiere**:
 I materiali che un cantiere consuma a ogni turno di lavoro; se mancano, il cantiere resta fermo quel turno.

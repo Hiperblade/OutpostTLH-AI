@@ -89,14 +89,23 @@ function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIs
 	let _refreshPriority = function()
 	{
 		let element = $("#buildingInfoDataPriority");
-		let staffed = currentItem != null && currentItem.getStaffPriority && currentItem.getBuildingType &&
-			PrototypeLib.get(currentItem.getBuildingType()).getStaff() > 0;
-		if(!staffed)
+		let prototype = (currentItem != null && currentItem.getStaffPriority && currentItem.getBuildingType) ? PrototypeLib.get(currentItem.getBuildingType()) : null;
+		// la precedenza vale per gli edifici che consumano energia, materiali o personale, e per i cantieri
+		let applies = prototype != null && !currentItem.isPipe() && (currentItem.underConstruction() ||
+			prototype.getStaff() > 0 || Object.keys(prototype.getConsumption()).length > 0);
+		if(!applies)
 		{
 			element.hide();
 			return;
 		}
-		element.text(TextRepository.get("StaffPriority") + ": " + TextRepository.get(PRIORITY_TEXT[currentItem.getStaffPriority()]));
+		let text = TextRepository.get("StaffPriority") + ": " + TextRepository.get(PRIORITY_TEXT[currentItem.getStaffPriority()]);
+		// precedenza ereditata da chi usa ciò che l'edificio produce
+		let effective = getColony ? getColony().getEffectivePrecedence(currentItem) : null;
+		if(effective !== null && effective < currentItem.getStaffPriority())
+		{
+			text += " (" + TextRepository.get("InheritedPrecedence").replace("%s", TextRepository.get(PRIORITY_TEXT[effective])) + ")";
+		}
+		element.text(text);
 		element.attr("title", TextRepository.get("StaffPriorityHint"));
 		element.show();
 	};

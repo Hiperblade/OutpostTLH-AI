@@ -40,6 +40,7 @@ function TurnConstructor()
 			IllnessPhase,
 			CapsulePhase,
 			RevivalPhase,
+			AlertPhase,
 			OutcomePhase
 		];
 	};
@@ -143,7 +144,12 @@ let TurnEventType = {
 	NewBuilding: "NEW_BUILDING",
 	NewStudy: "NEW_STUDY",
 	NewProduction: "NEW_PRODUCTION",
-	Discovery: "DISCOVERY"
+	Discovery: "DISCOVERY",
+	RobotsWorn: "ROBOTS_WORN",
+	StorageFull: "STORAGE_FULL",
+	StorageOk: "STORAGE_OK",
+	PowerShortage: "POWER_SHORTAGE",
+	PowerOk: "POWER_OK"
 };
 
 // singleton
@@ -296,6 +302,9 @@ let _demand = function(ctx)
 	return demand;
 };
 
+/** materiali che si accumulano in magazzino o nelle scorte: nella produzione manuale si pagano in proporzione ai punti */
+const STOCKABLE_MATERIALS = ["ironBar", "metalOre", "mineralOre", "cristalOre", "radioactiveOre"];
+
 /** unità generiche prodotte da molti edifici: da sole non bastano a far lavorare un laboratorio o un'industria */
 const GENERIC_WORK_MATERIALS = ["researchUnit", "productionUnit"];
 
@@ -367,41 +376,13 @@ let _productionOrder = function()
 	return order;
 };
 
-/**
- * Edifici con personale pronti a lavorare, nell'ordine in cui ricevono la manodopera di Lavoratori
- * e cloni: prima la precedenza Alta, poi Normale, poi Bassa; a pari precedenza l'ordine dei tipi.
- */
-let _staffedBuildings = function(ctx, demand)
-{
-	let list = [];
-	ctx.networks.forEach(function(graph)
-	{
-		_productionOrder().forEach(function(buildingType, order)
-		{
-			let prototype = PrototypeLib.get(buildingType);
-			if(prototype.getStaffLabor() <= 0 || graph[buildingType] == undefined || _isIdle(prototype, demand))
-			{
-				return;
-			}
-			graph[buildingType].forEach(function(building)
-			{
-				if(building.isOperative() && !_isSuspended(ctx.state, building))
-				{
-					list.push({ building: building, prototype: prototype, order: order });
-				}
-			});
-		});
-	});
-	return list.sort(function(a, b) { return (a.building.getStaffPriority() - b.building.getStaffPriority()) || (a.order - b.order); });
-};
-
 /** sospeso dal giocatore: le nascite valgono per tutta la colonia, gli altri edifici uno per uno */
 let _isSuspended = function(state, building)
 {
 	return (building.getBuildingType() == "Nursery") ? state.areBirthsSuspended() : building.isSuspended();
 };
 
-/** edificio attivo: consumi, produzione (in proporzione al rendimento del personale), capacità e smaltimento */
+/** edificio attivo: consumi, produzione (in proporzione al rendimento del personale), scarti e smaltimento */
 let _runBuilding = function(state, building, prototype, ratio)
 {
 	state.delMaterials(prototype.getConsumption());
@@ -415,46 +396,100 @@ let _runBuilding = function(state, building, prototype, ratio)
 	state.addToActiveList(building);
 };
 
-let _stopBuilding = function(state, building, prototype, missing)
-{
-	state.addToInactiveList(building);
-	state.setBuildingIssue(building, { reason: "inactive", missing: missing, noSpace: !state.haveSpace(prototype.getProductionWaste()) });
-};
-
 let _canRun = function(state, prototype)
 {
 	return state.haveMaterials(prototype.getConsumption()) && state.haveSpace(prototype.getProductionWaste());
 };
 
-/** produzione e consumi degli edifici, in ordine di priorità; costi dei cantieri */
+/**
+ * Precedenza effettiva: la propria, oppure quella più alta (numero più basso) tra gli edifici e i cantieri
+ * che usano ciò che l'edificio produce, anche indirettamente (la miniera che rifornisce la Fonderia che
+ * rifornisce un cantiere con precedenza Alta lavora come Alta).
+ */
+let _effectivePrecedence = function(entries)
+{
+	let effective = new Map();
+	entries.forEach(function(entry) { effective.set(entry.building, entry.building.getStaffPriority()); });
+	for(let changed = true, guard = 0; changed && guard < 20; guard++)
+	{
+		changed = false;
+		let wanted = {};
+		entries.forEach(function(entry)
+		{
+			let precedence = effective.get(entry.building);
+			entry.needs.forEach(function(name) { if(wanted[name] === undefined || precedence < wanted[name]) { wanted[name] = precedence; } });
+		});
+		entries.forEach(function(entry)
+		{
+			let precedence = effective.get(entry.building);
+			entry.gives.forEach(function(name)
+			{
+				if(wanted[name] !== undefined && wanted[name] < precedence)
+				{
+					precedence = wanted[name];
+					changed = true;
+				}
+			});
+			effective.set(entry.building, precedence);
+		});
+	}
+	return effective;
+};
+
+/** un tentativo di lavoro: null se riesce, altrimenti il problema { reason, missing } */
+let _attempt = function(state, entry)
+{
+	let prototype = entry.prototype;
+	if(entry.site)
+	{
+		// cantiere: avanza dei punti lavoro ricevuti, al massimo Work.UNITS_PER_TURN
+		let points = Math.min(Work.UNITS_PER_TURN, -entry.building.getProgressState(), _laborAvailable(state));
+		let cost = Object.assign({ labor: Math.max(1, points) }, prototype.getBuildingCost());
+		if(points > 0 && _canPay(state, cost))
+		{
+			_pay(state, cost);
+			state.addToBuildList(entry.building, points);
+			return null;
+		}
+		return { reason: "stalled", missing: _missing(state, cost) };
+	}
+	if(!_canRun(state, prototype))
+	{
+		return { reason: "inactive", missing: _missing(state, prototype.getConsumption()), noSpace: !state.haveSpace(prototype.getProductionWaste()) };
+	}
+	// personale: con meno punti del necessario l'edificio produce in proporzione
+	let need = prototype.getStaffLabor();
+	let staff = Math.min(need, Math.max(0, state.getRemainder("workerLabor")));
+	if(need > 0 && staff <= 0)
+	{
+		return { reason: "inactive", missing: ["workerLabor"], noSpace: false };
+	}
+	if(staff > 0)
+	{
+		state.delMaterials({ workerLabor: staff });
+	}
+	_runBuilding(state, entry.building, prototype, (need > 0) ? staff / need : 1);
+	return null;
+};
+
+/**
+ * Produzione e consumi degli edifici e avanzamento dei cantieri, per precedenza.
+ * Gli edifici lavorano a gruppi: prima la precedenza Alta, poi Normale, poi Bassa (precedenza effettiva,
+ * vedi _effectivePrecedence); in ogni gruppo chi produce prima di chi consuma, i cantieri per ultimi.
+ * Chi lavora prima prende per primo personale, energia e materiali. Alla fine gli edifici e i cantieri
+ * rimasti fermi riprovano una volta, nello stesso ordine, con ciò che è rimasto libero.
+ */
 let BuildingProductionPhase = {
 	project: function(ctx)
 	{
 		let state = ctx.state;
 		let demand = _demand(ctx);
-		// la manodopera di Lavoratori e cloni va prima al personale, per precedenza, ed è riservata subito:
-		// cantieri e produzione usano il resto. Il personale di un edificio che non può funzionare
-		// (energia o materiali mancanti) passa agli edifici con personale elaborati dopo.
-		let staffing = new Map();
-		let available = Math.max(0, state.getRemainder("workerLabor"));
-		let reserved = 0;
-		_staffedBuildings(ctx, demand).forEach(function(entry)
-		{
-			let points = Math.min(entry.prototype.getStaffLabor(), available);
-			available -= points;
-			reserved += points;
-			staffing.set(entry.building, points);
-		});
-		if(reserved > 0)
-		{
-			state.delMaterials({ workerLabor: reserved });
-		}
-		let released = 0;
-		let sites = [];
+		let order = _productionOrder();
+		let entries = [];
 		ctx.networks.forEach(function(graph)
 		{
 			let connected = BuildingGraph.hasHeadquarter(graph);
-			_productionOrder().forEach(function(buildingType)
+			order.forEach(function(buildingType, typeOrder)
 			{
 				if(graph[buildingType] == undefined)
 				{
@@ -471,10 +506,7 @@ let BuildingProductionPhase = {
 					{
 						// scorte interne e magazzini contano finché l'edificio esiste, anche se fermo o a riposo
 						state.addCapacity(prototype.getCapacity());
-						// senza materiali, energia o personale l'edificio resta inattivo; con personale
-						// insufficiente funziona e produce in proporzione ai punti lavoro ricevuti
-						// laboratori e industrie senza studi o produzioni da servire restano a riposo,
-						// come gli edifici sospesi dal giocatore
+						// gli edifici sospesi dal giocatore e quelli senza studi o produzioni da servire restano a riposo
 						if(_isSuspended(state, building))
 						{
 							state.setBuildingIssue(building, { reason: "suspended", missing: [] });
@@ -485,32 +517,14 @@ let BuildingProductionPhase = {
 							state.setBuildingIssue(building, { reason: "idle", missing: [] });
 							return;
 						}
-						let need = prototype.getStaffLabor();
-						let staff = staffing.get(building) || 0;
-						if(!_canRun(state, prototype))
-						{
-							released += staff;
-							_stopBuilding(state, building, prototype, _missing(state, prototype.getConsumption()));
-							return;
-						}
-						if(staff < need)
-						{
-							let extra = Math.min(need - staff, released);
-							released -= extra;
-							staff += extra;
-						}
-						if(need > 0 && staff <= 0)
-						{
-							_stopBuilding(state, building, prototype, ["workerLabor"]);
-							return;
-						}
-						_runBuilding(state, building, prototype, (need > 0) ? staff / need : 1);
+						entries.push({ building: building, prototype: prototype, site: false, order: typeOrder,
+							needs: Object.keys(prototype.getConsumption()), gives: Object.keys(prototype.getProduction()) });
 					}
 					// le parti delle strutture composite sono costruite dall'edificio principale
 					else if(building.underConstruction() && !building.getFrozen())
 					{
-						// i cantieri pagano dopo la produzione di tutti gli edifici (es. le barre delle Fonderie)
-						sites.push({ building: building, prototype: prototype });
+						entries.push({ building: building, prototype: prototype, site: true, order: typeOrder,
+							needs: Object.keys(prototype.getBuildingCost()), gives: [] });
 					}
 					else if(building.getIntegrity() == 0)
 					{
@@ -520,28 +534,29 @@ let BuildingProductionPhase = {
 			});
 		});
 
-		// la manodopera riservata e non usata torna disponibile
-		if(released > 0)
+		let precedence = _effectivePrecedence(entries);
+		state.setEffectivePrecedence(precedence);
+		entries.forEach(function(entry, index) { entry.index = index; });
+		entries.sort(function(a, b)
 		{
-			state.addMaterials({ workerLabor: released });
-		}
+			return (precedence.get(a.building) - precedence.get(b.building)) || ((a.site ? 1 : 0) - (b.site ? 1 : 0)) ||
+				(a.order - b.order) || (a.index - b.index);
+		});
 
-		// cantieri: senza materiali o manodopera restano fermi questo turno; avanzano dei punti
-		// lavoro ricevuti, al massimo Work.UNITS_PER_TURN
-		sites.forEach(function(site)
+		let failed = entries.filter(function(entry) { return _attempt(state, entry) !== null; });
+		// secondo tentativo per chi è rimasto fermo, con le risorse liberate dagli altri
+		failed.forEach(function(entry)
 		{
-			let building = site.building;
-			let points = Math.min(Work.UNITS_PER_TURN, -building.getProgressState(), _laborAvailable(state));
-			let cost = Object.assign({ labor: Math.max(1, points) }, site.prototype.getBuildingCost());
-			if(points > 0 && _canPay(state, cost))
+			let problem = _attempt(state, entry);
+			if(problem === null)
 			{
-				_pay(state, cost);
-				state.addToBuildList(building, points);
+				return;
 			}
-			else
+			if(!entry.site)
 			{
-				state.setBuildingIssue(building, { reason: "stalled", missing: _missing(state, cost) });
+				state.addToInactiveList(entry.building);
 			}
+			state.setBuildingIssue(entry.building, problem);
 		});
 	}
 };
@@ -564,12 +579,24 @@ let _consumeRecipeWork = function(state, item)
 		}
 		return value;
 	}
-	// produzione: ogni passo paga i materiali e riceve fino a Work.UNITS_PER_TURN punti di manodopera
-	let materials = Object.assign({}, cost);
-	delete materials.labor;
+	// produzione: ogni passo riceve fino a Work.UNITS_PER_TURN punti di manodopera e paga le unità per turno
+	// per intero; i materiali accumulabili si pagano in proporzione ai punti, così il costo totale non cambia
+	let units = {}, stock = {};
+	Object.keys(cost).forEach(function(name)
+	{
+		if(name == "labor") { return; }
+		if(STOCKABLE_MATERIALS.indexOf(name) >= 0) { stock[name] = cost[name]; } else { units[name] = cost[name]; }
+	});
 	while(value < item.getRemainTime())
 	{
 		let points = Math.min(Work.UNITS_PER_TURN, item.getRemainTime() - value, _laborAvailable(state));
+		let done = item.getCurrentTime() + value;
+		let materials = Object.assign({}, units);
+		Object.keys(stock).forEach(function(name)
+		{
+			let owed = Math.round(stock[name] * (done + points) / Work.UNITS_PER_TURN) - Math.round(stock[name] * done / Work.UNITS_PER_TURN);
+			if(owed > 0) { materials[name] = owed; }
+		});
 		if(points <= 0 || !state.haveMaterials(materials))
 		{
 			break;
@@ -610,6 +637,11 @@ let ProductionQueuePhase = {
 					state.addMaterials(recipe.getResult());
 					queue.splice(queue.indexOf(item), 1);
 					ctx.events.push({ type: TurnEventType.NewCreation, name: item.getName() });
+				}
+				else
+				{
+					// consegna bloccata: il magazzino è pieno
+					ctx.blocked = (ctx.blocked || []).concat(Object.keys(recipe.getResult()));
 				}
 			}
 		});
@@ -659,6 +691,7 @@ let RobotWearPhase = {
 	ROBOT_LIFE: 40,
 	LIFE_VARIANCE: 0.2,
 	MAINTENANCE_REDUCTION: 0.5,
+	WORN_WARNING: 0.9,
 	TYPES: ["roboWorker", "dozer", "digger"],
 
 	/** allinea l'elenco dei robot di un tipo alla quantità in magazzino (robot nuovi a usura zero) */
@@ -722,7 +755,21 @@ let RobotWearPhase = {
 				return;
 			}
 			let share = plan.work[type] * rate / list.length;
-			list.forEach(function(robot) { robot.wear += share; });
+			let worn = 0;
+			list.forEach(function(robot)
+			{
+				// avviso una volta sola, quando il robot supera WORN_WARNING della sua durata
+				let before = robot.wear;
+				robot.wear += share;
+				if(before < robot.life * RobotWearPhase.WORN_WARNING && robot.wear >= robot.life * RobotWearPhase.WORN_WARNING && robot.wear < robot.life)
+				{
+					worn++;
+				}
+			});
+			if(worn > 0)
+			{
+				ctx.events.push({ type: TurnEventType.RobotsWorn, name: type, count: worn });
+			}
 			for(let i = list.length - 1; i >= 0; i--)
 			{
 				if(list[i].wear >= list[i].life)
@@ -775,6 +822,61 @@ let RobotPhase = {
 };
 
 
+
+/**
+ * Avvisi di stato: magazzini pieni che bloccano qualcosa e energia insufficiente. La notifica arriva nel
+ * turno in cui il problema comincia e, in verde, in quello in cui si risolve.
+ */
+let AlertPhase = {
+	apply: function(ctx)
+	{
+		let state = ctx.state;
+		let alerts = state.getAlerts();
+
+		// magazzini: consegne bloccate e edifici fermi per gli scarti, per magazzino
+		let pools = state.getMetaMaterials();
+		let poolOf = function(material)
+		{
+			return pools.find(function(pool) { return state.getMaterialFromMetaMaterial(pool).indexOf(material) >= 0; });
+		};
+		let full = {};
+		(ctx.blocked || []).forEach(function(material) { let pool = poolOf(material); if(pool) { full[pool] = true; } });
+		state.getBuildingIssues().forEach(function(entry)
+		{
+			if(entry.issue.noSpace)
+			{
+				Object.keys(PrototypeLib.get(entry.building.getBuildingType()).getProductionWaste()).forEach(function(material)
+				{
+					let pool = poolOf(material);
+					if(pool) { full[pool] = true; }
+				});
+			}
+		});
+		pools.forEach(function(pool)
+		{
+			let was = !!alerts.storage[pool];
+			if(full[pool] && !was) { ctx.events.push({ type: TurnEventType.StorageFull, name: pool }); }
+			if(!full[pool] && was) { ctx.events.push({ type: TurnEventType.StorageOk, name: pool }); }
+			alerts.storage[pool] = !!full[pool];
+		});
+
+		// energia: edifici fermi perché manca energia
+		let stopped = state.getBuildingIssues().filter(function(entry)
+		{
+			return entry.issue.reason == "inactive" && entry.issue.missing.indexOf("power") >= 0;
+		});
+		if(stopped.length > 0 && !alerts.power)
+		{
+			let needed = stopped.reduce(function(n, entry) { return n + (PrototypeLib.get(entry.building.getBuildingType()).getConsumption().power || 0); }, 0);
+			ctx.events.push({ type: TurnEventType.PowerShortage, count: stopped.length, amount: Math.max(0, needed - Math.max(0, state.getRemainder("power"))) });
+		}
+		if(stopped.length == 0 && alerts.power)
+		{
+			ctx.events.push({ type: TurnEventType.PowerOk });
+		}
+		alerts.power = stopped.length > 0;
+	}
+};
 
 /**
  * Esito della partita.

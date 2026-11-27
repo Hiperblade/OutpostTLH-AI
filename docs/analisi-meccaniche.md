@@ -16,15 +16,15 @@ Stato: ✅ risolto · ⏳ aperto
 | 6 | I coloni nati diventano utili molto tardi | Equilibrio | ✅ (voluto) |
 | 7 | La felicità parte da 0 e dimezza la manodopera | Equilibrio | ✅ (voluto) |
 | 8 | La fame uccide in fretta e senza preavviso | Equilibrio | ✅ |
-| 9 | Con poca manodopera il lavoro costa più materiali | Equilibrio | ⏳ |
+| 9 | Con poca manodopera il lavoro costa più materiali | Equilibrio | ✅ |
 | 10 | Manca la terza fase (Spazioporto, terraformazione) | Meccaniche mancanti | ⏳ |
 | 11 | Manca il sistema di eventi | Meccaniche mancanti | ⏳ |
-| 12 | Limite della precedenza del personale | Meccaniche mancanti | ⏳ |
-| 13 | Mancano avvisi di fine turno | Informazioni | ⏳ |
+| 12 | Limite della precedenza del personale | Meccaniche mancanti | ✅ |
+| 13 | Mancano avvisi di fine turno | Informazioni | ✅ |
 | 14 | Il report Energia non distingue gli edifici a riposo | Informazioni | ✅ |
 | 15 | Refusi e descrizioni segnaposto nei testi | Informazioni | ✅ |
 
-**Da dove partire:** 9 (costo dei materiali con poca manodopera) e 13 (avvisi mancanti). Sono interventi piccoli che cambiano molto la sensazione di gioco.
+**Da dove partire:** restano aperte le meccaniche mancanti 10 (terza fase) e 11 (eventi). Sono interventi piccoli che cambiano molto la sensazione di gioco.
 
 ## A. Regole che non funzionano o si contraddicono
 
@@ -98,6 +98,8 @@ I materiali di un cantiere o di una produzione si pagano a ogni passo di lavoro,
 
 **Proposta:** materiali pagati in proporzione ai punti ricevuti.
 
+**Risolto ✅** per la produzione manuale: negli oggetti in coda di produzione i materiali accumulabili (Barre di Ferro, minerali, materiale radioattivo) si pagano in proporzione ai punti, quindi il costo totale non cambia con la manodopera. Le unità per turno e i cantieri pagano il costo pieno a ogni turno, come deciso.
+
 ## C. Meccaniche mancanti
 
 ### 10. Manca la terza fase
@@ -116,13 +118,15 @@ Il personale di un edificio che non può funzionare (per esempio per mancanza di
 
 **Proposta:** un secondo passaggio che riassegna i punti liberi agli edifici fermi solo per mancanza di personale.
 
+**Risolto ✅** con una **precedenza generale**: vale per personale, energia, materiali e cantieri. Gli edifici lavorano a gruppi (Alta, Normale, Bassa), con i produttori prima dei consumatori; chi rifornisce un edificio con precedenza più alta la eredita; alla fine gli edifici e i cantieri fermi riprovano con ciò che è rimasto libero.
+
 ## D. Informazioni per il giocatore
 
 ### 13. Mancano avvisi di fine turno
 
 **Proposta:** messaggi per cibo in esaurimento, robot vicini a fine vita, cloni in scadenza, magazzini pieni e materiali prodotti e andati persi.
 
-**In parte:** c'è il pannello delle notifiche con lo storico, e l'avviso dei cloni in scadenza; restano da aggiungere cibo in esaurimento, robot a fine vita e magazzini pieni.
+**Risolto ✅**: pannello delle notifiche con lo storico; avvisi per cloni in scadenza, cibo in esaurimento o esaurito, robot vicini a fine vita, magazzini pieni e energia insufficiente (questi ultimi due all'inizio e alla fine del problema).
 
 ### 14. Il report Energia non distingue gli edifici a riposo ✅
 

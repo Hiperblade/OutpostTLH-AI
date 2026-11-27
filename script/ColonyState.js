@@ -48,6 +48,8 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		state.birthsSuspended = false;
 		// storico delle notifiche di fine turno: [{ date, text, level }], le più recenti in fondo
 		state.notifications = [];
+		// avvisi di stato in corso (per notificare solo inizio e fine): { storage: { pool: bool }, power: bool }
+		state.alerts = { storage: {}, power: false };
 		// usura di ogni robot, per tipo: [{ wear, life }] (vedi RobotWearPhase)
 		state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 
@@ -57,6 +59,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		/** perché un edificio non funziona in questo turno: { reason: "inactive" | "stalled" | "disconnected", missing: [...] } */
 		let buildingIssues = new Map();
 		let buildPoints = new Map();
+		let effectivePrecedence = new Map();
 		/** abitabilità del turno: per supporto vitale, alloggi e cibo { available, needed } */
 		let habitability = null;
 
@@ -271,6 +274,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 				autoCure: state.autoCure,
 				birthsSuspended: state.birthsSuspended,
 				notifications: state.notifications.slice(),
+				alerts: JSON.parse(JSON.stringify(state.alerts)),
 				robotWear: JSON.parse(JSON.stringify(state.robotWear)),
 				robotsAvailable: Object.assign({}, state.robotsAvailable),
 				knowledge: {
@@ -303,6 +307,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 			state.autoCure = !!data.autoCure;
 			state.birthsSuspended = !!data.birthsSuspended;
 			state.notifications = Array.isArray(data.notifications) ? data.notifications.slice() : [];
+			state.alerts = (data.alerts && data.alerts.storage) ? data.alerts : { storage: {}, power: false };
 			// i salvataggi precedenti avevano un contatore per tipo: si ripartono da robot nuovi
 			state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 			Object.keys(data.robotWear || {}).forEach(function(type)
@@ -355,6 +360,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 			}
 		};
 		this.getNotifications = function() { return state.notifications; };
+		this.getAlerts = function() { return state.alerts; };
 		this.setPendingRevival = function(value) { state.pendingRevival = value; };
 		this.getRobotWear = function() { return state.robotWear; };
 
@@ -410,6 +416,9 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		// il primo motivo registrato vince: un edificio scollegato è anzitutto scollegato
 		this.setBuildingIssue = function(building, issue) { if(!buildingIssues.has(building)) { buildingIssues.set(building, issue); } };
 		this.getBuildingIssue = function(building) { return buildingIssues.get(building) || null; };
+		/** precedenza effettiva calcolata nel turno (con quella ereditata dai rifornimenti) */
+		this.setEffectivePrecedence = function(map) { effectivePrecedence = map; };
+		this.getEffectivePrecedence = function(building) { return effectivePrecedence.has(building) ? effectivePrecedence.get(building) : null; };
 		this.getBuildingIssues = function() { return Array.from(buildingIssues.entries()).map(function(e) { return { building: e[0], issue: e[1] }; }); };
 		this.setHabitability = function(value) { habitability = value; };
 		this.getHabitability = function() { return habitability; };

@@ -495,6 +495,64 @@ function checks()
 	expect("fame: muoiono prima i Pensionati", [elders.getPopulation(), adults.getPopulation(), babies.getPopulation()], [0, 5, 5]);
 	IllnessPhase.ILLNESS_RATE = illnessRateHunger;
 
+	// produzione manuale: le barre del satellite si pagano in proporzione ai punti (3 cloni = 3 punti a turno)
+	let manual = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let mn = manual.getState();
+	mn.addKnowledge({ technology: ["LandingModule"] });
+	["dozer", "digger", "miner", "roboWorker", "MicrowaveSatellite"].forEach(m => mn.configureMaterial(m, "roboticStorage"));
+	mn.createMaterials({ foodUnit: 500, residentialUnit: 500, habitatUnit: 500 });
+	manual.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(manual);
+	mn.getPopulation().subsistence = 1;
+	mn.destroyMaterials({ roboWorker: mn.getStored("roboWorker") });
+	let fewClones = createClones(mn.getDate(), 1);
+	fewClones.kill(); fewClones.kill();
+	mn.getPopulation().registry.push(fewClones);
+	manual.addBuilding("IndustrialFactory", { x: 8, y: 11 }, true);
+	mn.createMaterials({ ironBar: 100 });
+	mn.getProductionQueue().push(RecipeLib.create("MicrowaveSatellite"));
+	let manualTurns = 0;
+	while(mn.getProductionQueue().length > 0 && manualTurns < 10) { Turn.advance(manual); manualTurns++; }
+	expect("produzione manuale: barre in proporzione ai punti", [manualTurns, 100 - mn.getStored("ironBar")], [4, 6]);
+	// avviso: rimesse piene, il robot prodotto non può essere consegnato
+	mn.createMaterials({ roboWorker: Math.max(0, mn.getCapacity("roboticStorage") - mn.getFullCapacity("roboticStorage")), metalOre: 50 });
+	mn.getProductionQueue().push(RecipeLib.create("Robo-Dozer"));
+	let storageEvents = [];
+	for(let t = 0; t < 4; t++) storageEvents = storageEvents.concat(Turn.advance(manual).events);
+	expect("avviso: magazzino pieno", storageEvents.filter(e => e.type == "STORAGE_FULL").map(e => e.name), ["roboticStorage"]);
+
+	// precedenza generale: con poca energia lavora prima l'edificio con precedenza Alta; avviso di energia
+	let grid = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let gs2 = grid.getState();
+	gs2.addKnowledge({ technology: ["LandingModule"] });
+	grid.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(grid);
+	let controls = [{ x: 8, y: 10 }, { x: 12, y: 9 }, { x: 8, y: 11 }].map(p => grid.addBuilding("EnvironmentalControl", p, true));
+	controls[2].setStaffPriority(StaffPriority.High);
+	let gridEvents = Turn.advance(grid).events;
+	Turn.project(grid);
+	let activeControls = gs2.getActiveList()["EnvironmentalControl"] || [];
+	expect("precedenza: con poca energia lavora prima l'Alta", [activeControls.indexOf(controls[2]) >= 0, activeControls.length < 3], [true, true]);
+	expect("avviso: energia insufficiente", gridEvents.filter(e => e.type == "POWER_SHORTAGE").length, 1);
+	expect("avviso di energia solo all'inizio", Turn.advance(grid).events.filter(e => e.type == "POWER_SHORTAGE").length, 0);
+	controls.slice(0, 2).forEach(c => c.destroy());
+	expect("avviso: energia di nuovo sufficiente", Turn.advance(grid).events.filter(e => e.type == "POWER_OK").length, 1);
+	// il fornitore eredita la precedenza di chi rifornisce
+	let smelter = grid.addBuilding("Smelter", { x: 13, y: 9 }, true);
+	let advancedSite = grid.addBuilding("AgridomeAdv", { x: 13, y: 10 });
+	advancedSite.setStaffPriority(StaffPriority.High);
+	gs2.createMaterials({ metalOre: 50 });
+	Turn.project(grid);
+	expect("precedenza ereditata dal rifornimento", [smelter.getStaffPriority(), gs2.getEffectivePrecedence(smelter)], [StaffPriority.Normal, StaffPriority.High]);
+
+	// avviso: robot vicini a fine vita, una volta sola
+	let fleetWorn = RobotWearPhase.sync(gs2, "roboWorker");
+	fleetWorn.forEach(r => { r.wear = r.life * 0.9 - 0.01; });
+	grid.addBuilding("Agridome", { x: 7, y: 12 });
+	let wornEvents = Turn.advance(grid).events.filter(e => e.type == "ROBOTS_WORN");
+	expect("avviso: robot vicini a fine vita", [wornEvents.length, wornEvents.length ? wornEvents[0].count > 0 : false], [1, true]);
+	expect("avviso robot una volta sola", Turn.advance(grid).events.filter(e => e.type == "ROBOTS_WORN").length, 0);
+
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
 	idle.addBuilding("LandingModule", { x: 10, y: 10 });

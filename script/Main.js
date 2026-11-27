@@ -562,18 +562,28 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 		CLONES_EXPIRED: "danger",
 		FELL_ILL: "warning",
 		FOOD_SHORTAGE: "warning",
+		ROBOTS_WORN: "warning",
+		STORAGE_FULL: "warning",
+		POWER_SHORTAGE: "danger",
 		FOOD_EXHAUSTED: "danger",
 		STARVATION_DEATHS: "danger",
 		HABITAT_DEATHS: "danger",
 		ILLNESS_DEATHS: "danger"
 	};
 
+	const Event_HAS_NAME = ["STORAGE_FULL", "STORAGE_OK"];
+
 	/** testo di un evento: "%s" nel testo prende il numero o il nome, altrimenti si aggiunge dopo i due punti */
 	let _eventText = function(event)
 	{
 		let text = TextRepository.get("Event_" + event.type);
+		// %t = nome (tradotto), %a = quantità aggiuntiva
+		if(text.indexOf("%t") >= 0) { text = text.replace("%t", TextRepository.get(event.name)); }
+		if(text.indexOf("%a") >= 0) { text = text.replace("%a", event.amount); }
+		if(event.count === undefined && event.name === undefined) { return text; }
 		let value = (event.count !== undefined) ? event.count : TextRepository.get(event.name);
-		return (text.indexOf("%s") >= 0) ? text.replace("%s", value) : text + ": " + value;
+		if(text.indexOf("%s") >= 0) { return text.replace("%s", value); }
+		return (Event_HAS_NAME.indexOf(event.type) >= 0) ? text : text + ": " + value;
 	};
 
 	let _save = function()

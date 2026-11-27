@@ -118,7 +118,7 @@ PrototypeLib.add("LaunchModule", TerrainLayer.Surface, 2, {}, {
 	});
 
 // il modulo cargo ospita anche i robot del kit, con spazio per i primi robot prodotti
-PrototypeLib.add("CargoModule", TerrainLayer.Surface, 2, {}, { capacity: { genericStorage: 200, roboticStorage: 30 },
+PrototypeLib.add("CargoModule", TerrainLayer.Surface, 2, {}, { capacity: { genericStorage: 20, roboticStorage: 30 },
 	builder: "LandingPoint",
 	ports: "nw",
 	onCompleted: function(item, map)
