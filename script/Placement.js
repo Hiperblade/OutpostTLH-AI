@@ -28,7 +28,9 @@ let PlacementReason = {
 	NoExtractionTechnology: "noExtractionTechnology",
 	NotRazed: "notRazed",
 	NoResourceRequired: "noResourceRequired",
-	RequiresResource: "requiresResource"
+	RequiresResource: "requiresResource",
+	LimitReached: "limitReached",
+	MissingMaterial: "missingMaterial"
 };
 
 function PlacementConstructor()
@@ -167,9 +169,36 @@ function PlacementConstructor()
 		{
 			return _fail(PlacementReason.Blocked);
 		}
+
+		// numero massimo di edifici di questo tipo (costruiti o in cantiere)
+		let limit = prototype.getLimit();
+		if(limit > 0)
+		{
+			let count = map.getStructure().filter(function(el) { return el.getBuildingType && el.getBuildingType() == buildingType && !el.isDestroyed(); }).length;
+			if(count >= limit)
+			{
+				return _fail(PlacementReason.LimitReached, { buildingType: buildingType, limit: limit });
+			}
+		}
+		// materiali da consumare al piazzamento (es. il satellite dell'Impianto a Microonde)
+		let state = map.getState();
+		let placementCost = prototype.getPlacementCost();
+		let missing = Object.keys(placementCost).find(function(name) { return state.getStored(name) < placementCost[name]; });
+		if(missing !== undefined)
+		{
+			return _fail(PlacementReason.MissingMaterial, { material: missing });
+		}
 		return _ok(function()
 		{
-			return map.addBuilding(buildingType, point) != null;
+			if(map.addBuilding(buildingType, point) == null)
+			{
+				return false;
+			}
+			if(Object.keys(placementCost).length > 0)
+			{
+				state.destroyMaterials(placementCost);
+			}
+			return true;
 		});
 	};
 

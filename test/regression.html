@@ -452,6 +452,23 @@ function checks()
 	expect("nuovo studio dopo una ricerca completata", studies.filter(e => e.type == "NEW_STUDY").map(e => e.name).indexOf("Pharmacology") >= 0, true);
 	expect("nuovo edificio dopo una ricerca completata", studies.filter(e => e.type == "NEW_BUILDING").map(e => e.name).indexOf("CryoCenter") >= 0, true);
 
+	// Impianto a Microonde: consuma il satellite al piazzamento, al massimo 3 nella colonia
+	let micro = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
+	let ms = micro.getState();
+	ms.addKnowledge({ technology: ["LandingModule"] });
+	micro.addBuilding("LandingModule", { x: 10, y: 10 });
+	for(let t = 0; t < 4; t++) Turn.advance(micro);
+	let flat = [{ x: 12, y: 8 }, { x: 13, y: 8 }, { x: 13, y: 9 }, { x: 13, y: 10 }];
+	flat.forEach(p => { while(micro.raze(p, TerrainLayer.Surface) > 0) {} });
+	let tool = { buildingType: "MicrowavePlant" };
+	expect("microonde: satellite del kit", [ms.getStored("MicrowaveSatellite"), reason(Placement.place(micro, tool, flat[0])), ms.getStored("MicrowaveSatellite")], [1, "ok", 0]);
+	expect("microonde: senza satellite non si piazza", [reason(Placement.check(micro, tool, flat[1])), Placement.check(micro, tool, flat[1]).data.material], ["missingMaterial", "MicrowaveSatellite"]);
+	ms.createMaterials({ MicrowaveSatellite: 5 });
+	expect("microonde: massimo 3", [reason(Placement.place(micro, tool, flat[1])), reason(Placement.place(micro, tool, flat[2])), reason(Placement.check(micro, tool, flat[3]))], ["ok", "ok", "limitReached"]);
+	for(let t = 0; t < 3; t++) Turn.advance(micro);
+	expect("microonde: nessun satellite consumato dal cantiere", ms.getStored("MicrowaveSatellite"), 3);
+	expect("satellite: costa barre di ferro", RecipeLib.get("MicrowaveSatellite").getCost().ironBar, 2);
+
 	let idle = new TerrainMap(Typology.Vulcanic, { x: 30, y: 30 });
 	idle.getState().addKnowledge({ technology: ["LandingModule"] });
 	idle.addBuilding("LandingModule", { x: 10, y: 10 });

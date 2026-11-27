@@ -130,7 +130,8 @@ PrototypeLib.add("CargoModule", TerrainLayer.Surface, 2, {}, { capacity: { gener
 //-------------------------------------------------------------
 // produzione elettrica
 
-PrototypeLib.add("MicrowavePlant", TerrainLayer.Surface, 1, { MicrowaveSatellite: 1 }, { production: { power: 500 } });
+// impianto a microonde: consuma un satellite quando viene piazzato, al massimo 3 nella colonia
+PrototypeLib.add("MicrowavePlant", TerrainLayer.Surface, 1, {}, { production: { power: 500 }, limit: 3, placementCost: { MicrowaveSatellite: 1 } });
 PrototypeLib.add("ElectrostaticCoil", TerrainLayer.Surface, 3, {}, { production: { power: 100 } });
 PrototypeLib.add("Geothermal", TerrainLayer.Deep, 10, {}, { requiredResource: "Fumarole", production: { power: 2000 } });
 

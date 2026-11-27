@@ -11,7 +11,7 @@ Stato: ✅ risolto · ⏳ aperto
 | 1 | Il Benessere non ha effetti | Regole | ✅ |
 | 2 | Barre di Ferro e minerali senza magazzino | Regole | ✅ |
 | 3 | I cloni di un risveglio muoiono tutti nello stesso turno | Regole | ✅ |
-| 4 | Energia a microonde illimitata e quasi gratuita | Regole | ⏳ |
+| 4 | Energia a microonde illimitata e quasi gratuita | Regole | ✅ |
 | 5 | I cloni costano molto rispetto a quanto rendono | Equilibrio | ⏳ |
 | 6 | I coloni nati diventano utili molto tardi | Equilibrio | ⏳ |
 | 7 | La felicità parte da 0 e dimezza la manodopera | Equilibrio | ⏳ |
@@ -24,7 +24,7 @@ Stato: ✅ risolto · ⏳ aperto
 | 14 | Il report Energia non distingue gli edifici a riposo | Informazioni | ✅ |
 | 15 | Refusi e descrizioni segnaposto nei testi | Informazioni | ✅ |
 
-**Da dove partire:** 4 e 13. Sono interventi piccoli che cambiano molto la sensazione di gioco.
+**Da dove partire:** 13 (avvisi mancanti) e poi l'equilibrio (5–9). Sono interventi piccoli che cambiano molto la sensazione di gioco.
 
 ## A. Regole che non funzionano o si contraddicono
 
@@ -57,6 +57,8 @@ I cloni risvegliati insieme muoiono tutti nello stesso turno, dopo 55 turni. Se 
 Un Satellite a Microonde costa 3 unità di produzione e 1 struttura standard, nessuna materia prima, e alimenta un Impianto a Microonde da 500 di energia costruito in un turno. Tokamak (barre radioattive e filiera chimica), Centrale Geotermica (fumarole profonde) e Bobina Elettrostatica perdono così ogni motivo di esistere.
 
 **Proposta:** dare al satellite un costo in Barre di Ferro, oppure limitare il numero di satelliti, oppure ridurne la potenza col passare dei turni.
+
+**Risolto ✅**: il satellite costa 2 Barre di Ferro per passo di produzione (6 a pieno ritmo); l'Impianto a Microonde consuma il satellite una sola volta, al piazzamento, e se ne possono avere al massimo 3. Oltre i 1700 di energia servono Tokamak, Centrale Geotermica o Bobina Elettrostatica.
 
 ## B. Equilibrio
 

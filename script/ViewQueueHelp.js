@@ -87,6 +87,16 @@ function HelpQueueData(colonyState)
 
 				let list;
 				let listItem;
+				// limite di edifici e materiali consumati al piazzamento
+				if(proto.getLimit() > 0)
+				{
+					text += '<tr><td>' + TextRepository.get("BuildingLimit") + ':</td><td class="tableDataRight">' + proto.getLimit() + '</td><td></td></tr>';
+				}
+				list = proto.getPlacementCost();
+				for(listItem in list)
+				{
+					text += '<tr><td>' + TextRepository.get("PlacementCost") + ':</td><td class="tableDataRight">' + list[listItem] + '</td><td>' + TextRepository.get(listItem) + '</td></tr>';
+				}
 				if(proto.getBuildingTime() > 0 || Object.keys(proto.getBuildingCost()).length > 0)
 				{
 					//text += '<tr><td>' + TextRepository.get("BuildingTitle") + '</td></tr>';

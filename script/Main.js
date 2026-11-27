@@ -310,6 +310,10 @@ Log.dialog(_placementMessage(result));
 				return "Questo edificio non richiede la presenza di risorse!";
 			case PlacementReason.RequiresResource:
 				return "Questo edificio richiede la presenza della risorsa " + result.data.resource + "!";
+			case PlacementReason.LimitReached:
+				return TextRepository.get("Placement_limitReached").replace("%n", result.data.limit).replace("%s", TextRepository.get(result.data.buildingType));
+			case PlacementReason.MissingMaterial:
+				return TextRepository.get("Placement_missingMaterial").replace("%s", TextRepository.get(result.data.material));
 		}
 		return result.reason;
 	};

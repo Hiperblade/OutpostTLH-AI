@@ -106,11 +106,11 @@ La morte per vecchiaia dei Pensionati, rallentata dalle cure mediche.
 
 **Manodopera**:
 Il lavoro disponibile in un turno, in punti lavoro: 4 per Lavoratore, 4 per RoboWorker, 2 per Pensionato, 1 per clone; la felicità riduce solo quella di Lavoratori e Pensionati. Cantieri e produzione usano prima quella dei robot, gli edifici con personale solo quella di Lavoratori, Pensionati e cloni. Non si accumula tra un turno e l'altro.
+_Evitare_: workforce, work unit, forza lavoro
 
 **Punti lavoro**:
 L'unità di misura della manodopera e dei tempi: costruzioni, produzioni e ricerche durano un certo numero di punti, e un cantiere o una produzione riceve al massimo 4 punti a turno (un Lavoratore a tempo pieno).
 _Evitare_: turni di lavoro, ore uomo
-_Evitare_: workforce, work unit, forza lavoro
 
 **RoboWorker**:
 Robot lavoratore che fornisce manodopera robotica e occupa spazio nel magazzino robotico.
@@ -140,6 +140,13 @@ _Evitare_: priorità (riservato all'ordine fisso dei tipi di edificio)
 **Costo per turno di cantiere**:
 I materiali che un cantiere consuma a ogni turno di lavoro; se mancano, il cantiere resta fermo quel turno.
 _Evitare_: costo di costruzione (inteso come costo una tantum)
+
+**Impianto a Microonde**:
+Centrale che riceve energia da un Satellite a Microonde in orbita; consuma il satellite quando viene piazzata e se ne possono avere al massimo 3.
+_Evitare_: centrale solare, ripetitore
+
+**Satellite a Microonde**:
+Satellite prodotto dalla colonia (con Barre di Ferro) che alimenta un Impianto a Microonde; il kit di atterraggio ne porta uno.
 
 **Centro di ricerca automatico**:
 Edificio di superficie che conduce senza coloni le ricerche necessarie a rendere la colonia abitabile.

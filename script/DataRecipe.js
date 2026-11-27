@@ -9,7 +9,7 @@ RecipeLib.add(RecipeType.Production, "Robo-Dozer",  { discovery: ["Robotics"] },
 RecipeLib.add(RecipeType.Production, "Robo-Miner",  { discovery: ["Robotics"] }, 3, { labor: 1, productionUnit: 3, productionStandardStructure: 1, metalOre: 6 }, { miner: 1, fusionWaste: 3, toxicWaste: 1 });
 RecipeLib.add(RecipeType.Production, "Robo-Digger", { discovery: ["Robotics"] }, 3, { labor: 1, productionUnit: 2, productionStandardStructure: 1, metalOre: 4 }, { digger: 1, fusionWaste: 3, toxicWaste: 1 });
 
-RecipeLib.add(RecipeType.Production, "MicrowaveSatellite",  { }, 3, { labor: 1, productionUnit: 3, productionStandardStructure: 1 }, { MicrowaveSatellite: 1 });
+RecipeLib.add(RecipeType.Production, "MicrowaveSatellite",  { }, 3, { labor: 1, productionUnit: 3, productionStandardStructure: 1, ironBar: 2 }, { MicrowaveSatellite: 1 });
 
 RecipeLib.add(RecipeType.Production, "RadioactiveBar", { technology: ["Tokamak"] }, 1, { labor: 1, productionUnit: 3, productionChemicalStructure: 1, radioactiveOre: 2 }, { radioactiveBar: 10, radioactiveWaste: 3 });
 
