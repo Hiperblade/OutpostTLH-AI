@@ -642,6 +642,11 @@ function Building(buildingType, terrainLayer, position, buildingTime, builder)
 		if(!frozen && progressState < 0)
 		{
 			progressState = Math.min(0, progressState + (amount === undefined ? 1 : amount));
+			if(progressState == 0)
+			{
+				// la precedenza data al cantiere non passa all'edificio costruito
+				staffPriority = StaffPriority.Normal;
+			}
 		}
 		return (progressState == 0);
 	};

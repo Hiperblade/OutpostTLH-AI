@@ -551,6 +551,13 @@ function checks()
 	gs2.createMaterials({ metalOre: 50 });
 	Turn.project(grid);
 	expect("precedenza ereditata dal rifornimento", [smelter.getStaffPriority(), gs2.getEffectivePrecedence(smelter)], [StaffPriority.Normal, StaffPriority.High]);
+	// la precedenza del cantiere non passa all'edificio costruito
+	let prioritySite = grid.addBuilding("Agridome", { x: 3, y: 3 });
+	prioritySite.setStaffPriority(StaffPriority.High);
+	let siteHalf = prioritySite.progressBuild(1);
+	let siteDone = prioritySite.progressBuild(1000);
+	expect("precedenza del cantiere azzerata a costruzione finita", [siteHalf, prioritySite.getStaffPriority() == StaffPriority.High || prioritySite.getProgressState() == 0, siteDone, prioritySite.getStaffPriority()], [false, true, true, StaffPriority.Normal]);
+	prioritySite.destroy();
 
 	// avviso: robot vicini a fine vita, una volta sola
 	let fleetWorn = RobotWearPhase.sync(gs2, "roboWorker");
