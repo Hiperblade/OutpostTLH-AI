@@ -1,6 +1,7 @@
 "use strict";
 
 import { StructureTypes } from "./Enums.js";
+import { visibleDeposits } from "./Orbit.js";
 import { TextRepository } from "./TextRepository.js";
 
 /** segnalatori delle risorse: forma e colore per tipo (la forma aiuta chi distingue male i colori) */
@@ -8,17 +9,21 @@ const RESOURCE_MARKERS = {
 	Metal: { shape: "circle", color: "#1EA7FF" },
 	Mineral: { shape: "diamond", color: "#FF3EDB" },
 	Radioactive: { shape: "triangle", color: "#7CFF00" },
-	Fumarole: { shape: "square", color: "#FF8C00" }
+	Fumarole: { shape: "square", color: "#FF8C00" },
+	AlienNest: { shape: "cross", color: "#FF2020" }
 };
+/** l'analisi cerca le zone con giacimenti di superficie e sottosuolo, non quelli di profondità */
+const ZONE_TYPES = ["Metal", "Mineral"];
 const MARKER_SIZE = 4;
 const ZONE_RADIUS = 15;		// caselle (1 casella = 1 pixel della minimappa)
 const ZONE_STEP = 3;		// passo della ricerca dei centri delle zone
 const OPTIONS_KEY = "outposttlh-minimap";
 
 /**
- * Minimappa: foto del sito, edifici, segnalatori delle risorse e area visibile.
+ * Minimappa: foto del sito, edifici, segnalatori dei giacimenti e area visibile.
+ * Si vedono i giacimenti conosciuti e quelli rilevati dai satelliti in orbita (vedi visibleDeposits).
  * Due pulsanti accanto alla minimappa: mostra/nascondi i segnalatori e modalità analisi (segnalatori di
- * tutti gli strati e cerchi sulle zone che hanno vicino almeno una risorsa di ogni tipo presente).
+ * tutti gli strati e cerchi sulle zone che hanno vicino giacimenti sia di metallo sia di minerali).
  * Le scelte restano nel browser tra una partita e l'altra.
  * @param {CanvasImageSource} backgroundImage immagine del sito
  */
@@ -27,7 +32,7 @@ function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 	let canvasMap = document.getElementById(canvasId);
 	let ctx = canvasMap.getContext("2d");
 	let position = { x: 0, y: 0 };
-	let findResources = {};
+	let deposits = [];	// giacimenti visibili sulla minimappa
 	let options = { markers: true, analysis: false };
 	let zonesCache = null;	// { key, zones }
 
@@ -51,7 +56,7 @@ function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 		}
 		let legend = Object.keys(RESOURCE_MARKERS).map(function(type)
 		{
-			return { circle: "\u25CF", diamond: "\u25C6", triangle: "\u25B2", square: "\u25A0" }[RESOURCE_MARKERS[type].shape] + " " + TextRepository.get("Resource_" + type);
+			return { circle: "\u25CF", diamond: "\u25C6", triangle: "\u25B2", square: "\u25A0", cross: "\u2716" }[RESOURCE_MARKERS[type].shape] + " " + TextRepository.get("Resource_" + type);
 		}).join("\n");
 		markers.title = TextRepository.get("MapMarkersHint") + "\n\n" + legend;
 		analysis.title = TextRepository.get("MapAnalysisHint") + "\n\n" + legend;
@@ -85,15 +90,7 @@ function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 
 	let _redraw = function()
 	{
-		findResources = {};
-		let knowledge = map.getState().getTheory();
-		for(let know = 0; know < knowledge.length; know++)
-		{
-			if(knowledge[know].indexOf("Find_") == 0)
-			{
-				findResources[knowledge[know].substr(5)] = true;
-			}
-		}
+		deposits = visibleDeposits(map);
 
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -116,13 +113,7 @@ function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 		}
 		if(options.markers || options.analysis)
 		{
-			structure.forEach(function(el)
-			{
-				if(el.getType() == StructureTypes.Resource)
-				{
-					_drawResource(el.getPosition(), el);
-				}
-			});
+			deposits.forEach(function(el) { _drawResource(el.getPosition(), el); });
 		}
 
 		_drawActiveArea();
@@ -146,10 +137,6 @@ function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 	/** segnalatore pieno con contorno scuro; in analisi si vedono quelli di tutti gli strati */
 	let _drawResource = function(position, resource)
 	{
-		if(!findResources[resource.getResourceType()])
-		{
-			return;
-		}
 		if(!options.analysis && resource.getLayer() != map.getLayer())
 		{
 			return;
@@ -173,6 +160,10 @@ function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 			case "square":
 				ctx.rect(p.x - r, p.y - r, r * 2, r * 2);
 				break;
+			case "cross":
+				ctx.moveTo(p.x - r, p.y - r - 1); ctx.lineTo(p.x + r + 1, p.y + r); ctx.lineTo(p.x + r, p.y + r + 1); ctx.lineTo(p.x - r - 1, p.y - r);
+				ctx.moveTo(p.x + r, p.y - r - 1); ctx.lineTo(p.x + r + 1, p.y - r); ctx.lineTo(p.x - r, p.y + r + 1); ctx.lineTo(p.x - r - 1, p.y + r);
+				break;
 			default:
 				ctx.arc(p.x, p.y, r, 0, Math.PI * 2, false);
 		}
@@ -185,16 +176,13 @@ function MapView(map, canvasId, backgroundImage, areaSize, onChangePosition)
 	};
 
 	/**
-	 * Zone ricche: centri con almeno una risorsa di ogni tipo presente sul pianeta (tra quelli che la
-	 * colonia sa cercare) entro ZONE_RADIUS caselle; si scelgono prima i centri con più risorse vicine,
-	 * senza che un centro cada dentro un cerchio già scelto.
+	 * Zone ricche: centri con almeno un giacimento visibile di ogni tipo di ZONE_TYPES presente entro
+	 * ZONE_RADIUS caselle; si scelgono prima i centri con più giacimenti vicini, senza che un centro cada
+	 * dentro un cerchio già scelto.
 	 */
 	let _zones = function()
 	{
-		let resources = map.getStructure().filter(function(el)
-		{
-			return el.getType() == StructureTypes.Resource && findResources[el.getResourceType()];
-		});
+		let resources = deposits.filter(function(el) { return ZONE_TYPES.indexOf(el.getResourceType()) >= 0; });
 		let types = Array.from(new Set(resources.map(function(r) { return r.getResourceType(); })));
 		let key = types.join(",") + "|" + resources.length;
 		if(zonesCache !== null && zonesCache.key == key)

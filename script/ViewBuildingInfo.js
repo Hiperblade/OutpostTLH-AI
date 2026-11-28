@@ -24,7 +24,8 @@ function BuildingInfoViewConstructor(onChangePosition, onClearCurrentItem, getIs
 {
 	// comandi degli edifici: tipo di edificio -> { action, text, hint }
 	const BUILDING_ACTIONS = {
-		SpacePort: { action: "launch", text: "Launch_command", hint: "Launch_hint" }
+		SpacePort: { action: "launch", text: "Launch_command", hint: "Launch_hint" },
+		LaunchSilo: { action: "satellite", text: "SiloLaunch_command", hint: "SiloLaunch_hint" }
 	};
 	// interruttori di tutta la colonia, mostrati nel pannello degli edifici interessati
 	const COLONY_SWITCHES = {

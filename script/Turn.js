@@ -1,7 +1,8 @@
 "use strict";
 
 import { RobotTypes, StructureTypes } from "./Enums.js";
-import { EventPhase } from "./Events.js";
+import { EventPhase, NestPhase } from "./Events.js";
+import { Orbit, OrbitPhase } from "./Orbit.js";
 import { GenerationState } from "./Generations.js";
 import { BuildingGraph } from "./PipeNetwork.js";
 import { PrototypeLib } from "./PrototypeLib.js";
@@ -36,6 +37,8 @@ function TurnConstructor()
 			ProductionQueuePhase,
 			ResearchPhase,
 			MaintenancePhase,
+			NestPhase,
+			OrbitPhase,
 			RobotWearPhase,
 			RobotPhase,
 			PopulationPhase,
@@ -77,7 +80,7 @@ function TurnConstructor()
 			buildings: state.getTechnology().slice(),
 			studies: RecipeLib.getAvailableResearch(state).map(function(recipe) { return recipe.getName(); }),
 			productions: RecipeLib.getAvailableProduction(state).map(function(recipe) { return recipe.getName(); }),
-			discoveries: state.getDiscovery().filter(function(name) { return name.indexOf("Resource_") == 0; })
+			discoveries: state.getDiscovery().filter(function(name) { return name.indexOf("Resource_") == 0 || name == "Alien_Nest"; })
 		};
 	};
 
@@ -163,7 +166,10 @@ let TurnEventType = {
 	EarthquakeDestroyed: "EARTHQUAKE_DESTROYED",
 	EarthquakeEnd: "EARTHQUAKE_END",
 	Sandstorm: "SANDSTORM",
-	SandstormEnd: "SANDSTORM_END"
+	SandstormEnd: "SANDSTORM_END",
+	// satelliti (vedi Orbit.js)
+	SatelliteExpiring: "SATELLITE_EXPIRING",
+	SatelliteExpired: "SATELLITE_EXPIRED"
 };
 
 // singleton
@@ -501,6 +507,8 @@ let BuildingProductionPhase = {
 		let demand = _demand(ctx);
 		let order = _productionOrder();
 		let entries = [];
+		// Impianti a Microonde: uno per ogni satellite a microonde in orbita, gli altri restano fermi
+		let microwaveSatellites = Orbit.count(state, "MicrowaveSatellite");
 		ctx.networks.forEach(function(graph)
 		{
 			let connected = BuildingGraph.hasHeadquarter(graph);
@@ -533,6 +541,16 @@ let BuildingProductionPhase = {
 							state.setBuildingIssue(building, { reason: "storm", missing: [] });
 							state.addToInactiveList(building);
 							return;
+						}
+						if(buildingType == "MicrowavePlant")
+						{
+							if(microwaveSatellites <= 0)
+							{
+								state.setBuildingIssue(building, { reason: "noSatellite", missing: [] });
+								state.addToInactiveList(building);
+								return;
+							}
+							microwaveSatellites--;
 						}
 						if(_isIdle(prototype, demand))
 						{

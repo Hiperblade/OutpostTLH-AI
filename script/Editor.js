@@ -16,6 +16,7 @@ import { EVENT_TYPES, Events } from "./Events.js";
 import { Site } from "./GameSetup.js";
 import { ImagesLib } from "./ImagesLib.js";
 import { Mission, Missions } from "./Mission.js";
+import { Orbit } from "./Orbit.js";
 import { RecipeLib, RecipeType } from "./RecipeLib.js";
 import { TextRepository } from "./TextRepository.js";
 import "./DataRecipe.js";
@@ -32,7 +33,7 @@ const OBJECTIVES = [
 	{ type: "superintelligence", params: [] },
 	{ type: "terraforming", params: [{ key: "points", label: "punti", value: 300 }] }
 ];
-const KIT_FIELDS = ["roboWorker", "dozer", "digger", "miner", "MicrowaveSatellite"];
+const KIT_FIELDS = ["roboWorker", "dozer", "digger", "miner", "MicrowaveSatellite", "MiningSatellite"];
 const STOCK_MATERIALS = ["foodUnit", "ironBar", "metalOre", "mineralOre", "cristalOre", "radioactiveOre", "radioactiveBar",
 	"pharmaceuticalUnit", "goodsUnit", "mediKit", "goods", "cryoCapsule", "shipHull", "shipEngine", "shipFuel"];
 
@@ -60,9 +61,9 @@ let buildings = (function()
 /** parametri degli eventi modificabili nell'editor */
 const EVENT_FIELDS = {
 	epidemic: [
-		{ key: "probability", label: "probabilità a turno (0-1)", step: 0.01 },
-		{ key: "delay", label: "turni di Centro di ricerca medico prima del Nido" },
-		{ key: "maxNests", label: "Nidi al massimo" }],
+		{ key: "rate", label: "Nidi: quota delle caselle del sottosuolo (0-1)", step: 0.0005 },
+		{ key: "radius", label: "distanza di costruzione pericolosa (caselle)" },
+		{ key: "probability", label: "probabilità di epidemia per costruzione (0-1)", step: 0.05 }],
 	earthquake: [
 		{ key: "probability", label: "probabilità a turno (0-1)", step: 0.005 },
 		{ key: "minTurn", label: "dal turno" },
@@ -146,9 +147,13 @@ let warnings = function(m)
 			list.push("L'evento “" + name("GameEvent_" + type) + "” non può avvenire su questo tipo di pianeta.");
 		}
 	});
-	if(m.events.epidemic.enabled && (excludedBuilding("MedicalResearchCenter") || excludedStudy("AdvancedMedicine")))
+	if(m.events.epidemic.enabled && (excludedBuilding("MedicalResearchCenter") || excludedStudy("Vaccine")))
 	{
-		list.push("Epidemia: il Nido compare solo dopo un Centro di ricerca medico, che è escluso.");
+		list.push("Epidemia: senza Centro di ricerca medico o Vaccino il contagio non si può fermare.");
+	}
+	if(m.kit.MicrowaveSatellite > m.orbits.microwave || m.kit.MiningSatellite > m.orbits.observation)
+	{
+		list.push("Il kit ha più satelliti dei posti in orbita: quelli in più non entrano in orbita.");
 	}
 	return list;
 };
@@ -253,11 +258,17 @@ let render = function()
 	$('<label>Limite di turni (0 = nessuno) <input type="number" min="0"></label>').appendTo(limitRow).find("input").val(m.turnLimit).on("input", function() { m.turnLimit = Number(this.value) || 0; changed(); });
 
 	// condizioni iniziali: kit e scorte
-	form.append('<h3>Kit di atterraggio</h3>');
+	form.append('<h3>Kit di atterraggio (i satelliti partono già in orbita)</h3>');
 	let kitRow = $('<div class="row"></div>').appendTo(form);
 	KIT_FIELDS.forEach(function(key)
 	{
 		$('<label></label>').text(name(key) + " ").append($('<input type="number" min="0">').val(m.kit[key]).on("input", function() { m.kit[key] = Number(this.value) || 0; changed(); })).appendTo(kitRow);
+	});
+	form.append('<h3>Posti delle orbite</h3>');
+	let orbitRow = $('<div class="row"></div>').appendTo(form);
+	Orbit.ORBITS.forEach(function(orbit)
+	{
+		$('<label></label>').text(name("Orbit_" + orbit) + " ").append($('<input type="number" min="0">').val(m.orbits[orbit]).on("input", function() { m.orbits[orbit] = Number(this.value) || 0; changed(); })).appendTo(orbitRow);
 	});
 	form.append('<h3>Scorte iniziali</h3>');
 	let stockBox = $('<div class="grid"></div>').appendTo(form);

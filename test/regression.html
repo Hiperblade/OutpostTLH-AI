@@ -27,7 +27,8 @@ import { RecipeLib } from "../script/RecipeLib.js";
 import { Cure } from "../script/Cure.js";
 import { Launch } from "../script/Launch.js";
 import { Mission } from "../script/Mission.js";
-import { EVENT_TYPES, Events, EventPhase } from "../script/Events.js";
+import { EVENT_TYPES, Events, EventPhase, NestPhase } from "../script/Events.js";
+import { Orbit, OrbitPhase, visibleDeposits } from "../script/Orbit.js";
 import { Campaign } from "../script/Campaign.js";
 import { IllnessPhase, foodNeed } from "../script/TurnPopulation.js";
 import { BuildingGraph } from "../script/PipeNetwork.js";
@@ -178,6 +179,7 @@ function checks()
 	let plant = new TerrainMap(Typology.Vulcanic, { x: 20, y: 20 });
 	plant.addBuilding("CommandCenter", { x: 5, y: 5 }, true);
 	plant.addBuilding("MicrowavePlant", { x: 6, y: 5 }, true);
+	Orbit.put(plant.getState(), "MicrowaveSatellite");
 	plant.addBuilding("WasteTreatment", { x: 4, y: 5 }, true);
 	plant.getState().createMaterials({ fusionWaste: 25, toxicWaste: 3 });
 	Turn.advance(plant);
@@ -469,12 +471,65 @@ function checks()
 	let flat = [{ x: 12, y: 8 }, { x: 13, y: 8 }, { x: 13, y: 9 }, { x: 13, y: 10 }];
 	flat.forEach(p => { while(micro.raze(p, TerrainLayer.Surface) > 0) {} });
 	let tool = { buildingType: "MicrowavePlant" };
-	expect("microonde: satellite del kit", [ms.getStored("MicrowaveSatellite"), reason(Placement.place(micro, tool, flat[0])), ms.getStored("MicrowaveSatellite")], [1, "ok", 0]);
-	expect("microonde: senza satellite non si piazza", [reason(Placement.check(micro, tool, flat[1])), Placement.check(micro, tool, flat[1]).data.material], ["missingMaterial", "MicrowaveSatellite"]);
-	ms.createMaterials({ MicrowaveSatellite: 5 });
-	expect("microonde: massimo 3", [reason(Placement.place(micro, tool, flat[1])), reason(Placement.place(micro, tool, flat[2])), reason(Placement.check(micro, tool, flat[3]))], ["ok", "ok", "limitReached"]);
-	for(let t = 0; t < 3; t++) Turn.advance(micro);
-	expect("microonde: nessun satellite consumato dal cantiere", ms.getStored("MicrowaveSatellite"), 3);
+	expect("orbite: il kit mette in orbita un satellite a microonde e uno minerario", [Orbit.count(ms, "MicrowaveSatellite"), Orbit.count(ms, "MiningSatellite"), ms.getStored("MicrowaveSatellite")], [1, 1, 0]);
+	expect("microonde: si piazza senza satellite e senza limite", flat.map(p => reason(Placement.place(micro, tool, p))), ["ok", "ok", "ok", "ok"]);
+	// due impianti collegati al Centro di Comando e un solo satellite a microonde: uno resta fermo
+	[{ x: 8, y: 9 }, { x: 9, y: 8 }].forEach(p => { while(micro.raze(p, TerrainLayer.Surface) > 0) {} });
+	let plants = [micro.addBuilding("MicrowavePlant", { x: 8, y: 9 }, true), micro.addBuilding("MicrowavePlant", { x: 9, y: 8 }, true)];
+	Turn.project(micro);
+	let plantIssues = () => plants.map(p => (ms.getBuildingIssue(p) || {}).reason).filter(r => r == "noSatellite").length;
+	expect("microonde: un impianto per satellite in orbita", plantIssues(), 1);
+	expect("orbite: posti limitati", [Orbit.put(ms, "MicrowaveSatellite"), Orbit.put(ms, "MicrowaveSatellite"), Orbit.put(ms, "MicrowaveSatellite"), Orbit.room(ms, "microwave")], [true, true, false, 0]);
+	Turn.project(micro);
+	expect("microonde: con più satelliti funzionano tutti", plantIssues(), 0);
+	// lanci dal Silos: uno a turno per Silos attivo
+	ms.createMaterials({ MiningSatelliteAdv: 2 });
+	expect("silos: senza Silos non si lancia", reason(Orbit.launch(ms, "MiningSatelliteAdv")), "noSilo");
+	ms.addToActiveList({ getBuildingType: () => "LaunchSilo", getPosition: () => ({ x: 1, y: 1 }), getLayer: () => TerrainLayer.Surface });
+	expect("silos: un lancio a turno", [reason(Orbit.launch(ms, "MiningSatelliteAdv")), ms.getStored("MiningSatelliteAdv"), Orbit.count(ms, "observation"), reason(Orbit.launch(ms, "MiningSatelliteAdv"))], ["ok", 1, 2, "noLaunch"]);
+	expect("satelliti: giacimenti rilevati", Object.keys(Orbit.detected(ms)).sort(), ["Metal", "Mineral", "Radioactive"]);
+	// durata: avviso 5 turni prima, poi il satellite si esaurisce e libera il posto
+	ms.getOrbits().satellites.filter(s => s.type == "MiningSatellite")[0].life = 6;
+	let expiring = Turn.advance(micro).events.filter(e => e.type == "SATELLITE_EXPIRING").map(e => [e.name, e.count]);
+	ms.getOrbits().satellites.filter(s => s.type == "MiningSatellite")[0].life = 1;
+	let expired = Turn.advance(micro).events.filter(e => e.type == "SATELLITE_EXPIRED").map(e => [e.name, e.count]);
+	expect("satelliti: avviso ed esaurimento", [expiring, expired, Orbit.count(ms, "MiningSatellite"), Orbit.detected(ms).Metal === undefined], [[["MiningSatellite", 1]], [["MiningSatellite", 1]], 0, true]);
+	// modulo d'atterraggio automatizzato: serve un lancio dal Silos
+	ms.addKnowledge({ technology: ["AutoLandingModule"] });
+	ms.createMaterials({ autoLandingModule: 1 });
+	let outpostTool = { buildingType: "AutoLandingModule" };
+	Turn.project(micro);
+	expect("avamposto: senza lancio non si piazza", reason(Placement.check(micro, outpostTool, { x: 20, y: 20 })), "noLaunch");
+	ms.addToActiveList({ getBuildingType: () => "LaunchSilo", getPosition: () => ({ x: 1, y: 1 }), getLayer: () => TerrainLayer.Surface });
+	expect("avamposto: lanciato dal Silos", [reason(Placement.place(micro, outpostTool, { x: 20, y: 20 })), ms.getStored("autoLandingModule"), Orbit.launchesLeft(ms), PrototypeLib.get("AutoLandingModule").isHeadquarter()], ["ok", 0, 0, true]);
+	let oldOrbits = new TerrainMap(Typology.Vulcanic, { x: 10, y: 10 });
+	let oldData = oldOrbits.toData();
+	delete oldData.state.orbits;
+	expect("orbite: le partite salvate prima vanno preparate", TerrainMap.fromData(JSON.parse(JSON.stringify(oldData))).getState().isOrbitsMissing(), true);
+
+	// minimappa: giacimenti conosciuti e rilevati
+	let depositMap = new TerrainMap(Typology.Vulcanic, { x: 40, y: 40 });
+	depositMap.addResource("Metal", { x: 30, y: 30 });
+	depositMap.addResource("Metal", { x: 5, y: 8 });
+	depositMap.addResource("Mineral", { x: 5, y: 5 });
+	depositMap.addResource("Radioactive", { x: 6, y: 6 });
+	let depositNames = () => visibleDeposits(depositMap).map(r => r.getResourceType() + r.getPosition().x).sort();
+	let noneKnown = depositNames();
+	depositMap.addBuilding("Agridome", { x: 5, y: 10 }, true);
+	depositMap.discoveryTile({ x: 5, y: 5 }, TerrainLayer.Underground);
+	let known = depositNames();
+	Orbit.put(depositMap.getState(), "MiningSatellite");
+	expect("minimappa: senza satelliti solo i giacimenti conosciuti, con il satellite anche gli altri", [noneKnown, known, depositNames()], [[], ["Metal5", "Mineral5"], ["Metal30", "Metal5", "Mineral5"]]);
+
+	// nidi alieni: solo sui pianeti giungla, con l'epidemia attiva
+	let nestCount = (typology, config) =>
+	{
+		let m = new TerrainMap(typology, { x: 30, y: 30 });
+		m.getState().setEventsConfig(config);
+		return Events.placeNests(m);
+	};
+	let jungleNests = { epidemic: { enabled: true, rate: 0.01 } };
+	expect("nidi: solo nella giungla e con l'epidemia attiva", [nestCount(Typology.Jungle, jungleNests), nestCount(Typology.Vulcanic, jungleNests), nestCount(Typology.Jungle, {})], [9, 0, 0]);
 	expect("satellite: costa barre di ferro", RecipeLib.get("MicrowaveSatellite").getCost().ironBar, 2);
 
 	// fame: i cloni mangiano la metà, avviso prima che il cibo finisca, muoiono prima i Pensionati
@@ -776,13 +831,24 @@ function checks()
 	let plagueWorkers = createWorkers(pls.getDate(), 20);
 	let plagueClones = createClones(pls.getDate(), 4);
 	pls.getPopulation().registry.push(plagueWorkers, plagueClones);
-	let plagueCtx = { state: pls, map: plague, events: [] };
-	expect("nido: nessuna casella esplorata", EventPhase.spawnNest(plagueCtx), null);
-	plague.discoveryTile({ x: 5, y: 5 }, TerrainLayer.Underground);
-	let nestAt = EventPhase.spawnNest(plagueCtx);
-	expect("nido: compare nella casella esplorata e fa scoppiare l'epidemia",
-		[nestAt, plague.findResource({ x: 5, y: 5 }, TerrainLayer.Underground) != null, pls.getDiscovery().indexOf("Alien_Nest") >= 0, plagueCtx.events.map(e => [e.type, e.count]), plagueWorkers.getSick(), plagueClones.getSick()],
-		[{ x: 5, y: 5 }, true, true, [["EPIDEMIC", 1]], 1, 0]);
+	// costruzioni vicine al Nido nascosto in (5,5): fuori distanza, poi con il Nido contenuto, poi senza contenimento
+	plague.addResource("AlienNest", { x: 5, y: 5 });
+	pls.setEventsConfig({ epidemic: { enabled: true, probability: 1, radius: 2 } });
+	let fakeSite = (x, y, layer) => ({ getLayer: () => layer || TerrainLayer.Underground, getPosition: () => ({ x: x, y: y }) });
+	let plagueCtx = (completed) => ({ state: pls, map: plague, events: [], completed: completed });
+	let farCtx = plagueCtx([fakeSite(8, 5), fakeSite(6, 5, TerrainLayer.Surface)]);
+	NestPhase.apply(farCtx);
+	Turn.project(plague);
+	pls.addToActiveList({ getBuildingType: () => "ContainmentStructure", getPosition: () => ({ x: 5, y: 5 }), getLayer: () => TerrainLayer.Underground });
+	let containedCtx = plagueCtx([fakeSite(6, 5)]);
+	NestPhase.apply(containedCtx);
+	expect("nido: niente epidemia lontano, in superficie o con il contenimento", [farCtx.events.length, containedCtx.events.length, plague.isVisible({ x: 5, y: 5 }, TerrainLayer.Underground)], [0, 0, false]);
+	Turn.project(plague);
+	let nearCtx = plagueCtx([fakeSite(6, 6)]);
+	NestPhase.apply(nearCtx);
+	expect("nido: costruire vicino fa scoppiare l'epidemia e scopre il Nido",
+		[plague.isVisible({ x: 5, y: 5 }, TerrainLayer.Underground), pls.getDiscovery().indexOf("Alien_Nest") >= 0, nearCtx.events.map(e => [e.type, e.count]), plagueWorkers.getSick(), plagueClones.getSick()],
+		[true, true, [["EPIDEMIC", 1]], 1, 0]);
 	expect("nido: studi del Vaccino e del Patogeno alieno", ["Vaccine", "AlienPathogen"].map(n => pls.checkKnowledge(RecipeLib.get(n).getRequirement())), [false, false]);
 	pls.addKnowledge({ theory: ["Medicine", "Virus"] });
 	expect("nido: studi disponibili con la scoperta", ["Vaccine", "AlienPathogen"].map(n => pls.checkKnowledge(RecipeLib.get(n).getRequirement())), [true, true]);

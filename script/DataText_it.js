@@ -37,7 +37,7 @@ TextRepository.add("Placement_limitReached", "Al massimo %n edifici di tipo %s n
 TextRepository.add("Placement_missingMaterial", "Per piazzare questo edificio serve: %s.");
 TextRepository.add("BuildingLimit", "Massimo nella colonia");
 TextRepository.add("PlacementCost", "Consumato al piazzamento");
-TextRepository.add("MicrowaveSatelliteDescription", "Satellite che trasmette energia a un Impianto a Microonde: viene consumato quando si piazza l'impianto (massimo 3).");
+TextRepository.add("MicrowaveSatelliteDescription", "Satellite che trasmette energia a un Impianto a Microonde: in orbita alimenta un impianto; si lancia da un Silos di Lancio (l'orbita a microonde ha 3 posti) e dura 100 turni.");
 TextRepository.add("ironBarDescription", "Barre di ferro prodotte dalle Fonderie: servono ai cantieri degli edifici avanzati. Ogni Fonderia ne conserva 10, ogni Deposito 5 in pi\u00F9.");
 TextRepository.add("pharmaceuticalUnitDescription", "Unit\u00E0 farmaceutiche prodotte dall'Industria Farmaceutica per le Strutture Mediche e i Kit Medici. Ogni industria ne conserva 10, ogni Deposito 5 in pi\u00F9.");
 TextRepository.add("goodsUnitDescription", "Unit\u00E0 per beni prodotte dalla Fabbrica di Beni per produrre i Beni. Ogni fabbrica ne conserva 10, ogni Deposito 5 in pi\u00F9.");
@@ -272,7 +272,7 @@ TextRepository.addDescription("LandingModule", "Modulo d'Atterraggio", "Modulo d
 TextRepository.add("SupportModule", "Modulo di Supporto");
 TextRepository.add("LaunchModule", "Modulo di Lancio");
 TextRepository.add("CargoModule", "Modulo Cargo");
-TextRepository.addDescription("MicrowavePlant", "Impianto a Microonde", "Impianto che genera energia elettrica ricevendo microonde da un satellite.");
+TextRepository.addDescription("MicrowavePlant", "Impianto a Microonde", "Impianto che genera energia elettrica ricevendo microonde da un satellite: ogni impianto in funzione usa un Satellite a Microonde in orbita.");
 TextRepository.add("MicrowaveSatellite", "Satellite a Microonde");
 
 TextRepository.add("ElectrostaticCoil", "Bobina Elettrostatica");
@@ -494,7 +494,7 @@ TextRepository.add("MapAnalysisHint", "Analisi: segnalatori di tutti gli strati 
 TextRepository.addDescription("Drill", "Trivella", "Trivella profonda automatica: estrae a ogni turno 3 Minerali Metallici e 3 Minerali ovunque nelle profondità, senza bisogno di un giacimento. Disponibile solo in alcune missioni.");
 TextRepository.addDescription("MedicalResearchCenter", "Centro di ricerca medico", "Laboratorio di superficie con personale: l'unico che permette gli studi medici (Virus, Triage, Patogeno alieno, Vaccino); le sue unità di ricerca valgono anche per gli altri studi.");
 TextRepository.addDescription("EpidemicResponseCore", "Nucleo di risposta epidemie", "Con il personale al lavoro dimezza la propagazione delle epidemie: servono due contagiati per infettare un colono sano. Più nuclei non si sommano.");
-TextRepository.addDescription("Resource_AlienNest", "Nido Alieno", "Struttura aliena comparsa nel sottosuolo: la sua scoperta ha fatto scoppiare un'epidemia. Occupa la casella per sempre.");
+TextRepository.addDescription("Resource_AlienNest", "Nido Alieno", "Struttura aliena del sottosuolo: costruire nelle sue vicinanze può far scoppiare un'epidemia. Una Struttura di contenimento costruita sopra la rende innocua.");
 TextRepository.add("researchStructureMedical", "Centri di ricerca medica");
 TextRepository.add("Alien_Nest", "Nido Alieno");
 TextRepository.addDescription("Virus", "Virus", "Studio dei virus nel Centro di ricerca medico: sblocca lo studio Triage.");
@@ -505,12 +505,12 @@ TextRepository.add("Issue_storm", "Fermo: la tempesta di sabbia impedisce di ric
 TextRepository.add("ChooseEvents", "4. Eventi imprevisti (togli la spunta per disattivarli)");
 TextRepository.add("EventAllPlanets", "tutti i pianeti");
 TextRepository.add("GameEvent_epidemic", "Epidemia");
-TextRepository.add("GameEvent_epidemicDescription", "Dopo la costruzione di un Centro di ricerca medico può comparire un Nido Alieno: l'1% dei coloni si ammala e ogni malato ne contagia un altro a ogni turno, finché non si studia il Vaccino.");
+TextRepository.add("GameEvent_epidemicDescription", "Nel sottosuolo ci sono Nidi Alieni nascosti: costruire nelle loro vicinanze può far ammalare l'1% dei coloni, e ogni malato ne contagia un altro a ogni turno, finché non si studia il Vaccino.");
 TextRepository.add("GameEvent_earthquake", "Terremoto");
 TextRepository.add("GameEvent_earthquakeDescription", "Per alcuni turni danneggia tutti gli edifici, in proporzione alla sua intensità, e può distruggerne alcuni.");
 TextRepository.add("GameEvent_sandstorm", "Tempesta di sabbia");
 TextRepository.add("GameEvent_sandstormDescription", "Per alcuni turni danneggia lievemente gli edifici di superficie e spegne gli Impianti a Microonde.");
-TextRepository.add("Event_EPIDEMIC", "Epidemia! È comparso un Nido Alieno nel sottosuolo: %s coloni si sono ammalati");
+TextRepository.add("Event_EPIDEMIC", "Epidemia! Una costruzione ha disturbato un Nido Alieno: %s coloni si sono ammalati");
 TextRepository.add("Event_EPIDEMIC_SPREAD", "Epidemia: %s nuovi contagiati");
 TextRepository.add("Event_EPIDEMIC_VACCINE", "Il Vaccino ha fermato l'epidemia");
 TextRepository.add("Event_EPIDEMIC_END", "L'epidemia è finita: non restano malati");
@@ -519,3 +519,38 @@ TextRepository.add("Event_EARTHQUAKE_DESTROYED", "Il terremoto ha distrutto %s e
 TextRepository.add("Event_EARTHQUAKE_END", "Il terremoto è finito");
 TextRepository.add("Event_SANDSTORM", "Tempesta di sabbia per %s turni: Impianti a Microonde fermi");
 TextRepository.add("Event_SANDSTORM_END", "La tempesta di sabbia è finita");
+
+// nidi alieni, satelliti e avamposti
+TextRepository.add("Resource_AlienNest", "Nido Alieno");
+TextRepository.addDescription("ContainmentStructure", "Struttura di contenimento", "Si costruisce solo su un Nido Alieno: finché è attiva, quel Nido non causa epidemie. Automatica.");
+TextRepository.addDescription("AlienBiomassContainment", "Contenimento Biomasse Aliene", "Tecniche per isolare i Nidi Alieni: sblocca la Struttura di contenimento.");
+TextRepository.addDescription("Aerospace", "Ricerca Aerospaziale", "Razzi e satelliti: sblocca il Silos di Lancio e la produzione di satelliti a microonde e minerari.");
+TextRepository.addDescription("RemoteSensing", "Telerilevamento", "Sensori orbitali avanzati: sblocca i satelliti minerari avanzati (radioattivi) e termici avanzati (fumarole).");
+TextRepository.addDescription("Nanotechnology", "Nanotecnologie", "Costruzioni autonome: sblocca il Modulo d'Atterraggio Automatizzato, che fonda un avamposto.");
+TextRepository.addDescription("LaunchSilo", "Silos di Lancio", "Lancia in orbita i satelliti in magazzino e il Modulo d'Atterraggio Automatizzato: un lancio a turno per Silos, con il personale al lavoro.");
+TextRepository.add("LaunchSilo_u", "Silos di Lancio");
+TextRepository.addDescription("AutoLandingModule", "Modulo d'Atterraggio Automatizzato", "Lanciato da un Silos su un punto della mappa, fonda un avamposto: un nuovo Headquarter con energia, manutenzione e qualche robot. Condivide materiali, ricerca e popolazione con la colonia.");
+TextRepository.add("autoLandingModule", "Modulo d'Atterraggio Automatizzato");
+TextRepository.addDescription("MiningSatellite", "Satellite Minerario", "In orbita di osservazione mostra sulla minimappa i giacimenti di metallo e di minerali.");
+TextRepository.addDescription("MiningSatelliteAdv", "Satellite Minerario Avanzato", "In orbita di osservazione mostra sulla minimappa i giacimenti radioattivi.");
+TextRepository.addDescription("ThermalSatelliteAdv", "Satellite Termico Avanzato", "In orbita di osservazione mostra sulla minimappa le fumarole.");
+TextRepository.add("Orbit_microwave", "Orbita a microonde");
+TextRepository.add("Orbit_observation", "Orbita di osservazione");
+TextRepository.add("ReportOrbits", "Orbite e lanci");
+TextRepository.add("ReportOrbitsDescription", "Satelliti in orbita e la loro durata, satelliti in magazzino, Silos di Lancio e Spazioporto.");
+TextRepository.add("TurnsLeft", "%s turni");
+TextRepository.add("SatellitesInStorage", "In magazzino");
+TextRepository.add("LaunchesLeft", "Lanci possibili in questo turno");
+TextRepository.add("ShipsLaunched", "Navicelle lanciate");
+TextRepository.add("SiloLaunch_command", "Lancia un satellite");
+TextRepository.add("SiloLaunch_hint", "Mette in orbita un satellite del magazzino, se la sua orbita ha un posto libero (un lancio a turno per Silos)");
+TextRepository.add("SiloLaunch_choose", "Quale satellite lanciare?");
+TextRepository.add("SiloLaunch_done", "%s lanciato in orbita");
+TextRepository.add("SiloLaunch_noSilo", "Serve un Silos di Lancio attivo, con il personale al lavoro.");
+TextRepository.add("SiloLaunch_noLaunch", "I Silos di Lancio hanno già fatto tutti i lanci di questo turno.");
+TextRepository.add("SiloLaunch_noSatellite", "Non ci sono satelliti in magazzino: producili prima.");
+TextRepository.add("SiloLaunch_orbitFull", "L'orbita di questo satellite non ha posti liberi.");
+TextRepository.add("Placement_noLaunch", "Il Modulo d'Atterraggio Automatizzato si lancia da un Silos di Lancio attivo che non abbia già lanciato in questo turno.");
+TextRepository.add("Issue_noSatellite", "Fermo: manca un satellite a microonde in orbita per questo impianto");
+TextRepository.add("Event_SATELLITE_EXPIRING", "%s satelliti in esaurimento fra 5 turni: %t");
+TextRepository.add("Event_SATELLITE_EXPIRED", "%s satelliti esauriti: %t");

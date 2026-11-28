@@ -4,6 +4,7 @@ import { Events } from "./Events.js";
 import { generationFromData } from "./Generations.js";
 import { MaterialLedger } from "./MaterialLedger.js";
 import { INCLUSION_BUILDINGS } from "./Mission.js";
+import { Orbit } from "./Orbit.js";
 import { RecipeLib } from "./RecipeLib.js";
 
 const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
@@ -64,6 +65,8 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		state.robotWear = { roboWorker: [], dozer: [], digger: [] };
 		// eventi: configurazione della partita ed eventi in corso (vedi Events.js); spenti finché non si configurano
 		state.events = Events.emptyState();
+		// orbite: posti e satelliti in orbita, lanci del turno (vedi Orbit.js)
+		state.orbits = Orbit.emptyState();
 
 		// i materiali sono gestiti dal Material ledger
 		let ledger = new MaterialLedger();
@@ -311,6 +314,7 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 				alerts: JSON.parse(JSON.stringify(state.alerts)),
 				robotWear: JSON.parse(JSON.stringify(state.robotWear)),
 				events: JSON.parse(JSON.stringify(state.events)),
+				orbits: JSON.parse(JSON.stringify(state.orbits)),
 				robotsAvailable: Object.assign({}, state.robotsAvailable),
 				knowledge: {
 					discovery: knowledge.discovery.slice(),
@@ -359,6 +363,9 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 			// i salvataggi precedenti non avevano eventi: restano spenti
 			state.events = Object.assign(Events.emptyState(), data.events || {});
 			state.events.config = Events.normalize(state.events.config);
+			// i salvataggi precedenti non avevano orbite: le prepara SaveGame.load (satelliti per gli impianti esistenti)
+			state.orbits = data.orbits ? Object.assign(Orbit.emptyState(), data.orbits) : Orbit.emptyState();
+			state.orbitsMissing = !data.orbits;
 			["discovery", "theory", "technology", "completed"].forEach(function(type)
 			{
 				state.knowledge[type] = data.knowledge[type].slice();
@@ -427,6 +434,12 @@ const NOTIFICATION_HISTORY = 100;	// notifiche conservate nello storico
 		/** eventi: { config, earthquake, sandstorm, epidemic, nests, medicalSince } (vedi Events.js) */
 		this.getEvents = function() { return state.events; };
 		this.setEventsConfig = function(config) { state.events.config = Events.normalize(config); };
+		/** orbite: { capacity, satellites, launches } (vedi Orbit.js) */
+		this.getOrbits = function() { return state.orbits; };
+		this.setOrbitCapacity = function(capacity) { state.orbits.capacity = Object.assign({}, Orbit.CAPACITY, capacity || {}); };
+		/** partita salvata prima delle orbite: da preparare una volta al caricamento */
+		this.isOrbitsMissing = function() { return !!state.orbitsMissing; };
+		this.clearOrbitsMissing = function() { delete state.orbitsMissing; };
 
 		this.getLedger = function() { return ledger; };
 		this.getConsumed = ledger.getConsumed;

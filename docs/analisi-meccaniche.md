@@ -58,7 +58,7 @@ Un Satellite a Microonde costa 3 unità di produzione e 1 struttura standard, ne
 
 **Proposta:** dare al satellite un costo in Barre di Ferro, oppure limitare il numero di satelliti, oppure ridurne la potenza col passare dei turni.
 
-**Risolto ✅**: il satellite costa 2 Barre di Ferro per passo di produzione (6 a pieno ritmo); l'Impianto a Microonde consuma il satellite una sola volta, al piazzamento, e se ne possono avere al massimo 3. Oltre i 1700 di energia servono Tokamak, Centrale Geotermica o Bobina Elettrostatica.
+**Risolto ✅**: il satellite costa 2 Barre di Ferro per passo di produzione (6 a pieno ritmo). Ora i satelliti stanno in orbite con posti limitati: ogni Impianto a Microonde in funzione usa un satellite a microonde in orbita (3 posti), i satelliti hanno una durata e si lanciano da un Silos di Lancio. Oltre i 1500 di energia servono Tokamak, Centrale Geotermica o Bobina Elettrostatica.
 
 ## B. Equilibrio
 
@@ -115,7 +115,7 @@ Lo Spazioporto non produce niente e la terraformazione non esiste. La vittoria d
 Incidenti, catastrofi, scoperte e ribellioni per felicità bassa protratta sono rimandati. Gli eventi del turno hanno già un registro dove inserirli.
 
 **Primi eventi ✅:** la fase degli eventi (`script/Events.js`) è la prima del turno.
-- **Epidemia**: dopo qualche turno di Centro di ricerca medico attivo può comparire un Nido Alieno in una casella esplorata del sottosuolo; l'1% dei coloni nati si ammala e ogni malato ne contagia uno a turno (uno ogni due con il Nucleo di risposta epidemie) finché non si studia il Vaccino.
+- **Epidemia** (pianeti giungla): i Nidi Alieni sono nascosti nel sottosuolo fin dall'inizio; completare una costruzione vicino a un Nido non contenuto può far ammalare l'1% dei coloni nati, e ogni malato ne contagia uno a turno (uno ogni due con il Nucleo di risposta epidemie) finché non si studia il Vaccino. La Struttura di contenimento rende innocuo il suo Nido.
 - **Terremoto** (pianeti vulcanici): per 1-3 turni danneggia tutti gli edifici secondo l'intensità e può distruggerne alcuni (non tubi e Headquarter).
 - **Tempesta di sabbia** (pianeti desertici): per 2-4 turni danneggia lievemente gli edifici di superficie e ferma gli Impianti a Microonde.
 

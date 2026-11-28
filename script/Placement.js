@@ -1,6 +1,7 @@
 "use strict";
 
 import { RobotTypes } from "./Enums.js";
+import { Orbit } from "./Orbit.js";
 import { PrototypeLib } from "./PrototypeLib.js";
 
 /**
@@ -30,7 +31,8 @@ let PlacementReason = {
 	NoResourceRequired: "noResourceRequired",
 	RequiresResource: "requiresResource",
 	LimitReached: "limitReached",
-	MissingMaterial: "missingMaterial"
+	MissingMaterial: "missingMaterial",
+	NoLaunch: "noLaunch"
 };
 
 function PlacementConstructor()
@@ -141,8 +143,8 @@ function PlacementConstructor()
 		let prototype = PrototypeLib.get(buildingType);
 		if(map.isRazable(point))
 		{
-			// solo il modulo di atterraggio può scendere su terreno non spianato
-			if(buildingType != "LandingModule")
+			// solo i moduli di atterraggio possono scendere su terreno non spianato
+			if(buildingType != "LandingModule" && buildingType != "AutoLandingModule")
 			{
 				return _fail(PlacementReason.NotApplicable);
 			}
@@ -188,6 +190,11 @@ function PlacementConstructor()
 		{
 			return _fail(PlacementReason.MissingMaterial, { material: missing });
 		}
+		// il Modulo d'Atterraggio Automatizzato arriva con un lancio da un Silos
+		if(prototype.needsLaunch() && Orbit.launchesLeft(state) <= 0)
+		{
+			return _fail(PlacementReason.NoLaunch);
+		}
 		return _ok(function()
 		{
 			if(map.addBuilding(buildingType, point) == null)
@@ -197,6 +204,10 @@ function PlacementConstructor()
 			if(Object.keys(placementCost).length > 0)
 			{
 				state.destroyMaterials(placementCost);
+			}
+			if(prototype.needsLaunch())
+			{
+				Orbit.useLaunch(state);
 			}
 			return true;
 		});

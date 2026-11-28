@@ -55,10 +55,12 @@ function PrototypeLibConstructor()
 	 *  @param {TerrainLayer} terrainLayer
 	 *  @param {string} color
 	 */
-	let _addResource = function(resourceType, terrainLayer, color)
+	/** @param {string} [discovery] scoperta che si ottiene rivelandone la casella (predefinita: il tipo "Resource_...") */
+	let _addResource = function(resourceType, terrainLayer, color, discovery)
 	{
 		let buildingType = "Resource_" + resourceType;
 		let item = new BasePrototype(buildingType, terrainLayer, 0, {}, {});
+		item.discovery = discovery || buildingType;
 		item.createItem = function(position)
 		{
 			return new Resource(resourceType, terrainLayer, color, position);
@@ -217,6 +219,8 @@ function BasePrototype(buildingType, terrainLayer, buildingTime, buildingCost, p
 	this.getAreaType = function() { return parameters.areaType || AreaTypes.One; };
 	this.getPorts = function() { return parameters.ports || null; };
 	this.isHeadquarter = function() { return parameters.headquarter === true; };
+	/** si piazza con un lancio da un Silos (Modulo d'Atterraggio Automatizzato) */
+	this.needsLaunch = function() { return parameters.launch === true; };
 	this.getParts = function() { return parts; };
 
 	this.createItem = _createItem;

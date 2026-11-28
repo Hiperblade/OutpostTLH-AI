@@ -310,7 +310,7 @@ function TerrainMap(terrainTypology, size, surfaceMorphology)
 			let resource = _findResource(point, selectedLayer);
 			if(resource != null)
 			{
-				state.addKnowledge({ discovery: [resource.getBuildingType()] });
+				state.addKnowledge({ discovery: [PrototypeLib.get(resource.getBuildingType()).discovery || resource.getBuildingType()] });
 				_getLayer(selectedLayer)[point.x][point.y] = 0;
 			}
 			else

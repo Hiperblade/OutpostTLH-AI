@@ -104,6 +104,8 @@ let MaintenancePhase = (function()
 					if(buildList.indexOf(building) >= 0 && building.progressBuild(ctx.state.getBuildPoints(building)))
 					{
 						ctx.map.onBuildingCompleted(building);
+						// per le fasi successive (es. le epidemie dei Nidi alieni)
+						ctx.completed = (ctx.completed || []).concat([building], building.getParts());
 					}
 				});
 			});

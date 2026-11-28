@@ -26,7 +26,8 @@ Il Modulo d'Atterraggio, completato, piazza da solo:
 | Modulo di Supporto | 200 di energia |
 | Modulo Cargo | 20 di magazzino generico, 30 posti per robot |
 | Modulo di Lancio | — |
-| Robot | 10 RoboWorker, 3 Ruspe, 1 Scavatrice, 2 Trivelle, 1 Satellite a Microonde |
+| Robot | 10 RoboWorker, 3 Ruspe, 1 Scavatrice, 2 Trivelle |
+| Satelliti in orbita | 1 Satellite a Microonde, 1 Satellite Minerario |
 
 Rende costruibili 19 edifici: Impianto a Microonde, Condensatore, Centro di Manutenzione, Rimessa Robotica, Comando Robotico, Controllo Ambientale, Cupola Agricola, Struttura Residenziale, Scuola, Università, Magazzino, Impianto di smaltimento, Fonderia, Area di stoccaggio, Fabbrica Industriale, Centro di ricerca automatico, Laboratorio di Superficie, Laboratorio, Laboratorio di Profondità.
 
@@ -36,7 +37,7 @@ Senza coloni svegli si costruisce tutto con i robot. Ordine consigliato:
 
 | # | Edificio / studio | Perché | Dati |
 |---|---|---|---|
-| 1 | **Impianto a Microonde** | energia per tutto il resto | 500 energia, usa il satellite del kit; max 3 |
+| 1 | **Impianto a Microonde** | energia per tutto il resto | 500 energia; ogni impianto usa un satellite a microonde in orbita (il kit ne porta uno, l'orbita ha 3 posti) |
 | 2 | **Controllo Ambientale** | habitat per la rete e per gli alloggi | 5 turni, 80 energia → 50 habitat, 20 habitat residenziale |
 | 3 | **Cupola Agricola** ×2 | cibo (un clone mangia ½) | 3 turni, 10 cibo ciascuna, scorta 50 |
 | 4 | Condotto verso il sottosuolo + **Struttura Residenziale** | alloggi per 16 | 4 turni, 15 energia, 2 habitat residenziale |
@@ -97,6 +98,8 @@ La felicità è 1 meno la carenza peggiore tra istruzione, alta istruzione e sva
 | Robot e logistica | Comando Robotico (+8 robot di cantiere insieme) e Avanzato, Rimessa e Rimessa Avanzata, Deposito | Metallurgia Avanzata, Intelligenza Artificiale |
 | Ricerca | Laboratorio di Superficie, di Profondità e versioni avanzate | Informatica, Intelligenza Artificiale |
 | Ricerca medica ed epidemie | Centro di ricerca medico (superficie, 4 addetti), Nucleo di risposta epidemie (sottosuolo, 3 addetti) | Medicina Avanzata, Virus, Triage (dimezza le malattie), Patogeno alieno, Vaccino (ferma l'epidemia) |
+| Satelliti e avamposti | Silos di Lancio (superficie, 3 addetti, un lancio a turno), Modulo d'Atterraggio Automatizzato (fonda un avamposto) | Ricerca Aerospaziale (Silos, satelliti a microonde e minerari), Telerilevamento (satelliti minerari e termici avanzati), Nanotecnologie (Modulo d'Atterraggio Automatizzato) |
+| Nidi alieni (pianeti giungla) | Struttura di contenimento (sottosuolo, solo su un Nido) | Contenimento Biomasse Aliene |
 | Solo in alcune missioni | Trivella (profondità, automatica: 3 metallo e 3 minerali a turno, senza giacimento) | nessuno: disponibile dall'atterraggio se la missione la include |
 
 ## Obiettivi

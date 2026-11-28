@@ -76,7 +76,7 @@ Non resta in piedi nessun Headquarter; oppure non resta manodopera e non c'è mo
 ### Coloni
 
 **Kit di atterraggio**:
-Ciò che la colonia riceve atterrando: i moduli di base, i robot di cantiere e i RoboWorker; niente cibo e niente coloni.
+Ciò che la colonia riceve atterrando: i moduli di base, i robot di cantiere, i RoboWorker, un satellite a microonde e uno minerario già in orbita; niente cibo e niente coloni.
 
 **Capsula criogenica**:
 Un clone in attesa di risveglio, preparato dal Centro Criogenico con i minerali; non consuma risorse e non lavora finché non viene risvegliato.
@@ -187,11 +187,39 @@ I materiali che un cantiere consuma a ogni turno di lavoro; se mancano, il canti
 _Evitare_: costo di costruzione (inteso come costo una tantum)
 
 **Impianto a Microonde**:
-Centrale che riceve energia da un Satellite a Microonde in orbita; consuma il satellite quando viene piazzata e se ne possono avere al massimo 3.
+Centrale che riceve energia da un Satellite a Microonde in orbita: ogni impianto in funzione ne usa uno, e quelli senza satellite restano fermi.
 _Evitare_: centrale solare, ripetitore
 
+**Satellite**:
+Oggetto prodotto dalla colonia e lanciato in orbita da un Silos di Lancio; in orbita ha una durata in turni, poi si esaurisce e libera il posto. Tipi: a microonde, minerario, minerario avanzato, termico avanzato.
+_Evitare_: sonda
+
+**Orbita**:
+Gli spazi limitati in cui stanno i satelliti: l'orbita a microonde (satelliti a microonde) e l'orbita di osservazione (satelliti minerari e termici), ciascuna con un numero di posti fissato dalla partita.
+
+**Giacimento conosciuto**:
+Un giacimento che la colonia ha scoperto da sé: nel sottosuolo e in profondità quando la sua casella è stata rivelata, in superficie quando è entro 10 caselle da un edificio della colonia. Resta sempre sulla minimappa.
+
+**Giacimento rilevato**:
+Un giacimento non ancora conosciuto che un satellite di osservazione in orbita mostra sulla minimappa; sparisce quando il satellite si esaurisce.
+
 **Satellite a Microonde**:
-Satellite prodotto dalla colonia (con Barre di Ferro) che alimenta un Impianto a Microonde; il kit di atterraggio ne porta uno.
+Satellite che alimenta un Impianto a Microonde.
+
+**Satellite di osservazione**:
+Satellite minerario (giacimenti di metallo e minerali), minerario avanzato (radioattivi) o termico avanzato (fumarole): mostra i giacimenti del suo tipo sulla minimappa.
+_Evitare_: satellite spia, sonda
+
+**Silos di Lancio**:
+Edificio di superficie che lancia in orbita i satelliti e il Modulo d'Atterraggio Automatizzato, uno a turno.
+_Evitare_: rampa, base di lancio
+
+**Modulo d'Atterraggio Automatizzato**:
+Modulo prodotto dalla colonia e lanciato da un Silos su un altro punto del sito, dove fonda un avamposto.
+
+**Avamposto**:
+Una seconda base della stessa colonia, con un proprio Headquarter e una propria rete di energia e manutenzione; condivide con la colonia materiali, ricerca e popolazione.
+_Evitare_: seconda colonia, colonia automatica
 
 **Centro di ricerca automatico**:
 Edificio di superficie che conduce senza coloni le ricerche necessarie a rendere la colonia abitabile.
@@ -249,11 +277,15 @@ _Evitare_: incidente generico, accadimento
 Nella partita libera ogni tipo di evento si può disattivare alla creazione; nelle missioni gli eventi sono spenti finché la missione non li attiva e ne stabilisce probabilità, durata e intensità.
 
 **Nido alieno**:
-Struttura aliena che può comparire nel sottosuolo solo dopo la costruzione di un Centro di ricerca medico, in una casella già esplorata e libera; viene scoperto appena compare, occupa la casella per sempre e la sua scoperta fa scoppiare un'epidemia.
+Struttura aliena dei pianeti giungla, nascosta nel sottosuolo fin dall'inizio come un giacimento; la sua scoperta rende possibili gli studi sul patogeno alieno, e costruire nelle sue vicinanze può far scoppiare un'epidemia.
+
+**Struttura di contenimento**:
+Edificio che si costruisce solo su un Nido alieno e, finché esiste, impedisce che quel Nido causi epidemie.
+_Evitare_: gabbia, sigillo
 _Evitare_: alveare, covo
 
 **Epidemia**:
-Evento causato dalla scoperta di un Nido alieno: all'inizio si ammala l'1% dei coloni nati (i cloni sono immuni) e a ogni turno ogni contagiato ne infetta un altro, finché lo studio Vaccino non ferma il contagio; i malati si curano come sempre con i Kit Medici.
+Evento causato da una costruzione vicino a un Nido alieno non contenuto: all'inizio si ammala l'1% dei coloni nati (i cloni sono immuni) e a ogni turno ogni contagiato ne infetta un altro, finché lo studio Vaccino non ferma il contagio; i malati si curano come sempre con i Kit Medici.
 _Evitare_: pandemia, infezione
 
 **Vaccino**:

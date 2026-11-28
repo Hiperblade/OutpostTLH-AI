@@ -1,5 +1,6 @@
 "use strict";
 
+import { Orbit, microwavePlants } from "./Orbit.js";
 import { configureStorage } from "./GameSetup.js";
 import { RecipeLib } from "./RecipeLib.js";
 import { TerrainMap } from "./TerrainMap.js";
@@ -68,6 +69,13 @@ function SaveGameConstructor()
 		let state = map.getState();
 		// materiali aggiunti dopo il salvataggio vanno nei loro magazzini
 		configureStorage(state);
+		// prima delle orbite: un satellite a microonde per ogni impianto costruito (fino ai posti) e uno minerario
+		if(state.isOrbitsMissing())
+		{
+			for(let i = microwavePlants(map); i > 0; i--) { Orbit.put(state, "MicrowaveSatellite"); }
+			Orbit.put(state, "MiningSatellite");
+			state.clearOrbitsMissing();
+		}
 		state.getCompletedResearch().slice().forEach(function(name)
 		{
 			let recipe = RecipeLib.get(name);

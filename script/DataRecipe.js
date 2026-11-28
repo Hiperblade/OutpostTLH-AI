@@ -9,7 +9,12 @@ RecipeLib.add(RecipeType.Production, "Robo-Dozer",  { discovery: ["Robotics"] },
 RecipeLib.add(RecipeType.Production, "Robo-Miner",  { discovery: ["Robotics"] }, 3, { labor: 1, productionUnit: 3, productionStandardStructure: 1, metalOre: 6 }, { miner: 1, fusionWaste: 3, toxicWaste: 1 });
 RecipeLib.add(RecipeType.Production, "Robo-Digger", { discovery: ["Robotics"] }, 3, { labor: 1, productionUnit: 2, productionStandardStructure: 1, metalOre: 4 }, { digger: 1, fusionWaste: 3, toxicWaste: 1 });
 
-RecipeLib.add(RecipeType.Production, "MicrowaveSatellite",  { }, 3, { labor: 1, productionUnit: 3, productionStandardStructure: 1, ironBar: 2 }, { MicrowaveSatellite: 1 });
+// satelliti (si lanciano dal Silos di Lancio) e Modulo d'Atterraggio Automatizzato
+RecipeLib.add(RecipeType.Production, "MicrowaveSatellite",  { theory: ["Aerospace"] }, 3, { labor: 1, productionUnit: 3, productionStandardStructure: 1, ironBar: 2 }, { MicrowaveSatellite: 1 });
+RecipeLib.add(RecipeType.Production, "MiningSatellite",     { theory: ["Aerospace"] }, 3, { labor: 1, productionUnit: 3, productionStandardStructure: 1, ironBar: 2 }, { MiningSatellite: 1 });
+RecipeLib.add(RecipeType.Production, "MiningSatelliteAdv",  { theory: ["RemoteSensing"] }, 4, { labor: 1, productionUnit: 4, productionStandardStructure: 1, ironBar: 3 }, { MiningSatelliteAdv: 1 });
+RecipeLib.add(RecipeType.Production, "ThermalSatelliteAdv", { theory: ["RemoteSensing"] }, 4, { labor: 1, productionUnit: 4, productionStandardStructure: 1, ironBar: 3 }, { ThermalSatelliteAdv: 1 });
+RecipeLib.add(RecipeType.Production, "AutoLandingModule",   { theory: ["Nanotechnology"] }, 10, { labor: 1, productionUnit: 10, productionStandardStructure: 1, ironBar: 10 }, { autoLandingModule: 1 });
 
 RecipeLib.add(RecipeType.Production, "RadioactiveBar", { technology: ["Tokamak"] }, 1, { labor: 1, productionUnit: 3, productionChemicalStructure: 1, radioactiveOre: 2 }, { radioactiveBar: 10, radioactiveWaste: 3 });
 
@@ -48,6 +53,8 @@ RecipeLib.add(RecipeType.Research, "AdvancedMedicine",		{ theory: ["Medicine"] }
 RecipeLib.add(RecipeType.Research, "Virus",					{ theory: ["Medicine"], technology: ["MedicalResearchCenter"] },	6, { researchUnit: 10, researchStructureMedical: 1 },	{ theory: ["Virus"] });
 RecipeLib.add(RecipeType.Research, "Triage",				{ theory: ["Virus"] },						3, { researchUnit: 8, researchStructureMedical: 1 },		{ theory: ["Triage"] });
 RecipeLib.add(RecipeType.Research, "AlienPathogen",			{ theory: ["Virus"], discovery: ["Alien_Nest"] },	6, { researchUnit: 15, researchStructureMedical: 1 },	{ theory: ["AlienPathogen"], technology: ["EpidemicResponseCore"] });
+// contenimento dei Nidi alieni
+RecipeLib.add(RecipeType.Research, "AlienBiomassContainment",	{ theory: ["AlienPathogen"] },			6, { researchUnit: 15, researchStructureMedical: 1 },	{ technology: ["ContainmentStructure"] });
 // vaccino: 3 turni con il Centro di ricerca medico a pieno personale (4 passi a turno)
 RecipeLib.add(RecipeType.Research, "Vaccine",				{ theory: ["Medicine"], discovery: ["Alien_Nest"] },	3, { researchUnit: 5, researchStructureMedical: 1 },	{ theory: ["Vaccine"] });
 RecipeLib.add(RecipeType.Research, "Pharmacology",			{ theory: ["Medicine"] },					6, { researchUnit: 4, researchStructureAuto: 1 },	{ technology: ["PharmaceuticalIndustry"] });
@@ -62,6 +69,11 @@ RecipeLib.add(RecipeType.Research, "Superintelligence",		{ theory: ["ArtificialC
 RecipeLib.add(RecipeType.Research, "Terraforming",				{ theory: ["Chemistry", "Physics"] },	10, { researchUnit: 40, researchStructureSurface: 2, researchStructureUnderground: 1 },	{ theory: ["Terraforming"], technology: ["Terraformer"] });
 RecipeLib.add(RecipeType.Research, "AdvancedTerraforming",		{ theory: ["Terraforming", "AdvancedMetallurgy"] },	15, { researchUnit: 50, researchStructureSurfaceAdv: 1 },	{ technology: ["TerraformerAdv"] });
 RecipeLib.add(RecipeType.Research, "AI",					{ theory: ["ComputerScience"] },			8, { researchUnit: 10, researchStructureSurface: 2 },		{ theory: ["AI"], technology: ["HotLabAdv", "LabAdv", "DeepLabAdv", "RoboCommanderAdv", "UnivesityAdv"] });
+
+// ricerca aerospaziale: Silos di Lancio e satelliti; poi telerilevamento e nanotecnologie
+RecipeLib.add(RecipeType.Research, "Aerospace",				{ theory: ["Physics", "AdvancedMetallurgy"] },	8, { researchUnit: 20, researchStructureSurface: 2 },	{ theory: ["Aerospace"], technology: ["LaunchSilo"] });
+RecipeLib.add(RecipeType.Research, "RemoteSensing",			{ theory: ["Aerospace"], technology: ["Tokamak"] },	8, { researchUnit: 25, researchStructureSurface: 2, researchStructureDeep: 1 },	{ theory: ["RemoteSensing"] });
+RecipeLib.add(RecipeType.Research, "Nanotechnology",		{ theory: ["Aerospace", "AI"] },			12, { researchUnit: 40, researchStructureSurfaceAdv: 1, researchStructureUnderground: 2 },	{ theory: ["Nanotechnology"], technology: ["AutoLandingModule"] });
 
 RecipeLib.add(RecipeType.Research, "HumanScience",		{ },										4, { researchUnit: 12, researchStructureSurface: 1 },		{ theory: ["HumanScience"] });
 RecipeLib.add(RecipeType.Research, "Psicology",			{ theory: ["HumanScience"] },				8, { researchUnit: 20, researchStructureSurface: 1 },		{ theory: ["Psicology"] });

@@ -11,25 +11,27 @@ import { StructureTypes, TerrainLayer, Typology } from "./Enums.js";
  *   Events.canHappen(type, typology)  il tipo di evento può avvenire su questo tipo di pianeta
  *
  * Stato in corso (ColonyState.getEvents()):
- *   { config, earthquake: { turns, intensity } | null, sandstorm: { turns } | null, epidemic: bool,
- *     nests: numero di Nidi comparsi, medicalSince: data del primo Centro di ricerca medico attivo | null }
+ *   { config, earthquake: { turns, intensity } | null, sandstorm: { turns } | null, epidemic: bool }
  *
  * EventPhase è la prima fase del turno: nella proiezione spegne gli edifici fermati dagli eventi in corso
  * (Tempesta di sabbia: Impianti a Microonde); nell'applicazione fa durare e finire gli eventi in corso e ne
- * fa scoppiare di nuovi. Il contagio dell'epidemia avviene nella fase della malattia (Epidemic.spread).
+ * fa scoppiare di nuovi. I Nidi alieni si piazzano con la mappa (Events.placeNests); NestPhase, dopo la
+ * manutenzione, fa scoppiare l'epidemia quando si completa una costruzione vicino a un Nido non contenuto.
+ * Il contagio dell'epidemia avviene nella fase della malattia (Epidemic.spread).
  */
 const EVENT_TYPES = ["epidemic", "earthquake", "sandstorm"];
 
 const EVENT_DEFAULTS = {
-	// il Nido compare solo dopo "delay" turni di Centro di ricerca medico attivo, con "probability" a turno
-	epidemic: { probability: 0.02, delay: 5, maxNests: 1 },
+	// Nidi: quota delle caselle del sottosuolo; costruire entro "radius" caselle da un Nido non contenuto
+	// fa scoppiare l'epidemia con "probability"
+	epidemic: { rate: 0.001, radius: 2, probability: 0.25 },
 	earthquake: { probability: 0.01, minTurn: 30, minDuration: 1, maxDuration: 3, minIntensity: 1, maxIntensity: 3 },
 	sandstorm: { probability: 0.02, minTurn: 20, minDuration: 2, maxDuration: 4 }
 };
 
 /** tipi di pianeta su cui l'evento può avvenire (null: tutti) */
 const EVENT_PLANETS = {
-	epidemic: null,
+	epidemic: [Typology.Jungle],
 	earthquake: [Typology.Vulcanic],
 	sandstorm: [Typology.Desert]
 };
@@ -39,7 +41,7 @@ const EARTHQUAKE_DESTROY = 0.02;	// probabilità di distruzione a turno per punt
 const SANDSTORM_DAMAGE = 10;		// integrità persa a turno dagli edifici di superficie (1%)
 const SANDSTORM_STOPS = ["MicrowavePlant"];
 const EPIDEMIC_START = 0.01;		// coloni nati che si ammalano alla comparsa di un Nido
-const NEST_CENTER = "MedicalResearchCenter";
+const CONTAINMENT = "ContainmentStructure";
 const RESPONSE_CORE = "EpidemicResponseCore";
 const VACCINE = "Vaccine";
 
@@ -77,7 +79,30 @@ let Events = {
 	/** stato iniziale degli eventi: tutti spenti (le partite salvate prima degli eventi restano così) */
 	emptyState: function(config)
 	{
-		return { config: Events.normalize(config), earthquake: null, sandstorm: null, epidemic: false, nests: 0, medicalSince: null };
+		return { config: Events.normalize(config), earthquake: null, sandstorm: null, epidemic: false };
+	},
+
+	/** Nidi alieni nascosti nel sottosuolo, se l'epidemia è attiva e il pianeta lo prevede; restituisce quanti */
+	placeNests: function(map)
+	{
+		let config = map.getState().getEvents().config.epidemic;
+		if(!config.enabled || !Events.canHappen("epidemic", map.getTypology()))
+		{
+			return 0;
+		}
+		let size = map.getSize();
+		let count = Math.round(size.x * size.y * config.rate);
+		let placed = 0;
+		for(let attempt = 0; placed < count && attempt < count * 20; attempt++)
+		{
+			let position = { x: Math.floor(Math.random() * size.x), y: Math.floor(Math.random() * size.y) };
+			if(map.findResource(position, TerrainLayer.Underground) == null && map.findBuilding(position, TerrainLayer.Underground) == null)
+			{
+				map.addResource("AlienNest", position);
+				placed++;
+			}
+		}
+		return placed;
 	},
 
 	/** edifici fermati in questo turno dagli eventi in corso */
@@ -165,32 +190,6 @@ let Epidemic = {
 
 //-----------------------------------------------------------------------------
 // fase degli eventi
-
-/** caselle del sottosuolo già esplorate e libere (senza edifici, tubi, risorse o robot) */
-let _freeExploredTiles = function(map)
-{
-	let occupied = new Set();
-	map.getStructure().forEach(function(el)
-	{
-		if(el.getLayer() == TerrainLayer.Underground)
-		{
-			occupied.add(el.getPosition().x + "," + el.getPosition().y);
-		}
-	});
-	let size = map.getSize();
-	let tiles = [];
-	for(let x = 0; x < size.x; x++)
-	{
-		for(let y = 0; y < size.y; y++)
-		{
-			if(map.isVisible({ x: x, y: y }, TerrainLayer.Underground) && !occupied.has(x + "," + y))
-			{
-				tiles.push({ x: x, y: y });
-			}
-		}
-	}
-	return tiles;
-};
 
 /** danneggia gli edifici (principali e tubi): chi arriva a zero è distrutto */
 let _damage = function(ctx, buildings, amount, destroyChance)
@@ -283,40 +282,51 @@ let EventPhase = {
 				ctx.events.push({ type: "SANDSTORM_END" });
 			}
 		}
+	}
+};
 
-		// epidemia: il Nido compare dopo qualche turno di Centro di ricerca medico attivo
-		if(config.epidemic.enabled)
+/**
+ * Epidemia dalla costruzione: ogni edificio o tubo completato nel sottosuolo entro "radius" caselle da un Nido
+ * non contenuto (senza Struttura di contenimento attiva) la fa scoppiare con "probability"; il Nido, se ancora
+ * nascosto, viene scoperto. Dopo il Vaccino i Nidi non fanno più scoppiare epidemie.
+ */
+let NestPhase = {
+	apply: function(ctx)
+	{
+		let state = ctx.state;
+		let config = state.getEvents().config.epidemic;
+		let completed = (ctx.completed || []).filter(function(b) { return b.getLayer() == TerrainLayer.Underground; });
+		if(!config.enabled || completed.length == 0 || state.isCompletedKnowledge(VACCINE))
 		{
-			if(events.medicalSince === null && (state.getActiveList()[NEST_CENTER] || []).length > 0)
+			return;
+		}
+		let contained = new Set((state.getActiveList()[CONTAINMENT] || []).map(function(b) { return b.getPosition().x + "," + b.getPosition().y; }));
+		let nests = ctx.map.getStructure().filter(function(el)
+		{
+			return el.getType() == StructureTypes.Resource && el.getResourceType() == "AlienNest" && !contained.has(el.getPosition().x + "," + el.getPosition().y);
+		});
+		let r2 = config.radius * config.radius;
+		for(let i = 0; i < completed.length; i++)
+		{
+			let p = completed[i].getPosition();
+			let nest = nests.find(function(n) { let q = n.getPosition(); return (q.x - p.x) * (q.x - p.x) + (q.y - p.y) * (q.y - p.y) <= r2; });
+			if(nest !== undefined && Math.random() < config.probability)
 			{
-				events.medicalSince = date;
-			}
-			if(events.medicalSince !== null && events.nests < config.epidemic.maxNests && !state.isCompletedKnowledge(VACCINE) &&
-				date - events.medicalSince >= config.epidemic.delay && Math.random() < config.epidemic.probability)
-			{
-				EventPhase.spawnNest(ctx);
+				NestPhase.outbreak(ctx, nest);
+				return;
 			}
 		}
 	},
 
-	/** un Nido alieno compare in una casella esplorata e libera del sottosuolo, e fa scoppiare l'epidemia */
-	spawnNest: function(ctx)
+	/** scoppia l'epidemia dal Nido: lo si scopre e si ammala l'1% dei coloni nati */
+	outbreak: function(ctx, nest)
 	{
 		let state = ctx.state;
-		let tiles = _freeExploredTiles(ctx.map);
-		if(tiles.length == 0)
-		{
-			return null;
-		}
-		let position = tiles[Math.floor(Math.random() * tiles.length)];
-		ctx.map.addResource("AlienNest", position);
-		let events = state.getEvents();
-		events.nests++;
+		ctx.map.discoveryTile(nest.getPosition(), TerrainLayer.Underground);
 		state.addKnowledge({ discovery: ["Alien_Nest"] });
-		events.epidemic = true;
-		ctx.events.push({ type: "EPIDEMIC", count: Epidemic.outbreak(state), position: position });
-		return position;
+		state.getEvents().epidemic = true;
+		ctx.events.push({ type: "EPIDEMIC", count: Epidemic.outbreak(state), position: nest.getPosition() });
 	}
 };
 
-export { Events, Epidemic, EventPhase, EVENT_TYPES };
+export { Events, Epidemic, EventPhase, NestPhase, EVENT_TYPES };

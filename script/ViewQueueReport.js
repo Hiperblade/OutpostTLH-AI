@@ -1,5 +1,7 @@
 "use strict";
 
+import { Launch } from "./Launch.js";
+import { Orbit } from "./Orbit.js";
 import { describeBuildingIssue } from "./BuildingIssueText.js";
 import { Cure } from "./Cure.js";
 import { GenerationState } from "./Generations.js";
@@ -593,6 +595,48 @@ function ReportStoppedBuildings(colonyState, image)
 	this.getImageId = function(){ return image || "Pipes"; }
 }
 
+/** orbite (posti e durata dei satelliti), satelliti in magazzino, Silos e lanci, Spazioporto */
+function ReportOrbits(colonyState, image)
+{
+	let _row = function(label, value, error) { return '<tr><td class="tableMainColumn">' + label + '</td><td class="tableDataRight' + (error ? ' colorError' : '') + '">' + value + '</td></tr>'; };
+
+	this.getItemInfo = function()
+	{
+		let orbits = colonyState.getOrbits();
+		let text = '<table>';
+		Orbit.ORBITS.forEach(function(orbit)
+		{
+			let used = Orbit.count(colonyState, orbit);
+			text += _row('<b>' + TextRepository.get("Orbit_" + orbit) + '</b>', used + " / " + orbits.capacity[orbit], false);
+			orbits.satellites.filter(function(s) { return Orbit.TYPES[s.type].orbit == orbit; }).forEach(function(s)
+			{
+				text += _row('<span class="tableIndentation">' + TextRepository.get(s.type) + '</span>', TextRepository.get("TurnsLeft").replace("%s", s.life), s.life <= Orbit.EXPIRY_WARNING);
+			});
+		});
+		text += _row('<b>' + TextRepository.get("SatellitesInStorage") + '</b>', "", false);
+		Object.keys(Orbit.TYPES).concat(["autoLandingModule"]).forEach(function(type)
+		{
+			if(colonyState.getStored(type) > 0)
+			{
+				text += _row('<span class="tableIndentation">' + TextRepository.get(type) + '</span>', colonyState.getStored(type), false);
+			}
+		});
+		text += _row('<b>' + TextRepository.get("LaunchSilo") + '</b>', Orbit.silos(colonyState), false);
+		text += _row('<span class="tableIndentation">' + TextRepository.get("LaunchesLeft") + '</span>', Orbit.launchesLeft(colonyState), false);
+		text += _row('<b>' + TextRepository.get("SpacePort") + '</b>', (colonyState.getActiveList()["SpacePort"] || []).length, false);
+		Object.keys(Launch.SHIP_PARTS).forEach(function(part)
+		{
+			text += _row('<span class="tableIndentation">' + TextRepository.get(part) + '</span>', colonyState.getStored(part), false);
+		});
+		text += _row('<span class="tableIndentation">' + TextRepository.get("ShipsLaunched") + '</span>', colonyState.getShipsLaunched(), false);
+		text += '</table>';
+		return text;
+	};
+
+	this.getName = function(){ return "ReportOrbits"; };
+	this.getImageId = function(){ return image || "MicrowaveSatellite"; }
+}
+
 function ReportQueueData(colonyState)
 {
 	let queue = [];
@@ -603,6 +647,7 @@ function ReportQueueData(colonyState)
 	queue.push(new ReportStoppedBuildings(colonyState, "Pipes"));
 	queue.push(new ReportMaintenance(colonyState, "Pipes"));
 	queue.push(new ReportProductionMaterial(colonyState, "power", "Power" ));
+	queue.push(new ReportOrbits(colonyState, "MicrowaveSatellite"));
 	queue.push(new ReportHumans(colonyState, "Humans"));
 	queue.push(new ReportProductionMaterial(colonyState, "foodUnit", "Hydroponics", 1));
 	queue.push(new ReportProductionMaterial(colonyState, "ironBar", "Smelter"));
@@ -642,4 +687,4 @@ function ReportQueueData(colonyState)
 }
 inherits(ReportQueueData, QueueData);
 
-export { ReportObjectives, ReportNotifications, ReportProductionMaterial, ReportMetaMaterial, ReportMaintenance, ReportHumans, ReportStoppedBuildings, ReportQueueData };
+export { ReportOrbits, ReportObjectives, ReportNotifications, ReportProductionMaterial, ReportMetaMaterial, ReportMaintenance, ReportHumans, ReportStoppedBuildings, ReportQueueData };

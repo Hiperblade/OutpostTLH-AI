@@ -1,6 +1,7 @@
 "use strict";
 
 import { Events } from "./Events.js";
+import { Orbit } from "./Orbit.js";
 
 /**
  * Missioni: partite preparate, descritte da file JSON in data/missions/ (elencati in index.json).
@@ -12,7 +13,8 @@ import { Events } from "./Events.js";
  *   "briefing": "Testo di presentazione",
  *   "planetId": "ignis", "siteId": "1",
  *   "objectives": [{ "type": "happyPopulation", "params": { "population": 50, "turns": 10 } }],
- *   "kit": { "roboWorker": 10, "dozer": 3, "digger": 1, "miner": 2, "MicrowaveSatellite": 1 },
+ *   "kit": { "roboWorker": 10, "dozer": 3, "digger": 1, "miner": 2, "MicrowaveSatellite": 1, "MiningSatellite": 1 },
+ *   "orbits": { "microwave": 3, "observation": 3 },
  *   "stock": { "foodUnit": 100 },
  *   "completedResearch": ["Medicine"],
  *   "excludedResearch": ["Terraforming"],
@@ -23,6 +25,7 @@ import { Events } from "./Events.js";
  * }
  * Gli edifici a inclusione (INCLUSION_BUILDINGS) esistono solo nelle missioni che li elencano in includedBuildings;
  * gli eventi sono spenti finché la missione non li attiva (parametri: vedi Events.DEFAULTS).
+ * Nel kit i satelliti (MicrowaveSatellite, MiningSatellite) partono già in orbita; "orbits" sono i posti di ogni orbita.
  *
  *   Mission.normalize(data)  missione con tutti i campi (valori predefiniti per quelli mancanti)
  *   Mission.KIT              contenuto predefinito del kit di atterraggio
@@ -30,7 +33,7 @@ import { Events } from "./Events.js";
  */
 /** edifici a inclusione: non esistono nella partita libera, solo nelle missioni che li includono */
 const INCLUSION_BUILDINGS = ["Drill"];
-const KIT = { roboWorker: 10, dozer: 3, digger: 1, miner: 2, MicrowaveSatellite: 1 };
+const KIT = { roboWorker: 10, dozer: 3, digger: 1, miner: 2, MicrowaveSatellite: 1, MiningSatellite: 1 };
 const BASE_PATH = "data/missions/";
 
 let Mission = {
@@ -52,6 +55,7 @@ let Mission = {
 			excludedBuildings: (data.excludedBuildings || []).slice(),
 			includedBuildings: (data.includedBuildings || []).filter(function(id) { return INCLUSION_BUILDINGS.indexOf(id) >= 0; }),
 			events: Events.normalize(data.events),
+			orbits: Object.assign({}, Orbit.CAPACITY, data.orbits || {}),
 			turnLimit: data.turnLimit || 0
 		};
 	}

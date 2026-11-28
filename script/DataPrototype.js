@@ -2,6 +2,7 @@
 
 import { PipeType, TerrainLayer } from "./Enums.js";
 import { INCLUSION_BUILDINGS, Mission } from "./Mission.js";
+import { Orbit } from "./Orbit.js";
 import { AreaTypes, PrototypeLib } from "./PrototypeLib.js";
 
  
@@ -61,9 +62,13 @@ PrototypeLib.add("LandingModule", TerrainLayer.Surface, 1, {}, { production: { c
 	onPlaced: function(item, map)
 		{
 			map.getState().delKnowledge({ technology: [ "LandingModule" ] });
-			// il kit di atterraggio: satellite e RoboWorker per avviare i cantieri
+			// il kit di atterraggio: satelliti già in orbita e RoboWorker per avviare i cantieri
 			let kit = map.getState().getKit(Mission.KIT);
-			map.getState().createMaterials({ MicrowaveSatellite: kit.MicrowaveSatellite, roboWorker: kit.roboWorker });
+			["MicrowaveSatellite", "MiningSatellite"].forEach(function(type)
+			{
+				for(let i = 0; i < (kit[type] || 0); i++) { Orbit.put(map.getState(), type); }
+			});
+			map.getState().createMaterials({ roboWorker: kit.roboWorker });
 		},
 	onCompleted: function(item, map)
 		{
@@ -111,8 +116,8 @@ PrototypeLib.add("CargoModule", TerrainLayer.Surface, 2, {}, { capacity: { gener
 //-------------------------------------------------------------
 // produzione elettrica
 
-// impianto a microonde: consuma un satellite quando viene piazzato, al massimo 3 nella colonia
-PrototypeLib.add("MicrowavePlant", TerrainLayer.Surface, 1, {}, { production: { power: 500 }, limit: 3, placementCost: { MicrowaveSatellite: 1 } });
+// impianto a microonde: funziona solo con un satellite a microonde in orbita (uno per impianto, vedi BuildingProductionPhase)
+PrototypeLib.add("MicrowavePlant", TerrainLayer.Surface, 1, {}, { production: { power: 500 } });
 PrototypeLib.add("ElectrostaticCoil", TerrainLayer.Surface, 3, {}, { production: { power: 100 } });
 PrototypeLib.add("Geothermal", TerrainLayer.Deep, 10, {}, { requiredResource: "Fumarole", production: { power: 2000 } });
 
@@ -245,8 +250,10 @@ PrototypeLib.addMine("Radioactive", TerrainLayer.Deep, 2, {}, { requiredResource
 // trivella: estrae poco metallo e pochi minerali ovunque nelle profondità, senza risorsa (edificio a inclusione)
 PrototypeLib.add("Drill", TerrainLayer.Deep, 4, {}, { consumption: { power: 10 }, production: { metalOre: 3, mineralOre: 3 }, capacity: { metalOre: 10, mineralOre: 10 } });
 
-// nido alieno: compare con l'evento Epidemia (vedi Events.js), occupa la casella per sempre
-PrototypeLib.addResource("AlienNest", TerrainLayer.Underground, "#C03030");
+// nido alieno: solo sui pianeti giungla, nascosto con la mappa (Events.placeNests); occupa la casella per sempre
+PrototypeLib.addResource("AlienNest", TerrainLayer.Underground, "#C03030", "Alien_Nest");
+// struttura di contenimento: solo su un Nido; finché è attiva quel Nido non causa epidemie
+PrototypeLib.add("ContainmentStructure", TerrainLayer.Underground, 6, { ironBar: 1 }, { requiredResource: "AlienNest", consumption: { power: 20 } });
 
 // pozzi delle miniere sui layer inferiori
 PrototypeLib.add("Mine", TerrainLayer.Underground, 1000, {});
@@ -365,6 +372,24 @@ PrototypeLib.add("SpacePort", TerrainLayer.Surface, 4, {}, { staff: 5, consumpti
 		{ type: "SpacePort_u_n", dx: 1, dy: -1 },
 		{ type: "SpacePort_u_e", dx: 1, dy: 0 }
 	] });
+
+// silos di lancio: un lancio a turno (satelliti e Modulo d'Atterraggio Automatizzato), con il personale al lavoro
+PrototypeLib.add("LaunchSilo", TerrainLayer.Surface, 6, { ironBar: 2 }, { staff: 3, consumption: { power: 100 },
+	parts: [ { type: "LaunchSilo_u", dx: 0, dy: 0 } ] });
+PrototypeLib.add("LaunchSilo_u", TerrainLayer.Underground, 1, {});
+
+// modulo d'atterraggio automatizzato: lanciato da un Silos, fonda un avamposto (nuovo Headquarter) con qualche robot
+PrototypeLib.add("AutoLandingModule", TerrainLayer.Surface, 1, {}, { production: { controlUnit: 4, power: 100, repairUnit: 300 },
+	builder: "LandingPoint",
+	ports: "nesw",
+	headquarter: true,
+	launch: true,
+	placementCost: { autoLandingModule: 1 },
+	onCompleted: function(item, map)
+		{
+			map.getState().createMaterials({ roboWorker: 4, dozer: 1 });
+		}
+	});
 
 PrototypeLib.add("SpacePort_w", TerrainLayer.Surface, 1, {});
 PrototypeLib.add("SpacePort_n", TerrainLayer.Surface, 1, {});

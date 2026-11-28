@@ -110,7 +110,6 @@ function createGame(site, objectives, mission, campaign, events)
 	let state = map.getState();
 	state.addKnowledge({ technology: ["LandingModule"] });
 	state.addKnowledge({ discovery: ["ElectrostaticDischarge", "Robotics", "Resource_Metal"] });
-	state.addKnowledge({ theory: ["Find_Metal", "Find_Mineral", "Find_Radioactive", "Find_Fumarole"] });
 
 	configureStorage(state);
 	state.setObjectives(objectives || [{ type: "happyPopulation", params: {} }]);
@@ -119,6 +118,8 @@ function createGame(site, objectives, mission, campaign, events)
 	{
 		_applyMission(state, mission);
 	}
+	// Nidi alieni nascosti nel sottosuolo (solo pianeti giungla, con l'epidemia attiva)
+	Events.placeNests(map);
 	if(mission && campaign)
 	{
 		state.setCampaign({ id: campaign.id, name: campaign.name, missions: campaign.missions.slice(), missionId: mission.id });
@@ -132,6 +133,7 @@ function _applyMission(state, mission)
 	state.setMission(mission);
 	state.setObjectives(mission.objectives);
 	state.setEventsConfig(mission.events);
+	state.setOrbitCapacity(mission.orbits);
 	mission.completedResearch.forEach(function(name)
 	{
 		let recipe = RecipeLib.get(name);
@@ -151,7 +153,7 @@ function _applyMission(state, mission)
 function configureStorage(state)
 {
 	["mediKit", "goods", "toxicWaste", "fusionWaste", "shipHull", "shipEngine", "shipFuel"].forEach(function(name) { state.configureMaterial(name, "genericStorage"); });
-	["dozer", "digger", "miner", "roboWorker", "MicrowaveSatellite"].forEach(function(name) { state.configureMaterial(name, "roboticStorage"); });
+	["dozer", "digger", "miner", "roboWorker", "MicrowaveSatellite", "MiningSatellite", "MiningSatelliteAdv", "ThermalSatelliteAdv", "autoLandingModule"].forEach(function(name) { state.configureMaterial(name, "roboticStorage"); });
 	["radioactiveBar", "radioactiveWaste"].forEach(function(name) { state.configureMaterial(name, "radioactiveStorage"); });
 }
 

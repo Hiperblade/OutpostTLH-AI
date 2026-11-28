@@ -240,6 +240,10 @@ imagesList.push({ id: "Drill", fileName: "buildings/Drill.gif" });
 imagesList.push({ id: "MedicalResearchCenter", fileName: "buildings/MedicalResearchCenter.gif" });
 imagesList.push({ id: "EpidemicResponseCore", fileName: "buildings/EpidemicResponseCore.gif" });
 imagesList.push({ id: "Resource_AlienNest", fileName: "buildings/AlienNest.gif" });
+imagesList.push({ id: "ContainmentStructure", fileName: "buildings/ContainmentStructure.gif" });
+imagesList.push({ id: "LaunchSilo", fileName: "buildings/LaunchSilo.gif" });
+imagesList.push({ id: "LaunchSilo_u", fileName: "buildings/LaunchSilo_u.gif" });
+imagesList.push({ id: "AutoLandingModule", fileName: "buildings/LandingModule.gif" });
 imagesList.push({ id: "Terraformer", fileName: "buildings/Terraformer.gif" });
 imagesList.push({ id: "TerraformerAdv", fileName: "buildings/TerraformerAdv.gif" });
 imagesList.push({ id: "TerraformerAdv_Mini", fileName: "buildings/TerraformerAdv_Mini.gif" });
@@ -317,5 +321,13 @@ imagesList.push({ id: "Virus", fileName: "illustrations/Virus.png" });
 imagesList.push({ id: "Triage", fileName: "illustrations/Virus.png" });
 imagesList.push({ id: "AlienPathogen", fileName: "illustrations/Virus.png" });
 imagesList.push({ id: "Vaccine", fileName: "illustrations/Virus.png" });
+imagesList.push({ id: "AlienBiomassContainment", fileName: "buildings/ContainmentStructure.gif" });
+// ricerca aerospaziale e satelliti (i satelliti di osservazione usano provvisoriamente l'immagine di quello a microonde)
+imagesList.push({ id: "Aerospace", fileName: "illustrations/Aerospace.png" });
+imagesList.push({ id: "RemoteSensing", fileName: "illustrations/Aerospace.png" });
+imagesList.push({ id: "Nanotechnology", fileName: "illustrations/Nanotecnology.png" });
+imagesList.push({ id: "MiningSatellite", fileName: "illustrations/MicrowaveSatellite.png" });
+imagesList.push({ id: "MiningSatelliteAdv", fileName: "illustrations/MicrowaveSatellite.png" });
+imagesList.push({ id: "ThermalSatelliteAdv", fileName: "illustrations/MicrowaveSatellite.png" });
 
 export { imagesList };

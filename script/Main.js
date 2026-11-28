@@ -5,6 +5,7 @@ import { Placement, PlacementReason } from "./Placement.js";
 import { Campaign, CampaignProgress } from "./Campaign.js";
 import { Cure } from "./Cure.js";
 import { Launch } from "./Launch.js";
+import { Orbit } from "./Orbit.js";
 import { Revival } from "./Revival.js";
 import { SaveGame } from "./SaveGame.js";
 import { Notifications } from "./Notifications.js";
@@ -216,6 +217,10 @@ function MainSystemConstructor(mapCanvas, miniMapCanvas, selectorCanvas, siteTyp
 				{
 					_launch();
 				}
+				if(action == "satellite")
+				{
+					_chooseSatellite();
+				}
 			});
 		queueView = InitializeQueueView("queueDiv", canvasSize);
 
@@ -318,11 +323,13 @@ Log.dialog(_placementMessage(result));
 			case PlacementReason.NoResourceRequired:
 				return "Questo edificio non richiede la presenza di risorse!";
 			case PlacementReason.RequiresResource:
-				return "Questo edificio richiede la presenza della risorsa " + result.data.resource + "!";
+				return "Questo edificio richiede la presenza della risorsa " + TextRepository.get("Resource_" + result.data.resource) + "!";
 			case PlacementReason.LimitReached:
 				return TextRepository.get("Placement_limitReached").replace("%n", result.data.limit).replace("%s", TextRepository.get(result.data.buildingType));
 			case PlacementReason.MissingMaterial:
 				return TextRepository.get("Placement_missingMaterial").replace("%s", TextRepository.get(result.data.material));
+			case PlacementReason.NoLaunch:
+				return TextRepository.get("Placement_noLaunch");
 		}
 		return result.reason;
 	};
@@ -512,6 +519,42 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 		Log.dialog(TextRepository.get("Launch_" + result.reason).replace("%s", result.missing.map(function(name) { return TextRepository.get(name); }).join(", ")));
 	};
 
+	/** lancio di un satellite dal Silos: si sceglie tra quelli in magazzino */
+	let _chooseSatellite = function()
+	{
+		let types = Object.keys(Orbit.TYPES).filter(function(type) { return state.getStored(type) > 0; });
+		if(Orbit.launchesLeft(state) <= 0)
+		{
+			Log.dialog(TextRepository.get("SiloLaunch_" + (Orbit.silos(state) == 0 ? "noSilo" : "noLaunch")), "warning");
+			return;
+		}
+		if(types.length == 0)
+		{
+			Log.dialog(TextRepository.get("SiloLaunch_noSatellite"), "warning");
+			return;
+		}
+		Notifications.show([{ text: TextRepository.get("SiloLaunch_choose"), level: "info" }], { sticky: true, actions: types.map(function(type)
+		{
+			return { label: TextRepository.get(type) + " (" + state.getStored(type) + ")", onClick: function() { _launchSatellite(type); } };
+		}) });
+	};
+
+	let _launchSatellite = function(type)
+	{
+		let result = Orbit.launch(state, type);
+		if(!result.ok)
+		{
+			Log.dialog(TextRepository.get("SiloLaunch_" + result.reason), "warning");
+			return;
+		}
+		let text = TextRepository.get("SiloLaunch_done").replace("%s", TextRepository.get(type));
+		Notifications.show([{ text: text, level: "info" }]);
+		state.addNotifications([{ date: state.getDate(), text: text, level: "info" }]);
+		Turn.project(terrainMap);
+		_redraw();
+		_save();
+	};
+
 	/** prenota le cure dei coloni malati (avvengono a fine turno) */
 	let _cure = function()
 	{
@@ -615,6 +658,8 @@ Log.dialog(result.ok ? TextRepository.get("RevivalScheduled") : _revivalMessage(
 		EPIDEMIC_SPREAD: "warning",
 		EARTHQUAKE: "danger",
 		EARTHQUAKE_DESTROYED: "danger",
+		SATELLITE_EXPIRING: "warning",
+		SATELLITE_EXPIRED: "danger",
 		SANDSTORM: "warning"
 	};
 
